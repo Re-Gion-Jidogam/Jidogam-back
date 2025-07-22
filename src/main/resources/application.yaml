@@ -1,0 +1,51 @@
+spring:
+  application:
+    name: jidogam
+  profiles:
+    active: dev
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  jpa:
+    open-in-view: false
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        highlight_sql: false
+        format_sql: false
+
+jidogam:
+  storage:
+    type: ${STORAGE_TYPE:local}
+    local:
+      root-path: ${STORAGE_LOCAL_ROOT_PATH:.jidogam/storage}
+    s3:
+      access-key: ${AWS_S3_ACCESS_KEY}
+      secret-key: ${AWS_S3_SECRET_KEY}
+      region: ${AWS_S3_REGION}
+      bucket: ${AWS_S3_BUCKET}
+      presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600}
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: 900000   # 15?
+  refresh-token-expiration: 604800000   # 7?
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: WARN
+    region.jidogam: INFO
+    org.springframework: INFO
+    org.hibernate.sql: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: INFO

@@ -1,0 +1,134 @@
+-- Users table
+CREATE TABLE users
+(
+    id                UUID PRIMARY KEY,
+    nickname          VARCHAR(100)             NOT NULL UNIQUE,
+    email             VARCHAR(50)              NOT NULL UNIQUE,
+    password          TEXT                     NOT NULL,
+    exp               BIGINT                   NOT NULL,
+    role              VARCHAR(30)              NOT NULL,
+    profile_image_url VARCHAR(512)             NULL,
+    created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at        TIMESTAMP WITH TIME ZONE
+);
+
+-- Guidebooks table
+CREATE TABLE guidebooks
+(
+    id            UUID PRIMARY KEY,
+    author_id     UUID                     NOT NULL,
+    title         VARCHAR(50)              NOT NULL,
+    description   VARCHAR(512),
+    thumbnail_url VARCHAR(512),
+    emoji         VARCHAR(100),
+    color         VARCHAR(50),
+    points        INTEGER                  NOT NULL,
+    created_at    TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at    TIMESTAMP WITH TIME ZONE
+);
+
+-- Guidebook participants table
+CREATE TABLE guidebook_participants
+(
+    id           UUID PRIMARY KEY,
+    user_id      UUID                     NOT NULL,
+    guidebook_id UUID                     NOT NULL,
+    created_at   TIMESTAMP WITH TIME ZONE NOT NULL,
+    UNIQUE (user_id, guidebook_id)
+);
+
+-- Guidebook places table
+CREATE TABLE guidebook_places
+(
+    id           UUID PRIMARY KEY,
+    guidebook_id UUID                     NOT NULL,
+    place_id     UUID                     NOT NULL,
+    created_at   TIMESTAMP WITH TIME ZONE NOT NULL,
+    UNIQUE (guidebook_id, place_id)
+);
+
+-- Guidebook reviews table
+CREATE TABLE guidebook_reviews
+(
+    id           UUID PRIMARY KEY,
+    guidebook_id UUID                     NOT NULL,
+    author_id    UUID                     NOT NULL,
+    content      TEXT                     NOT NULL,
+    rating       DOUBLE PRECISION         NOT NULL,
+    created_at   TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at   TIMESTAMP WITH TIME ZONE,
+    UNIQUE (author_id, guidebook_id)
+);
+
+-- Stamps table
+CREATE TABLE stamps
+(
+    id         UUID PRIMARY KEY,
+    user_id    UUID                     NOT NULL,
+    place_id   UUID                     NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    UNIQUE (user_id, place_id)
+);
+
+-- Areas table
+CREATE TABLE areas
+(
+    id         UUID PRIMARY KEY,
+    sido       VARCHAR(50)              NOT NULL,
+    sigungu    VARCHAR(50)              NOT NULL,
+    weight     INTEGER                  NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Places table
+CREATE TABLE places
+(
+    id         UUID PRIMARY KEY,
+    area_id    UUID                     NOT NULL,
+    name       VARCHAR(255)             NOT NULL,
+    x          DECIMAL(18, 14)          NOT NULL,
+    y          DECIMAL(17, 14)          NOT NULL,
+    address    VARCHAR(255)             NOT NULL,
+    category   VARCHAR(50)              NULL,
+    points     INTEGER                  NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Foreign Key Constraints
+ALTER TABLE places
+    ADD CONSTRAINT fk_places_area_id
+        FOREIGN KEY (area_id) REFERENCES areas (id);
+
+ALTER TABLE guidebook_participants
+    ADD CONSTRAINT fk_guidebook_participants_guidebook_id
+        FOREIGN KEY (guidebook_id) REFERENCES guidebooks (id);
+
+ALTER TABLE guidebook_participants
+    ADD CONSTRAINT fk_guidebook_participants_user_id
+        FOREIGN KEY (user_id) REFERENCES users (id);
+
+ALTER TABLE guidebook_places
+    ADD CONSTRAINT fk_guidebook_places_guidebook_id
+        FOREIGN KEY (guidebook_id) REFERENCES guidebooks (id);
+
+ALTER TABLE guidebook_places
+    ADD CONSTRAINT fk_guidebook_places_place_id
+        FOREIGN KEY (place_id) REFERENCES places (id);
+
+ALTER TABLE guidebook_reviews
+    ADD CONSTRAINT fk_guidebook_reviews_guidebook_id
+        FOREIGN KEY (guidebook_id) REFERENCES guidebooks (id);
+
+ALTER TABLE guidebook_reviews
+    ADD CONSTRAINT fk_guidebook_reviews_user_id
+        FOREIGN KEY (author_id) REFERENCES users (id);
+
+ALTER TABLE stamps
+    ADD CONSTRAINT fk_stamps_place_id
+        FOREIGN KEY (place_id) REFERENCES places (id);
+
+ALTER TABLE stamps
+    ADD CONSTRAINT fk_stamps_user_id
+        FOREIGN KEY (user_id) REFERENCES users (id);
