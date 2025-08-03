@@ -48,6 +48,8 @@ jobs:
             echo "prefix=hotfix" >> $GITHUB_OUTPUT
           elif [[ "$labels" == *"refactor"* ]]; then
             echo "prefix=refactor" >> $GITHUB_OUTPUT
+          elif [[ "$labels" == *"test"* ]]; then
+            echo "prefix=test" >> $GITHUB_OUTPUT
           else
             echo "prefix=misc" >> $GITHUB_OUTPUT
           fi
