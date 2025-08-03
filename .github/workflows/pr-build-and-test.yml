@@ -26,4 +26,6 @@ jobs:
         run: ./gradlew assemble
 
       - name: Run tests
+        env:
+          SPRING_PROFILES_ACTIVE: test
         run: ./gradlew test
