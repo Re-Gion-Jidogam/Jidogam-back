@@ -1,6 +1,6 @@
 name: "🧩 Test"
 description: "테스트 추가 및 수정"
-title: "[Bug]"
+title: "[Test]"
 labels: "🧩test"
 body:
   - type: input
