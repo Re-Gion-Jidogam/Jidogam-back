@@ -36,19 +36,19 @@ jobs:
         id: set_metadata
         run: |
           labels=$(echo "${{ join(github.event.issue.labels.*.name, ',') }}" | tr '[:upper:]' '[:lower:]')
-          if [[ "$labels" == *"bug"* ]]; then
+          if [[ "$labels" == *"🐞bug"* ]]; then
             echo "prefix=bugfix" >> $GITHUB_OUTPUT
-          elif [[ "$labels" == *"feature"* ]]; then
+          elif [[ "$labels" == *"✨feature"* ]]; then
             echo "prefix=feature" >> $GITHUB_OUTPUT
-          elif [[ "$labels" == *"chore"* ]]; then
+          elif [[ "$labels" == *"🍪chore"* ]]; then
             echo "prefix=chore" >> $GITHUB_OUTPUT
-          elif [[ "$labels" == *"deploy"* ]]; then
+          elif [[ "$labels" == *"🚀deploy"* ]]; then
             echo "prefix=deploy" >> $GITHUB_OUTPUT
-          elif [[ "$labels" == *"hotfix"* ]]; then
+          elif [[ "$labels" == *"❗hotfix"* ]]; then
             echo "prefix=hotfix" >> $GITHUB_OUTPUT
-          elif [[ "$labels" == *"refactor"* ]]; then
+          elif [[ "$labels" == *"🔧refactor"* ]]; then
             echo "prefix=refactor" >> $GITHUB_OUTPUT
-          elif [[ "$labels" == *"test"* ]]; then
+          elif [[ "$labels" == *"🧩test"* ]]; then
             echo "prefix=test" >> $GITHUB_OUTPUT
           else
             echo "prefix=misc" >> $GITHUB_OUTPUT
@@ -74,4 +74,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          branch: ${{ steps.set_metadata.outputs.prefix }}/#${{ github.event.issue.number }}/${{ steps.sanitize.outputs.name }}
+          branch: ${{ steps.set_metadata.outputs.prefix }}/${{ github.event.issue.number }}/${{ steps.sanitize.outputs.name }}
