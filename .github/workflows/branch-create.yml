@@ -2,7 +2,7 @@ name: 🪴 Auto Create Issue Branch
 
 on:
   issues:
-    types: [assigned]
+    types: [ assigned ]
 
 permissions:
   contents: write
@@ -11,6 +11,7 @@ permissions:
 jobs:
   create-issue-branch:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
