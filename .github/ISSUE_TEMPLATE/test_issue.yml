@@ -1,5 +1,5 @@
 name: "🧩 Test"
-description: "버그 제보"
+description: "테스트 추가 및 수정"
 title: "[Bug]"
 labels: "🧩test"
 body:
