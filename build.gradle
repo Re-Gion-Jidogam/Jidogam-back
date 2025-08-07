@@ -29,6 +29,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
+    //Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
     // DB
     runtimeOnly 'com.h2database:h2'
     runtimeOnly 'org.postgresql:postgresql'
