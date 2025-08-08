@@ -3,6 +3,7 @@ package region.jidogam.domain.area.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,7 +13,11 @@ import region.jidogam.common.entity.BaseEntity;
 import region.jidogam.common.entity.BaseUpdatableEntity;
 
 @Entity
-@Table(name = "areas")
+@Table(
+  name = "areas", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"sido", "sigungu"})
+  }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
