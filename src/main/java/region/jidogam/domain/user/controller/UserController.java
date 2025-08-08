@@ -1,4 +1,4 @@
-package region.jidogam.domain.user;
+package region.jidogam.domain.user.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

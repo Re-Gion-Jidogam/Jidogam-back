@@ -23,7 +23,7 @@ import region.jidogam.domain.user.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("사용자 서비스 단위테스트")
-class UserServiceImplTest {
+class UserServiceTest {
 
   @Mock
   private UserRepository userRepository;
@@ -32,7 +32,7 @@ class UserServiceImplTest {
   private PasswordEncoder passwordEncoder;
 
   @InjectMocks
-  private UserServiceImpl userService;
+  private UserService userService;
 
   @Nested
   @DisplayName("회원가입")
