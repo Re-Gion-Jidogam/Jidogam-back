@@ -33,4 +33,6 @@ public class Area extends BaseUpdatableEntity {
   @Column(nullable = false)
   private Integer weight;
 
+  @Column(nullable = false, unique = true, length = 10)
+  private String sigunguCode;
 }
