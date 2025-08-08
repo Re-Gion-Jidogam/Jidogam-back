@@ -49,3 +49,9 @@ logging:
     org.springframework: INFO
     org.hibernate.sql: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: INFO
+
+api:
+  area:
+    service-id: ${AREA_SERVICE_ID:dummy}
+    secret-key: ${AREA_SECRET_KEY:dummy}
+    access-token: ${AREA_ACCESS_TOKEN:dummy} # 유효시간 4시간 (임시)
