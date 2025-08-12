@@ -15,7 +15,7 @@ public class AreaController {
   private final AreaInitService areaInitService;
 
   // only admin
-  @GetMapping("/save")
+  @GetMapping("/init")
   public ResponseEntity<Void> saveAreaData() {
     areaInitService.initializeAreaData();
     return ResponseEntity.ok().build();
