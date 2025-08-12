@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.domain.area.service.AreaInitService;
 
 @RestController
-@RequestMapping("/admin/area")
+@RequestMapping("/api/admin/area")
 @RequiredArgsConstructor
 public class AreaController {
 
