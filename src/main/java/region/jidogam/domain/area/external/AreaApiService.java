@@ -20,9 +20,11 @@ import region.jidogam.domain.area.dto.api.Sigungu;
 @RequiredArgsConstructor
 public class AreaApiService {
 
-  private final RestClient restClient;
+  private static final int RETRY_LIMIT = 3;
+  private static final String SUCCESS_CODE = "0";
+  private static final String AUTH_INVALID_CODE = "-401";
 
-  private final int RETRY_LIMIT = 3;
+  private final RestClient restClient;
 
   @Value("${api.area.service-id}")
   private String serviceId;
@@ -81,7 +83,7 @@ public class AreaApiService {
         AreaApiResponse<T> response = apiCall.get();
 
         // 성공
-        if (response.errCd().equals("0")) {
+        if (SUCCESS_CODE.equals(response.errCd())) {
           return response;
         }
 
@@ -92,7 +94,7 @@ public class AreaApiService {
         }
 
         // 재시도
-        if (response.errCd().equals("-401")) {
+        if (AUTH_INVALID_CODE.equals(response.errCd())) {
           log.warn("인증 정보가 유효하지 않음. 토큰 재발급 시도 ({})", response.errMsg());
           refreshToken();
         } else {
