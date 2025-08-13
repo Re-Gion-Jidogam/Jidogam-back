@@ -27,10 +27,10 @@ public class JwtProvider {
   @Value("${jwt.secret}")
   private String jwtSecret;
 
-  @Value("${access-token-expiration}")
+  @Value("${jwt.access-token-expiration}")
   private Long accessTokenExpiration;
 
-  @Value("${refresh-token-expiration}")
+  @Value("${jwt.refresh-token-expiration}")
   private Long refreshTokenExpiration;
 
   private static final String ISSUER = "region-jidogam";
