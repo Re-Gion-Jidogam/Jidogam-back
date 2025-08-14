@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
-import region.jidogam.domain.jwt.TokenPair;
-import region.jidogam.domain.jwt.TokenResponse;
+import region.jidogam.domain.jwt.dto.TokenPair;
+import region.jidogam.domain.jwt.dto.TokenResponse;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.service.UserService;
 

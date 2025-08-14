@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.jwt.JwtProvider;
 import region.jidogam.domain.jwt.RefreshTokenService;
-import region.jidogam.domain.jwt.TokenPair;
+import region.jidogam.domain.jwt.dto.TokenPair;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserEmailConflictException;
