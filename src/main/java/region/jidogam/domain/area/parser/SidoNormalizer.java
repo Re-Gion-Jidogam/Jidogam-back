@@ -30,7 +30,7 @@ public class SidoNormalizer {
     addAlias(addressMap, "강원특별자치도", "강원", "강원도", "강원특별자치도");
     addAlias(addressMap, "충청북도", "충북", "충청북도");
     addAlias(addressMap, "충청남도", "충남", "충청남도");
-    addAlias(addressMap, "전라북도", "전북", "전라북도");
+    addAlias(addressMap, "전북특별자치도", "전북", "전라북도");
     addAlias(addressMap, "전라남도", "전남", "전라남도");
     addAlias(addressMap, "경상북도", "경북", "경상북도");
     addAlias(addressMap, "경상남도", "경남", "경상남도");

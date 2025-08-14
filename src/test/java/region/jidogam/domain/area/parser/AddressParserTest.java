@@ -21,17 +21,17 @@ class AddressParserTest {
   private AddressParser addressParser;
 
   @Test
-  @DisplayName("도 + 시: '전북 익산시 망산길 11-17' → (전라북도, 익산시)")
+  @DisplayName("도 + 시: '전북 익산시 망산길 11-17' → (전북특별자치도, 익산시)")
   void baseCaseSuccess() {
     // given
-    when(sidoNormalizer.normalize("전북")).thenReturn("전라북도");
+    when(sidoNormalizer.normalize("전북")).thenReturn("전북특별자치도");
     String fullAddress = "전북 익산시 망산길 11-17";
 
     // when
     AddressInfo addressInfo = addressParser.parseAddress(fullAddress);
 
     // then
-    assertThat(addressInfo.sido()).isEqualTo("전라북도");
+    assertThat(addressInfo.sido()).isEqualTo("전북특별자치도");
     assertThat(addressInfo.sigungu()).isEqualTo("익산시");
   }
 
@@ -99,14 +99,14 @@ class AddressParserTest {
   @DisplayName("양끝 공백 제거 및 분리 테스트")
   void trimsAndSplitsByWhitespace() {
     // given
-    when(sidoNormalizer.normalize("전북")).thenReturn("전라북도");
+    when(sidoNormalizer.normalize("전북")).thenReturn("전북특별자치도");
     String fullAddress = "  전북 익산시\t망산길 11-17  ";
 
     // when
     AddressInfo addressInfo = addressParser.parseAddress(fullAddress);
 
     // then
-    assertThat(addressInfo.sido()).isEqualTo("전라북도");
+    assertThat(addressInfo.sido()).isEqualTo("전북특별자치도");
     assertThat(addressInfo.sigungu()).isEqualTo("익산시");
   }
 }
