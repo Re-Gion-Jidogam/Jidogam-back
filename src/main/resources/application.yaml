@@ -49,3 +49,8 @@ logging:
     org.springframework: INFO
     org.hibernate.sql: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: INFO
+
+api:
+  area:
+    service-id: ${AREA_SERVICE_ID:dev-service-id}
+    secret-key: ${AREA_SECRET_KEY:dev-secret-key}
