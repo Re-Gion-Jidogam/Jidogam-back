@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
 import region.jidogam.domain.jwt.TokenPair;
+import region.jidogam.domain.jwt.TokenResponse;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.service.UserService;
 
@@ -19,14 +21,18 @@ import region.jidogam.domain.user.service.UserService;
 public class UserController {
 
   private final UserService userService;
+  private final CookieUtil cookieUtil;
 
   @PostMapping
   public ResponseEntity<?> register(@RequestBody @Valid UserCreateRequest request) {
 
     TokenPair tokenPair = userService.create(request);
-    CookieUtil.createRefreshTokenCookie(tokenPair.refreshToken());
+    cookieUtil.createRefreshTokenCookie(tokenPair.refreshToken());
 
-    return ResponseEntity.status(HttpStatus.CREATED).body(tokenPair.accessToken());
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(ResponseDto.builder()
+            .data(new TokenResponse(tokenPair.accessToken()))
+            .build());
   }
 
 }

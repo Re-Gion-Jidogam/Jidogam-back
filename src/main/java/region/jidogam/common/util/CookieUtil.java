@@ -8,15 +8,15 @@ import org.springframework.stereotype.Component;
 public class CookieUtil {
 
   @Value("${jwt.refresh-token-expiration}")
-  private static Long refreshTokenExpiration;
+  private Long refreshTokenExpiration;
 
   @Value("${app.domain:localhost}")
-  private static String domain;
+  private String domain;
 
   @Value("${app.secure-cookie:false}") // HTTPS에서만 true
-  private static boolean secureCookie;
+  private boolean secureCookie;
 
-  public static ResponseCookie createRefreshTokenCookie(String refreshToken) {
+  public ResponseCookie createRefreshTokenCookie(String refreshToken) {
     return ResponseCookie.from("refresh", refreshToken)
         .httpOnly(true)
         .secure(secureCookie)
