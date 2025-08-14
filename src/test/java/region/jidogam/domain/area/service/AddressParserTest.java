@@ -38,8 +38,23 @@ class AddressParserTest {
   }
 
   @Test
+  @DisplayName("시 + 구: '서울 강남구 임시길' → (서울특별시, 강남구)")
+  void siAndGuCaseSuccess() {
+    // given
+    when(sidoNormalizer.normalize("서울")).thenReturn("서울특별시");
+    String fullAddress = "서울 강남구 임시길";
+
+    // when
+    AddressInfo addressInfo = addressParser.parseAddress(fullAddress);
+
+    // then
+    assertThat(addressInfo.sido()).isEqualTo("서울특별시");
+    assertThat(addressInfo.sigungu()).isEqualTo("강남구");
+  }
+
+  @Test
   @DisplayName("도 + 시 + 구: '경기 수원시 영통구 임시길' → (경기도, 수원시 영통구)")
-  void sidoAndsiGunCaseSuccess() {
+  void doAndsiAndGunCaseSuccess() {
     // given
     when(sidoNormalizer.normalize("경기")).thenReturn("경기도");
     String fullAddress = "경기 수원시 영통구 임시길";
@@ -54,7 +69,7 @@ class AddressParserTest {
 
   @Test
   @DisplayName("도 + 군: '충북 보은군 임시길' → (충청북도, 보은군)")
-  void sidoAndGunCaseSuccess() {
+  void doAndGunCaseSuccess() {
     // given
     when(sidoNormalizer.normalize("충북")).thenReturn("충청북도");
     String fullAddress = "충북 보은군 임시길";
