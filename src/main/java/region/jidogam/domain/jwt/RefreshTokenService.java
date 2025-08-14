@@ -17,10 +17,10 @@ public class RefreshTokenService {
 
   @Transactional
   public RefreshToken create(User user) {
-    log.info("사용자 token pair를 JwtSession으로 저장 시작: userId = {}", user.getId());
+    log.info("사용자 RefreshToken 생성 시작: userId = {}", user.getId());
 
     refreshTokenRepository.findByUserId(user.getId()).ifPresent(token -> {
-      log.debug("기존 JWT 세션 삭제: userId = {}", user.getId());
+      log.debug("기존 RefreshToken 삭제: userId = {}", user.getId());
       refreshTokenRepository.delete(token);
     });
 
@@ -34,7 +34,7 @@ public class RefreshTokenService {
         .build();
 
     refreshTokenRepository.save(refreshToken);
-    log.info("사용자 token pair를 JwtSession으로 저장 완료");
+    log.info("사용자 RefreshToken 생성 및 저장 완료");
 
     return refreshToken;
   }
