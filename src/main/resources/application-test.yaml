@@ -18,6 +18,9 @@ spring:
     init:
       mode: never
 
+jwt:
+  secret: 'this-is-jwt-secret-code-of-jidogam-porject-for-test'
+
 logging:
   level:
     root: WARN
