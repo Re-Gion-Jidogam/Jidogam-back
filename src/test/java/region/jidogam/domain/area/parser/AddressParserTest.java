@@ -1,4 +1,4 @@
-package region.jidogam.domain.area.service;
+package region.jidogam.domain.area.parser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -10,8 +10,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import region.jidogam.domain.area.dto.api.AddressInfo;
-import region.jidogam.domain.area.parser.AddressParser;
-import region.jidogam.domain.area.parser.SidoNormalizer;
 
 @ExtendWith(MockitoExtension.class)
 class AddressParserTest {

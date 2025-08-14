@@ -1,4 +1,4 @@
-package region.jidogam.domain.area.service;
+package region.jidogam.domain.area.parser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import region.jidogam.domain.area.exception.UnknownSidoException;
-import region.jidogam.domain.area.parser.SidoNormalizer;
 
 class SidoNormalizerTest {
 
