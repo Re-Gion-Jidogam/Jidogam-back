@@ -1,4 +1,4 @@
-package region.jidogam.domain.area.service;
+package region.jidogam.domain.area.parser;
 
 import java.util.HashMap;
 import java.util.Map;

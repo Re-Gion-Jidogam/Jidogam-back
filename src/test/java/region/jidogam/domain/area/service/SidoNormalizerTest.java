@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import region.jidogam.domain.area.exception.UnknownSidoException;
+import region.jidogam.domain.area.parser.SidoNormalizer;
 
 class SidoNormalizerTest {
 
