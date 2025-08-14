@@ -96,6 +96,16 @@ CREATE TABLE places
     updated_at TIMESTAMP WITH TIME ZONE
 );
 
+-- Refresh token table
+CREATE TABLE refresh_tokens
+(
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
+    refresh_token TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
 -- Foreign Key Constraints
 ALTER TABLE places
     ADD CONSTRAINT fk_places_area_id
@@ -131,4 +141,8 @@ ALTER TABLE stamps
 
 ALTER TABLE stamps
     ADD CONSTRAINT fk_stamps_user_id
+        FOREIGN KEY (user_id) REFERENCES users (id);
+
+ALTER TABLE refresh_tokens
+    ADD CONSTRAINT fk_refresh_tokens_user_id
         FOREIGN KEY (user_id) REFERENCES users (id);
