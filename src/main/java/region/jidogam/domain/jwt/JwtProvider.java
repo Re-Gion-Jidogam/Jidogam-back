@@ -112,12 +112,10 @@ public class JwtProvider {
       validateClaims(claims); // 발행자, 만료시간 검증
       return claims;
 
-    } catch (ParseException e) {
-      log.error("토큰 파싱 실패: {}", e.getMessage());
-      throw new IllegalArgumentException("토큰 파싱 실패", e);
-    } catch (JOSEException e) {
-      log.error("토큰 검증 실패: {}", e.getMessage());
-      throw new IllegalArgumentException("토큰 검증 실패", e);
+    } catch (Exception e) {
+      // todo - 추후에 인가 과정에서 예외처리할지, 전역 예외처리 할지 고민해보기
+      log.error("토큰 검증 및 파싱 에러");
+      throw new IllegalArgumentException("토큰 검증 및 파싱 실패");
     }
   }
 
