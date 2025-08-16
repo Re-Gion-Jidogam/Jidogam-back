@@ -36,16 +36,8 @@ public class JwtProvider {
   private static final String ISSUER = "region-jidogam";
 
   public String generateAccessToken(User user) {
-    return generateToken(user, "access", accessTokenExpiration);
-  }
-
-  public String generateRefreshToken(User user) {
-    return generateToken(user, "refresh", refreshTokenExpiration);
-  }
-
-  private String generateToken(User user, String tokenType, Long expiration) {
     Date now = new Date();
-    Date exp = new Date(now.getTime() + expiration);
+    Date exp = new Date(now.getTime() + accessTokenExpiration);
 
     JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
         .subject(user.getId().toString())
@@ -55,17 +47,34 @@ public class JwtProvider {
         .claim("nickname", user.getNickname())
         .claim("email", user.getEmail())
         .claim("role", user.getRole())
-        .claim("type", tokenType)
+        .claim("type", "access")
         .build();
 
-    SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet);
+    return signToken(claimsSet);
+  }
 
+  public String generateRefreshToken(User user) {
+    Date now = new Date();
+    Date exp = new Date(now.getTime() + refreshTokenExpiration);
+
+    JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+        .subject(user.getId().toString())
+        .issuer(ISSUER)
+        .issueTime(now)
+        .expirationTime(exp)
+        .claim("type", "refresh")
+        .build();
+
+    return signToken(claimsSet);
+  }
+
+  private String signToken(JWTClaimsSet claimsSet){
+    SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet);
     try {
       signedJWT.sign(new MACSigner(jwtSecret));
     } catch (JOSEException e) {
       throw new RuntimeException("Jwt signing error", e);
     }
-
     return signedJWT.serialize();
   }
 
