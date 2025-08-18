@@ -36,16 +36,8 @@ public class JwtProvider {
   private static final String ISSUER = "region-jidogam";
 
   public String generateAccessToken(User user) {
-    return generateToken(user, "access", accessTokenExpiration);
-  }
-
-  public String generateRefreshToken(User user) {
-    return generateToken(user, "refresh", refreshTokenExpiration);
-  }
-
-  private String generateToken(User user, String tokenType, Long expiration) {
     Date now = new Date();
-    Date exp = new Date(now.getTime() + expiration);
+    Date exp = new Date(now.getTime() + accessTokenExpiration);
 
     JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
         .subject(user.getId().toString())
@@ -55,17 +47,34 @@ public class JwtProvider {
         .claim("nickname", user.getNickname())
         .claim("email", user.getEmail())
         .claim("role", user.getRole())
-        .claim("type", tokenType)
+        .claim("type", "access")
         .build();
 
-    SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet);
+    return signToken(claimsSet);
+  }
 
+  public String generateRefreshToken(User user) {
+    Date now = new Date();
+    Date exp = new Date(now.getTime() + refreshTokenExpiration);
+
+    JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+        .subject(user.getId().toString())
+        .issuer(ISSUER)
+        .issueTime(now)
+        .expirationTime(exp)
+        .claim("type", "refresh")
+        .build();
+
+    return signToken(claimsSet);
+  }
+
+  private String signToken(JWTClaimsSet claimsSet){
+    SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet);
     try {
       signedJWT.sign(new MACSigner(jwtSecret));
     } catch (JOSEException e) {
       throw new RuntimeException("Jwt signing error", e);
     }
-
     return signedJWT.serialize();
   }
 
@@ -103,12 +112,10 @@ public class JwtProvider {
       validateClaims(claims); // 발행자, 만료시간 검증
       return claims;
 
-    } catch (ParseException e) {
-      log.error("토큰 파싱 실패: {}", e.getMessage());
-      throw new IllegalArgumentException("토큰 파싱 실패", e);
-    } catch (JOSEException e) {
-      log.error("토큰 검증 실패: {}", e.getMessage());
-      throw new IllegalArgumentException("토큰 검증 실패", e);
+    } catch (Exception e) {
+      // todo - 추후에 인가 과정에서 예외처리할지, 전역 예외처리 할지 고민해보기
+      log.error("토큰 검증 및 파싱 에러");
+      throw new IllegalArgumentException("토큰 검증 및 파싱 실패");
     }
   }
 
