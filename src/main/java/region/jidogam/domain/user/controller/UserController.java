@@ -30,9 +30,7 @@ public class UserController {
     cookieUtil.createRefreshTokenCookie(tokenPair.refreshToken());
 
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(ResponseDto.builder()
-            .data(new TokenResponse(tokenPair.accessToken()))
-            .build());
+        .body(ResponseDto.ok(new TokenResponse(tokenPair.accessToken())));
   }
 
 }
