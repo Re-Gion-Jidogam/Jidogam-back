@@ -5,6 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import region.jidogam.domain.jwt.JwtProvider;
+import region.jidogam.domain.jwt.RefreshTokenService;
+import region.jidogam.domain.jwt.dto.TokenPair;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserEmailConflictException;
@@ -18,9 +21,11 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final JwtProvider jwtProvider;
+  private final RefreshTokenService refreshTokenService;
 
   @Transactional
-  public void create(UserCreateRequest request){
+  public TokenPair create(UserCreateRequest request){
     log.info("유저 생성 시작: nickname = {}, email = {}", request.nickname(), request.email());
     if(userRepository.existsByNickname(request.nickname())){
       throw UserNicknameConflictException.withNickname(request.nickname());
@@ -35,7 +40,16 @@ public class UserService {
         .password(passwordEncoder.encode(request.password()))
     .build();
 
-    userRepository.save(user);
+    User savedUser = userRepository.save(user);
+
+    String accessToken = jwtProvider.generateAccessToken(savedUser);
+    String refreshToken = refreshTokenService.create(savedUser).getRefreshToken();
+
     log.info("유저 생성 완료: nickname = {}, email = {}", request.nickname(), request.email());
+
+    return TokenPair.builder()
+        .accessToken(accessToken)
+        .refreshToken(refreshToken)
+        .build();
   }
 }
