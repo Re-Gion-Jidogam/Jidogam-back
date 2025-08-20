@@ -1,6 +1,7 @@
 package region.jidogam.domain.place.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.area.entity.Area;
@@ -9,6 +10,7 @@ import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.repository.PlaceRepository;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PlaceService {
@@ -19,6 +21,7 @@ public class PlaceService {
   // 내부 서비스용
   @Transactional
   public Place createPlace(PlaceCreateRequest request) {
+    log.info("장소 생성 시작: placeName = {}", request.placeName());
 
     // 1. area 정보 조회
     Area area = areaService.getAreaByAddress(request.addressName());
@@ -37,6 +40,7 @@ public class PlaceService {
       .points(points)
       .build();
 
+    log.info("장소 생성 완료: placeName = {}", request.placeName());
     return placeRepository.save(place);
   }
 

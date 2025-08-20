@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.domain.user.repository.UserRepository;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StampService {
@@ -36,6 +38,7 @@ public class StampService {
 
   @Transactional
   public void stampPlace(PlaceStampRequest request, UUID userId) {
+    log.info("장소 도장 찍기 시작: placeName = {}, userId = {}", request.place().placeName(), userId);
 
     // 1. 유저 확인
     User user = userRepository.findById(userId)
@@ -59,6 +62,8 @@ public class StampService {
       .build();
 
     stampRepository.save(stamp);
+    log.info("장소 도장 찍기 완료: placeName = {}, email = {}", request.place().placeName(),
+      user.getEmail());
   }
 
   // 기존 장소
