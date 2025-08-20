@@ -7,6 +7,6 @@ public class UserNicknameLengthException extends UserException {
   }
 
   public static UserNicknameLengthException withNickname(String nickname) {
-    return new UserNicknameLengthException("'"+nickname + "'(은)는 유효하지 않은 길이의 닉네임입니다.");
+    return new UserNicknameLengthException("'"+nickname + "'은/는 유효하지 않은 길이의 닉네임입니다.");
   }
 }
