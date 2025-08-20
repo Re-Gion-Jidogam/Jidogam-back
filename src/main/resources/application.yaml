@@ -30,6 +30,9 @@ jidogam:
       region: ${AWS_S3_REGION}
       bucket: ${AWS_S3_BUCKET}
       presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600}
+  stamp:
+    cooldown:
+      time: ${STAMP_COOLDOWN_TIME:5m}
 
 jwt:
   secret: ${JWT_SECRET}
