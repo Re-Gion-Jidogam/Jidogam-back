@@ -7,6 +7,6 @@ public class UnknownSidoException extends AreaException {
   }
 
   public static UnknownSidoException withSido(String sido) {
-    return new UnknownSidoException("Unknown sido alias: " + sido);
+    return new UnknownSidoException("'" + sido + "'와 매칭되는 시도가 없습니다.");
   }
 }

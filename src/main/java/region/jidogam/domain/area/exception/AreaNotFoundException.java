@@ -7,6 +7,6 @@ public class AreaNotFoundException extends AreaException {
   }
 
   public static AreaNotFoundException withSidoAndSigungu(String sido, String sigungu) {
-    return new AreaNotFoundException(sido + ", " + sigungu + " not found");
+    return new AreaNotFoundException(sido + ", " + sigungu + " 정보가 존재하지 않습니다.");
   }
 }
