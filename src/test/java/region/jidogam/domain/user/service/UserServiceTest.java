@@ -19,6 +19,7 @@ import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserEmailConflictException;
 import region.jidogam.domain.user.exception.UserNicknameConflictException;
+import region.jidogam.domain.user.exception.UserNicknameLengthException;
 import region.jidogam.domain.user.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -97,6 +98,80 @@ class UserServiceTest {
           () -> userService.create(userCreateRequest));
 
       verify(userRepository, never()).save(any(User.class));
+    }
+  }
+
+  @Nested
+  @DisplayName("닉네임 중복 체크")
+  class CheckNicknameTest {
+    @Test
+    @DisplayName("중복되는 닉네임이 없음")
+    void success() {
+      //given
+      String nickname = "중복아닌닉네임";
+      when(userRepository.existsByNickname(nickname)).thenReturn(false);
+
+      //when
+      userService.validateNickname(nickname);
+
+      //then
+      verify(userRepository, times(1)).existsByNickname(nickname);
+    }
+
+    @Test
+    @DisplayName("중복되는 닉네임이 있음")
+    void failsWhenNicknameConflicted() {
+      // given
+      String nickname = "중복된닉네임";
+      when(userRepository.existsByNickname(nickname)).thenReturn(true);
+
+      // when & then
+      assertThrows(UserNicknameConflictException.class, () -> userService.validateNickname(nickname));
+      verify(userRepository, times(1)).existsByNickname(nickname);
+    }
+
+    @Test
+    @DisplayName("닉네임이 Null임")
+    void failsWhenNicknameIsNull() {
+      // given
+      String nickname = null;
+
+      // when & then
+      assertThrows(UserNicknameLengthException.class, () -> userService.validateNickname(nickname));
+      verify(userRepository, never()).existsByNickname(nickname);
+    }
+
+    @Test
+    @DisplayName("닉네임이 비어있음")
+    void failsWhenEmptyNickname() {
+      // given
+      String nickname = "";
+
+      // when & then
+      assertThrows(UserNicknameLengthException.class, () -> userService.validateNickname(nickname));
+      verify(userRepository, never()).existsByNickname(nickname);
+    }
+
+    @Test
+    @DisplayName("길이가 2미만인 닉네임")
+    void failsWhenNicknameLengthTooShort() {
+      // given
+      String nickname = "0";
+
+      // when & then
+      assertThrows(UserNicknameLengthException.class, () -> userService.validateNickname(nickname));
+      verify(userRepository, never()).existsByNickname(nickname);
+    }
+
+    @Test
+    @DisplayName("길이가 20초과인 닉네임")
+    void failsWhenNicknameLengthTooLong() {
+      // given
+      String nickname = "012345678901234567890";
+
+      // when & then
+      assertThrows(UserNicknameLengthException.class, () -> userService.validateNickname(nickname));
+      verify(userRepository, never()).existsByNickname(nickname);
     }
   }
 }
