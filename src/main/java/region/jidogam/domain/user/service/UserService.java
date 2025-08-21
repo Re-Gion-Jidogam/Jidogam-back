@@ -42,7 +42,7 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public void validateNickname(String nickname){
-    if(nickname == null || nickname.length() < 2 || nickname.length() > 20){
+    if(nickname == null || nickname.isBlank() || nickname.length() < 2 || nickname.length() > 20){
       throw UserNicknameLengthException.withNickname(nickname);
     }
     if (userRepository.existsByNickname(nickname)){
