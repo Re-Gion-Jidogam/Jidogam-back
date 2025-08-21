@@ -4,6 +4,8 @@ import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,5 +28,14 @@ public class StampController {
   ) {
     stampService.stampPlace(request, userId);
     return ResponseEntity.ok().build();
+  }
+
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> stampPlace(
+    @PathVariable UUID id,
+    @RequestParam(name = "userId") UUID userId // 임시
+  ) {
+    stampService.cancelStamp(id, userId);
+    return ResponseEntity.noContent().build();
   }
 }

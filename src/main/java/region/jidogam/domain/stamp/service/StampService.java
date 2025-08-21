@@ -41,8 +41,7 @@ public class StampService {
     log.info("장소 도장 찍기 시작: placeName = {}, userId = {}", request.place().placeName(), userId);
 
     // 1. 유저 확인
-    User user = userRepository.findById(userId)
-      .orElseThrow(() -> UserNotFoundException.withId(userId));
+    User user = getUserOrThrow(userId);
 
     // 2. 유저의 마지막 도장 찍은 시간 조회 (유효 시간 외인 경우 예외)
     validateStampCoolTime(user.getId());
@@ -64,6 +63,23 @@ public class StampService {
     stampRepository.save(stamp);
     log.info("장소 도장 찍기 완료: placeName = {}, email = {}", request.place().placeName(),
       user.getEmail());
+  }
+
+  @Transactional
+  public void cancelStamp(UUID id, UUID userId) {
+    log.info("장소 도장 취소 시작: placeId = {}, userId = {}", id, userId);
+
+    getUserOrThrow(userId);
+
+    stampRepository.deleteByPlace_IdAndUser_Id(id, userId);
+
+    log.info("장소 도장 취소 완료: placeId = {}, userId = {}", id, userId);
+  }
+
+  // 유저 확인
+  private User getUserOrThrow(UUID userId) {
+    return userRepository.findById(userId)
+      .orElseThrow(() -> UserNotFoundException.withId(userId));
   }
 
   // 기존 장소
@@ -95,7 +111,7 @@ public class StampService {
 
   // 도장 중복 검사
   private void validateDuplicateStamp(User user, Place place) {
-    if (stampRepository.existsByUser_IdAndPlace_Id(user.getId(), place.getId())) {
+    if (stampRepository.existsByPlace_IdAndUser_Id(user.getId(), place.getId())) {
       throw StampDuplicateException.withPlaceName(place.getName());
     }
   }
