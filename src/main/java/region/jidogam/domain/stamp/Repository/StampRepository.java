@@ -11,7 +11,7 @@ public interface StampRepository extends JpaRepository<Stamp, UUID> {
   Optional<Stamp> findFirstByUser_IdOrderByCreatedAtDesc(UUID uuid);
 
   // 해당 장소에 도장을 찍었는지 확인
-  boolean existsByPlace_IdAndUser_Id(UUID placeId, UUID userId);
+  boolean existsByUser_IdAndPlace_Id(UUID placeId, UUID userId);
 
-  void deleteByPlace_IdAndUser_Id(UUID placeId, UUID userId);
+  int deleteByUser_IdAndPlace_Id(UUID placeId, UUID userId);
 }

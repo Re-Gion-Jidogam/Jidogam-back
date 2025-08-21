@@ -124,7 +124,7 @@ class StampServiceTest {
 
     UUID placeId = UUID.randomUUID();
     when(placeRepository.findById(placeId)).thenReturn(Optional.of(place));
-    when(stampRepository.existsByPlace_IdAndUser_Id(user.getId(), place.getId()))
+    when(stampRepository.existsByUser_IdAndPlace_Id(user.getId(), place.getId()))
       .thenReturn(false);
 
     PlaceStampRequest request = new PlaceStampRequest(placeId, placeCreateRequest);
@@ -190,7 +190,7 @@ class StampServiceTest {
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
       .thenReturn(Optional.empty());
     when(placeRepository.findById(placeId)).thenReturn(Optional.of(place));
-    when(stampRepository.existsByPlace_IdAndUser_Id(user.getId(), place.getId()))
+    when(stampRepository.existsByUser_IdAndPlace_Id(user.getId(), place.getId()))
       .thenReturn(true);
 
     PlaceStampRequest request = new PlaceStampRequest(placeId, placeCreateRequest);

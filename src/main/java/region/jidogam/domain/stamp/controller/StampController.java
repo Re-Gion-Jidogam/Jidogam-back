@@ -30,12 +30,12 @@ public class StampController {
     return ResponseEntity.ok().build();
   }
 
-  @DeleteMapping("/{id}")
+  @DeleteMapping("/{placeId}")
   public ResponseEntity<Void> stampPlace(
-    @PathVariable UUID id,
+    @PathVariable UUID placeId,
     @RequestParam(name = "userId") UUID userId // 임시
   ) {
-    stampService.cancelStamp(id, userId);
+    stampService.cancelStamp(userId, placeId);
     return ResponseEntity.noContent().build();
   }
 }

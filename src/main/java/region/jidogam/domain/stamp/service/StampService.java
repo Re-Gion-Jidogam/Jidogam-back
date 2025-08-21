@@ -18,6 +18,7 @@ import region.jidogam.domain.stamp.dto.PlaceStampRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.exception.StampCooldownException;
 import region.jidogam.domain.stamp.exception.StampDuplicateException;
+import region.jidogam.domain.stamp.exception.StampNotFoundException;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.domain.user.repository.UserRepository;
@@ -66,14 +67,17 @@ public class StampService {
   }
 
   @Transactional
-  public void cancelStamp(UUID id, UUID userId) {
-    log.info("장소 도장 취소 시작: placeId = {}, userId = {}", id, userId);
+  public void cancelStamp(UUID userId, UUID placeId) {
+    log.info("장소 도장 취소 시작: userId = {}, placeId = {}", userId, placeId);
 
     getUserOrThrow(userId);
+    
+    int deleted = stampRepository.deleteByUser_IdAndPlace_Id(userId, placeId);
+    if (deleted == 0) {
+      throw StampNotFoundException.withPlaceIdAndUserId(userId, placeId);
+    }
 
-    stampRepository.deleteByPlace_IdAndUser_Id(id, userId);
-
-    log.info("장소 도장 취소 완료: placeId = {}, userId = {}", id, userId);
+    log.info("장소 도장 취소 완료: userId = {}, placeId = {}", userId, placeId);
   }
 
   // 유저 확인
@@ -111,7 +115,7 @@ public class StampService {
 
   // 도장 중복 검사
   private void validateDuplicateStamp(User user, Place place) {
-    if (stampRepository.existsByPlace_IdAndUser_Id(user.getId(), place.getId())) {
+    if (stampRepository.existsByUser_IdAndPlace_Id(user.getId(), place.getId())) {
       throw StampDuplicateException.withPlaceName(place.getName());
     }
   }
