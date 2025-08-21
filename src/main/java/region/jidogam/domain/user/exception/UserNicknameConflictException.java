@@ -7,7 +7,7 @@ public class UserNicknameConflictException extends UserException {
   }
 
   public static UserNicknameConflictException withNickname(String nickname) {
-    return new UserNicknameConflictException(nickname + " already exists");
+    return new UserNicknameConflictException("'"+ nickname + "'은/는 이미 존재하는 닉네임입니다.");
   }
 
 }

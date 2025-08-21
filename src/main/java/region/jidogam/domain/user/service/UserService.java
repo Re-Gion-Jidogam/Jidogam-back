@@ -12,6 +12,7 @@ import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserEmailConflictException;
 import region.jidogam.domain.user.exception.UserNicknameConflictException;
+import region.jidogam.domain.user.exception.UserNicknameLengthException;
 import region.jidogam.domain.user.repository.UserRepository;
 
 @Slf4j
@@ -51,5 +52,15 @@ public class UserService {
         .accessToken(accessToken)
         .refreshToken(refreshToken)
         .build();
+  }
+
+  @Transactional(readOnly = true)
+  public void validateNickname(String nickname){
+    if(nickname == null || nickname.isBlank() || nickname.length() < 2 || nickname.length() > 20){
+      throw UserNicknameLengthException.withNickname(nickname);
+    }
+    if (userRepository.existsByNickname(nickname)){
+      throw UserNicknameConflictException.withNickname(nickname);
+    }
   }
 }
