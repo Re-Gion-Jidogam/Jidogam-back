@@ -1,4 +1,4 @@
-package region.jidogam.domain.jwt;
+package region.jidogam.infrastructure.jwt;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

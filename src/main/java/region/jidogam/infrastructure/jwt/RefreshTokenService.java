@@ -1,4 +1,4 @@
-package region.jidogam.domain.jwt;
+package region.jidogam.infrastructure.jwt;
 
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;

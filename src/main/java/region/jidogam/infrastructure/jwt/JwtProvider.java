@@ -1,4 +1,4 @@
-package region.jidogam.domain.jwt;
+package region.jidogam.infrastructure.jwt;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
