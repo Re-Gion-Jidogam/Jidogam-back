@@ -21,7 +21,7 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ResponseDto<Void>> handleMethodArgumentNotValid(
       MethodArgumentNotValidException ex) {
 
-    ErrorCode ErrorCode = CommonErrorCode.INVALIED_INPUT_VALUE;
+    ErrorCode ErrorCode = CommonErrorCode.INVALID_INPUT_VALUE;
     FieldError fieldError = ex.getFieldErrors().get(0);
 
     log.info("Validation failed: {} - {}", fieldError.getField(),
