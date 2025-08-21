@@ -15,7 +15,7 @@ import region.jidogam.domain.stamp.dto.PlaceStampRequest;
 import region.jidogam.domain.stamp.service.StampService;
 
 @RestController
-@RequestMapping("/api/stamp")
+@RequestMapping("/api/stamps")
 @RequiredArgsConstructor
 public class StampController {
 
