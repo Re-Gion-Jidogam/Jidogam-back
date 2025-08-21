@@ -153,6 +153,17 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("닉네임이 공백으로만 되어있음")
+    void failsWhenBlankNickname() {
+      // given
+      String nickname = "     ";
+
+      // when & then
+      assertThrows(UserNicknameLengthException.class, () -> userService.validateNickname(nickname));
+      verify(userRepository, never()).existsByNickname(nickname);
+    }
+
+    @Test
     @DisplayName("길이가 2미만인 닉네임")
     void failsWhenNicknameLengthTooShort() {
       // given
