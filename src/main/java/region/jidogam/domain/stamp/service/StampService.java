@@ -48,12 +48,7 @@ public class StampService {
     validateStampCoolTime(user.getId());
 
     // 3. 장소 데이터 조회
-    Place place;
-    if (request.pid() != null) {
-      place = handleExistingPlace(user, request);
-    } else {
-      place = handleNewPlace(request);
-    }
+    Place place = getOrCreatePlace(user, request);
 
     // 4. 도장
     Stamp stamp = Stamp.builder()
@@ -66,14 +61,18 @@ public class StampService {
       user.getEmail());
   }
 
+  private Place getOrCreatePlace(User user, PlaceStampRequest request) {
+    if (request.pid() != null) {
+      return handleExistingPlace(user, request);
+    }
+    return handleNewPlace(request);
+  }
+
   // 기존 장소
   private Place handleExistingPlace(User user, PlaceStampRequest request) {
     Place place = placeRepository.findById(request.pid())
       .orElseThrow(() -> PlaceNotFoundException.withPlaceName(request.place().placeName()));
-
-    // 도장 중복 검사
     validateDuplicateStamp(user, place);
-
     return place;
   }
 
