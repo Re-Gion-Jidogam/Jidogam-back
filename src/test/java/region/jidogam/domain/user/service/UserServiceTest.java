@@ -15,6 +15,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import region.jidogam.domain.jwt.JwtProvider;
+import region.jidogam.domain.jwt.RefreshToken;
+import region.jidogam.domain.jwt.RefreshTokenService;
+import region.jidogam.domain.jwt.dto.TokenPair;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserEmailConflictException;
@@ -31,6 +35,12 @@ class UserServiceTest {
 
   @Mock
   private PasswordEncoder passwordEncoder;
+
+  @Mock
+  private JwtProvider jwtProvider;
+
+  @Mock
+  private RefreshTokenService refreshTokenService;
 
   @InjectMocks
   private UserService userService;
@@ -54,11 +64,28 @@ class UserServiceTest {
 
       when(passwordEncoder.encode("password1234")).thenReturn("encordedPassword1234");
 
+      User user = User.builder()
+          .nickname(userCreateRequest.nickname())
+          .email(userCreateRequest.email())
+          .password(passwordEncoder.encode(userCreateRequest.password()))
+          .build();
+
+      when(userRepository.save(any(User.class))).thenReturn(user);
+      when(jwtProvider.generateAccessToken(any(User.class))).thenReturn("accessToken");
+
+      RefreshToken refreshToken = RefreshToken.builder()
+          .refreshToken("refreshToken")
+          .build();
+      when(refreshTokenService.create(any(User.class))).thenReturn(refreshToken);
+
       //when
-      userService.create(userCreateRequest);
+      TokenPair tokenPair = userService.create(userCreateRequest);
 
       //then
       verify(userRepository, times(1)).save(any(User.class));
+      assertNotNull(tokenPair);
+      assertEquals("accessToken", tokenPair.accessToken());
+      assertEquals("refreshToken", tokenPair.refreshToken());
     }
 
     @Test
