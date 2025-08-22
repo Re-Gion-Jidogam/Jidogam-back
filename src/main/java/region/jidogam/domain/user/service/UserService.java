@@ -10,6 +10,7 @@ import region.jidogam.domain.jwt.RefreshTokenService;
 import region.jidogam.domain.jwt.dto.TokenPair;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.entity.User;
+import region.jidogam.domain.user.exception.InvalidEmailFormatException;
 import region.jidogam.domain.user.exception.UserEmailConflictException;
 import region.jidogam.domain.user.exception.UserNicknameConflictException;
 import region.jidogam.domain.user.exception.UserNicknameLengthException;
@@ -19,6 +20,8 @@ import region.jidogam.domain.user.repository.UserRepository;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
+  private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
@@ -61,6 +64,16 @@ public class UserService {
     }
     if (userRepository.existsByNickname(nickname)){
       throw UserNicknameConflictException.withNickname(nickname);
+    }
+  }
+
+  @Transactional(readOnly = true)
+  public void validateEmail(String email){
+    if (email == null || email.isBlank() || !email.matches(EMAIL_REGEX)) {
+      throw InvalidEmailFormatException.withEmail(email);
+    }
+    if (userRepository.existsByEmail(email)){
+      throw UserEmailConflictException.withEmail(email);
     }
   }
 }

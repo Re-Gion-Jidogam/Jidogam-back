@@ -7,7 +7,7 @@ public class UserEmailConflictException extends UserException {
   }
 
   public static UserEmailConflictException withEmail(String email) {
-    return new UserEmailConflictException(email + " already exists");
+    return new UserEmailConflictException("'"+ email + "'은/는 이미 존재하는 이메일입니다.");
   }
 
 }

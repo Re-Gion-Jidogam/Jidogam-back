@@ -40,4 +40,10 @@ public class UserController {
     userService.validateNickname(nickname);
     return ResponseEntity.ok((ResponseDto.ok("사용 가능한 닉네임입니다.")));
   }
+
+  @GetMapping("/check-email")
+  public ResponseEntity<?> checkEmail(@RequestParam("email") String email) {
+    userService.validateEmail(email);
+    return ResponseEntity.ok((ResponseDto.ok("사용 가능한 이메일입니다.")));
+  }
 }
