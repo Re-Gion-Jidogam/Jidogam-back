@@ -14,19 +14,15 @@ public record GuidebookCreateRequest(
   String title,
 
   @Schema(description = "가이드북 설명")
-//  @NotBlank(message = "가이드북 설명은 빈 값일 수 없습니다.")
   String description,
 
   @Schema(description = "가이드북 배경 이모지")
-//  @NotBlank(message = "가이드북 이모지는 빈 값일 수 없습니다.")
   String emoji,
 
   @Schema(description = "가이드북 배경 컬러")
-//  @NotBlank(message = "가이드북 컬러는 빈 값일 수 없습니다.")
   String color,
 
   @Schema(description = "가이드북 썸네일 url")
-//  @NotBlank(message = "가이드북 썸네일 url은 빈 값일 수 없습니다.")
   String thumbnail
 ) {
 
