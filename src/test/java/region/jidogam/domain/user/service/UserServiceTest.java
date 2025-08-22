@@ -21,6 +21,7 @@ import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.entity.User;
+import region.jidogam.domain.user.exception.InvalidEmailFormatException;
 import region.jidogam.domain.user.exception.UserEmailConflictException;
 import region.jidogam.domain.user.exception.UserNicknameConflictException;
 import region.jidogam.domain.user.exception.UserNicknameLengthException;
@@ -131,6 +132,7 @@ class UserServiceTest {
   @Nested
   @DisplayName("닉네임 중복 체크")
   class CheckNicknameTest {
+
     @Test
     @DisplayName("중복되는 닉네임이 없음")
     void success() {
@@ -153,7 +155,8 @@ class UserServiceTest {
       when(userRepository.existsByNickname(nickname)).thenReturn(true);
 
       // when & then
-      assertThrows(UserNicknameConflictException.class, () -> userService.validateNickname(nickname));
+      assertThrows(UserNicknameConflictException.class,
+          () -> userService.validateNickname(nickname));
       verify(userRepository, times(1)).existsByNickname(nickname);
     }
 
@@ -211,5 +214,81 @@ class UserServiceTest {
       assertThrows(UserNicknameLengthException.class, () -> userService.validateNickname(nickname));
       verify(userRepository, never()).existsByNickname(nickname);
     }
+  }
+
+  @Nested
+  @DisplayName("이메일 중복 체크")
+  class ValidateEmailTest {
+
+    @Test
+    @DisplayName("사용 가능한 이메일")
+    void success() {
+      //given
+      String email = "test@test.com";
+      when(userRepository.existsByEmail(email)).thenReturn(false);
+
+      //when
+      userService.validateEmail(email);
+
+      //then
+      verify(userRepository, times(1)).existsByEmail(email);
+    }
+
+    @Test
+    @DisplayName("중복되는 이메일이 있음")
+    void failsWhenEmailConflicted() {
+      //given
+      String email = "test@test.com";
+      when(userRepository.existsByEmail(email)).thenReturn(true);
+
+      //when & then
+      assertThrows(UserEmailConflictException.class, () -> userService.validateEmail(email));
+      verify(userRepository, times(1)).existsByEmail(email);
+    }
+
+    @Test
+    @DisplayName("이메일 형식에 맞지 않음")
+    void failsWhenEmailFormatInvalid() {
+      //given
+      String email = "test.com";
+
+      //when & then
+      assertThrows(InvalidEmailFormatException.class, () -> userService.validateEmail(email));
+      verify(userRepository, never()).existsByEmail(null);
+    }
+
+    @Test
+    @DisplayName("이메일이 비어있음")
+    void failsWhenEmailIsEmpty() {
+      //given
+      String email = " ";
+
+      //when & then
+      assertThrows(InvalidEmailFormatException.class, () -> userService.validateEmail(email));
+      verify(userRepository, never()).existsByEmail(null);
+    }
+
+    @Test
+    @DisplayName("이메일이 공백으로만 되어있음")
+    void failsWhenEmailIsBlank() {
+      //given
+      String email = "    ";
+
+      //when & then
+      assertThrows(InvalidEmailFormatException.class, () -> userService.validateEmail(email));
+      verify(userRepository, never()).existsByEmail(null);
+    }
+
+    @Test
+    @DisplayName("이메일이 null임")
+    void failsWhenEmailIsNull() {
+      //given
+      String email = null;
+
+      //when & then
+      assertThrows(InvalidEmailFormatException.class, () -> userService.validateEmail(email));
+      verify(userRepository, never()).existsByEmail(null);
+    }
+
   }
 }
