@@ -18,6 +18,7 @@ import region.jidogam.domain.stamp.dto.PlaceStampRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.exception.StampCooldownException;
 import region.jidogam.domain.stamp.exception.StampDuplicateException;
+import region.jidogam.domain.stamp.exception.StampNotFoundException;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.domain.user.repository.UserRepository;
@@ -41,8 +42,7 @@ public class StampService {
     log.info("장소 도장 찍기 시작: placeName = {}, userId = {}", request.place().placeName(), userId);
 
     // 1. 유저 확인
-    User user = userRepository.findById(userId)
-      .orElseThrow(() -> UserNotFoundException.withId(userId));
+    User user = getUserOrThrow(userId);
 
     // 2. 유저의 마지막 도장 찍은 시간 조회 (유효 시간 외인 경우 예외)
     validateStampCoolTime(user.getId());
@@ -59,6 +59,26 @@ public class StampService {
     stampRepository.save(stamp);
     log.info("장소 도장 찍기 완료: placeName = {}, email = {}", request.place().placeName(),
       user.getEmail());
+  }
+
+  @Transactional
+  public void cancelStamp(UUID userId, UUID placeId) {
+    log.info("장소 도장 취소 시작: userId = {}, placeId = {}", userId, placeId);
+
+    getUserOrThrow(userId);
+
+    int deleted = stampRepository.deleteByUser_IdAndPlace_Id(userId, placeId);
+    if (deleted == 0) {
+      throw StampNotFoundException.withPlaceIdAndUserId(userId, placeId);
+    }
+
+    log.info("장소 도장 취소 완료: userId = {}, placeId = {}", userId, placeId);
+  }
+
+  // 유저 확인
+  private User getUserOrThrow(UUID userId) {
+    return userRepository.findById(userId)
+      .orElseThrow(() -> UserNotFoundException.withId(userId));
   }
 
   private Place getOrCreatePlace(User user, PlaceStampRequest request) {
