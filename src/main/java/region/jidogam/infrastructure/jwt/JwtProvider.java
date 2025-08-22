@@ -8,7 +8,6 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import java.text.ParseException;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -85,6 +84,11 @@ public class JwtProvider {
     return expirationTime.toInstant()
         .atZone(ZoneId.systemDefault())
         .toLocalDateTime();
+  }
+
+  public String extractUserEmail(String token) {
+    JWTClaimsSet claims = extractClaims(token);
+    return claims.getClaim("email").toString();
   }
 
   // 검증
