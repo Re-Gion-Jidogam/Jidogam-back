@@ -30,12 +30,12 @@ import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.exception.PlaceNotFoundException;
 import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
-import region.jidogam.domain.stamp.Repository.StampRepository;
 import region.jidogam.domain.stamp.dto.PlaceStampRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.exception.StampCooldownException;
 import region.jidogam.domain.stamp.exception.StampDuplicateException;
 import region.jidogam.domain.stamp.exception.StampNotFoundException;
+import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.repository.UserRepository;
 
