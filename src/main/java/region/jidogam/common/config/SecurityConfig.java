@@ -29,8 +29,8 @@ public class SecurityConfig {
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-            .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
+            .requestMatchers(HttpMethod.POST, PublicApiEndpoints.getPublicPostEndpoints()).permitAll()
+            .requestMatchers(HttpMethod.GET, PublicApiEndpoints.getPublicGetEndpoints()).permitAll()
             .anyRequest().hasRole("USER"))
         //.anyRequest().permitAll()) // 개발용
 
