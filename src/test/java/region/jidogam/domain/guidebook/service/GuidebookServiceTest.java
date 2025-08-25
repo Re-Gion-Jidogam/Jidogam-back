@@ -57,7 +57,7 @@ class GuidebookServiceTest {
   }
 
   @Test
-  @DisplayName("배경 데이터가 하나도 없는 경우 예ㅉ")
+  @DisplayName("배경 데이터가 하나도 없는 경우 예외 발생")
   void failsWhenBackgroundIsMissing() {
     // given
     UUID userId = UUID.randomUUID();
@@ -79,7 +79,7 @@ class GuidebookServiceTest {
   }
 
   @Test
-  @DisplayName("배경 색깔없이 이모지만 있는 경우")
+  @DisplayName("배경 색깔없이 이모지만 있는 경우 예외 발생")
   void failsWhenOnlyEmojiProvided() {
     // given
     UUID userId = UUID.randomUUID();
