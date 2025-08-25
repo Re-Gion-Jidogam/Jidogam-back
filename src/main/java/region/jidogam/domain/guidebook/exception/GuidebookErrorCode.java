@@ -9,7 +9,7 @@ public enum GuidebookErrorCode implements ErrorCode {
 
   GUIDE_BOOK_NOT_FOUND(HttpStatus.NOT_FOUND, "GUIDE_BOOK_001", "존재하지 않는 가이드북입니다."),
   GUIDEBOOK_BACKGROUND_REQUIRED(HttpStatus.BAD_REQUEST, "GUIDE_BOOK_002",
-    "가이드북은 배경(컬러 또는 썸네일) 중 하나는 필수입니다.");
+    "가이드북 배경(컬러 또는 썸네일)은 필수 입니다.");
 
   private HttpStatus status;
   private String code;
