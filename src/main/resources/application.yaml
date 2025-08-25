@@ -18,6 +18,17 @@ spring:
       hibernate:
         highlight_sql: false
         format_sql: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 jidogam:
   storage:
@@ -33,6 +44,9 @@ jidogam:
   stamp:
     cooldown:
       time: ${STAMP_COOLDOWN_TIME:5m}
+  email:
+    auth:
+      expiration: ${EMAIL_AUTH_CODE_EXPIRATION:5m}
 
 jwt:
   secret: ${JWT_SECRET}
