@@ -1,4 +1,4 @@
-package region.jidogam.domain.stamp.Repository;
+package region.jidogam.domain.stamp.repository;
 
 import java.util.Optional;
 import java.util.UUID;
