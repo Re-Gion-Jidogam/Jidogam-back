@@ -1,5 +1,6 @@
 package region.jidogam.domain.auth;
 
+import jakarta.security.auth.message.AuthException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -7,7 +8,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import region.jidogam.domain.auth.dto.LoginRequest;
 import region.jidogam.domain.user.entity.User;
-import org.springframework.security.authentication.BadCredentialsException;
 import region.jidogam.domain.user.repository.UserRepository;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
@@ -24,15 +24,15 @@ public class AuthService {
   private final RefreshTokenService refreshTokenService;
 
   @Transactional
-  public TokenPair login(LoginRequest request) {
+  public TokenPair login(LoginRequest request) throws AuthException{
     log.info("사용자 로그인 시도: email = {}", request.email());
 
     User user = userRepository.findByEmail(request.email())
-        .orElseThrow(() -> new BadCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다"));
+        .orElseThrow(() -> new AuthException("이메일 또는 비밀번호가 올바르지 않습니다"));
 
     if (!passwordEncoder.matches(request.password(), user.getPassword())) {
       log.warn("비밀번호 불일치: email = {}", request.email());
-      throw new BadCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다");
+      throw new AuthException("이메일 또는 비밀번호가 올바르지 않습니다");
     }
 
     refreshTokenService.delete(user);

@@ -1,5 +1,6 @@
 package region.jidogam.domain.auth;
 
+import jakarta.security.auth.message.AuthException;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,8 @@ public class AuthController {
   private final CookieUtil cookieUtil;
 
   @PostMapping("/login")
-  public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletResponse response) {
+  public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletResponse response)
+      throws AuthException {
     TokenPair tokenPair = authService.login(request);
 
     ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(tokenPair.refreshToken());

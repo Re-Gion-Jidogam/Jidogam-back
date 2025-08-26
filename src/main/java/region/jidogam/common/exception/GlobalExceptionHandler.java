@@ -1,7 +1,11 @@
 package region.jidogam.common.exception;
 
+import jakarta.security.auth.message.AuthException;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -11,10 +15,15 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import region.jidogam.common.dto.response.ResponseDto;
+import region.jidogam.common.util.CookieUtil;
+import region.jidogam.domain.auth.exception.AuthErrorCode;
 
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+  private final CookieUtil cookieUtil;
 
   // validation
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -107,21 +116,21 @@ public class GlobalExceptionHandler {
 //  }
 
   // auth
-//  @ExceptionHandler(AuthException.class)
-//  protected ResponseEntity<ResponseDto<Void>> handleAuthException(AuthException ex,
-//      HttpServletResponse response) {
-//
-//    ErrorCode errorCode = ex.getErrorCode();
-//
-//    log.info("Authentication failed : {} | Error: {})",
-//        errorCode, errorCode.getMessage());
-//
-//    // refresh token 쿠키 무효화
-//    Cookie cookie = CookieUtil.expireRefreshTokenCookie();
-//    response.addCookie(cookie);
-//
-//    return createErrorResponse(errorCode.getHttpStatus(), errorResponse);
-//  }
+  @ExceptionHandler(AuthException.class)
+  protected ResponseEntity<ResponseDto<Void>> handleAuthException(AuthException ex,
+      HttpServletResponse response) {
+
+    ErrorCode errorCode = AuthErrorCode.UNAUTHORIZED;
+
+    log.info("Authentication failed : {} | Error: {})",
+        errorCode, errorCode.getMessage());
+
+    // refresh token 쿠키 무효화
+    ResponseCookie refreshCookie = cookieUtil.deleteRefreshTokenCookie();
+    response.addHeader("Set-Cookie", refreshCookie.toString());
+
+    return createErrorResponse(errorCode, ex.getMessage());
+  }
 
   // 응답
   private ResponseEntity<ResponseDto<Void>> createErrorResponse(ErrorCode errorCode, String message) {
