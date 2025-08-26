@@ -2,7 +2,6 @@ package region.jidogam.domain.auth.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import jakarta.transaction.Transactional;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -32,7 +31,6 @@ public class EmailAuthService {
 
   private static final String EMAIL_TEMPLATE_NAME = "auth-code-email-template.html";
 
-  @Transactional
   public void sendAuthCodeEmail(String email) {
     try {
       log.info("HTML 이메일 발송 시작 - 수신자: {}", email);
@@ -63,6 +61,7 @@ public class EmailAuthService {
 
       // 플레이스홀더 치환
       htmlContent = htmlContent.replace("{{AUTH_CODE}}", authCode);
+      htmlContent = htmlContent.replace("{{AUTH_CODE_EXPIRATION}}", expiration.toMinutes()+"");
 
       helper.setText(htmlContent, true);
 
