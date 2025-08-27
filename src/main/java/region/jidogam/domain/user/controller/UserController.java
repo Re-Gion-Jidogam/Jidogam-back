@@ -1,8 +1,10 @@
 package region.jidogam.domain.user.controller;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,10 +28,13 @@ public class UserController {
   private final CookieUtil cookieUtil;
 
   @PostMapping
-  public ResponseEntity<?> register(@RequestBody @Valid UserCreateRequest request) {
+  public ResponseEntity<?> register(@RequestBody @Valid UserCreateRequest request,
+      HttpServletResponse response) {
 
     TokenPair tokenPair = userService.create(request);
-    cookieUtil.createRefreshTokenCookie(tokenPair.refreshToken());
+    ResponseCookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(
+        tokenPair.refreshToken());
+    response.addHeader("Set-Cookie", refreshTokenCookie.toString());
 
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(ResponseDto.ok(new TokenResponse(tokenPair.accessToken())));
