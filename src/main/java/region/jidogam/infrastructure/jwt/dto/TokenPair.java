@@ -1,4 +1,4 @@
-package region.jidogam.domain.jwt.dto;
+package region.jidogam.infrastructure.jwt.dto;
 
 import lombok.Builder;
 

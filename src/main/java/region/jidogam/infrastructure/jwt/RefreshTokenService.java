@@ -1,6 +1,7 @@
-package region.jidogam.domain.jwt;
+package region.jidogam.infrastructure.jwt;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,10 +20,7 @@ public class RefreshTokenService {
   public RefreshToken create(User user) {
     log.info("사용자 RefreshToken 생성 시작: userId = {}", user.getId());
 
-    refreshTokenRepository.findByUserId(user.getId()).ifPresent(token -> {
-      log.debug("기존 RefreshToken 삭제: userId = {}", user.getId());
-      refreshTokenRepository.delete(token);
-    });
+    deleteExistingToken(user.getId());
 
     String refreshTokenString = jwtProvider.generateRefreshToken(user);
     LocalDateTime expiresAt = jwtProvider.extractExpirationTime(refreshTokenString);
@@ -37,5 +35,17 @@ public class RefreshTokenService {
     log.info("사용자 RefreshToken 생성 및 저장 완료");
 
     return refreshToken;
+  }
+
+  @Transactional
+  public void delete(User user) {
+    deleteExistingToken(user.getId());
+  }
+
+  private void deleteExistingToken(UUID userId) {
+    refreshTokenRepository.findByUserId(userId).ifPresent(token -> {
+      log.debug("기존 RefreshToken 삭제: userId={}", userId);
+      refreshTokenRepository.delete(token);
+    });
   }
 }

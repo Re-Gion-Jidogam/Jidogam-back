@@ -26,4 +26,15 @@ public class CookieUtil {
         .domain(domain)
         .build();
   }
+
+  public ResponseCookie deleteRefreshTokenCookie() {
+    return ResponseCookie.from("refresh", "")
+        .httpOnly(true)
+        .secure(secureCookie)
+        .path("/")
+        .sameSite("Lax")
+        .domain(domain)
+        .maxAge(0)
+        .build();
+  }
 }

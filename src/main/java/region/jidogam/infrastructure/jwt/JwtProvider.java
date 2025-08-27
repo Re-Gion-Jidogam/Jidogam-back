@@ -1,4 +1,4 @@
-package region.jidogam.domain.jwt;
+package region.jidogam.infrastructure.jwt;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -8,16 +8,17 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import java.text.ParseException;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import region.jidogam.domain.user.entity.User;
+import region.jidogam.domain.user.entity.User.Role;
 
 @Slf4j
 @Component
@@ -85,6 +86,21 @@ public class JwtProvider {
     return expirationTime.toInstant()
         .atZone(ZoneId.systemDefault())
         .toLocalDateTime();
+  }
+
+  public String extractUserEmail(String token) {
+    JWTClaimsSet claims = extractClaims(token);
+    return claims.getClaim("email").toString();
+  }
+
+  public Role extractUserRole(String token) {
+    JWTClaimsSet claims = extractClaims(token);
+    return Role.valueOf(claims.getClaim("role").toString());
+  }
+
+  public UUID extractUserId(String token) {
+    JWTClaimsSet claims = extractClaims(token);
+    return UUID.fromString(claims.getSubject());
   }
 
   // 검증
