@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
+import region.jidogam.domain.auth.service.EmailAuthService;
 import region.jidogam.domain.jwt.dto.TokenPair;
 import region.jidogam.domain.jwt.dto.TokenResponse;
 import region.jidogam.domain.user.dto.UserCreateRequest;
@@ -25,6 +26,7 @@ import region.jidogam.domain.user.service.UserService;
 public class UserController {
 
   private final UserService userService;
+  private final EmailAuthService emailAuthService;
   private final CookieUtil cookieUtil;
 
   @PostMapping
@@ -50,5 +52,11 @@ public class UserController {
   public ResponseEntity<?> checkEmail(@RequestParam("email") String email) {
     userService.validateEmail(email);
     return ResponseEntity.ok((ResponseDto.ok("사용 가능한 이메일입니다.")));
+  }
+
+  @PostMapping("/auth-code")
+  public ResponseEntity<?> sendAuthCode(@RequestParam("email") String email) {
+    emailAuthService.sendAuthCodeEmail(email);
+    return ResponseEntity.ok().build();
   }
 }
