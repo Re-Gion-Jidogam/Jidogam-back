@@ -12,11 +12,13 @@ import com.nimbusds.jwt.SignedJWT;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import region.jidogam.domain.user.entity.User;
+import region.jidogam.domain.user.entity.User.Role;
 
 @Slf4j
 @Component
@@ -89,6 +91,16 @@ public class JwtProvider {
   public String extractUserEmail(String token) {
     JWTClaimsSet claims = extractClaims(token);
     return claims.getClaim("email").toString();
+  }
+
+  public Role extractUserRole(String token) {
+    JWTClaimsSet claims = extractClaims(token);
+    return Role.valueOf(claims.getClaim("role").toString());
+  }
+
+  public UUID extractUserId(String token) {
+    JWTClaimsSet claims = extractClaims(token);
+    return UUID.fromString(claims.getSubject());
   }
 
   // 검증

@@ -16,7 +16,7 @@ import region.jidogam.infrastructure.jwt.JwtProvider;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtProvider jwtProvider;
-  private final JidogamUserDetailsService userDetailsService;
+  private final JidogamUserDetailsService jidogamUserDetailsService;
 
   private static final String AUTHORIZATION_HEADER = "Authorization";
   private static final String BEARER_PREFIX = "Bearer ";
@@ -28,8 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     if (token != null && jwtProvider.validateToken(token)) {
 
-      String email = jwtProvider.extractUserEmail(token);
-      UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+      UserDetails userDetails = jidogamUserDetailsService.loadUserByToken(token);
 
       UsernamePasswordAuthenticationToken authentication =
           new UsernamePasswordAuthenticationToken(
