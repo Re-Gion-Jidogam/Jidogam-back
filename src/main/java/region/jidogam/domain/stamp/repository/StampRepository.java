@@ -1,4 +1,4 @@
-package region.jidogam.domain.stamp.Repository;
+package region.jidogam.domain.stamp.repository;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -11,5 +11,7 @@ public interface StampRepository extends JpaRepository<Stamp, UUID> {
   Optional<Stamp> findFirstByUser_IdOrderByCreatedAtDesc(UUID uuid);
 
   // 해당 장소에 도장을 찍었는지 확인
-  boolean existsByUser_IdAndPlace_Id(UUID userId, UUID placeId);
+  boolean existsByUser_IdAndPlace_Id(UUID placeId, UUID userId);
+
+  int deleteByUser_IdAndPlace_Id(UUID placeId, UUID userId);
 }

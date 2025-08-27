@@ -4,6 +4,8 @@ import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,7 +15,7 @@ import region.jidogam.domain.stamp.dto.PlaceStampRequest;
 import region.jidogam.domain.stamp.service.StampService;
 
 @RestController
-@RequestMapping("/api/stamp")
+@RequestMapping("/api/stamps")
 @RequiredArgsConstructor
 public class StampController {
 
@@ -26,5 +28,14 @@ public class StampController {
   ) {
     stampService.stampPlace(request, userId);
     return ResponseEntity.ok().build();
+  }
+
+  @DeleteMapping("/{placeId}")
+  public ResponseEntity<Void> stampPlace(
+    @PathVariable UUID placeId,
+    @RequestParam(name = "userId") UUID userId // 임시
+  ) {
+    stampService.cancelStamp(userId, placeId);
+    return ResponseEntity.noContent().build();
   }
 }

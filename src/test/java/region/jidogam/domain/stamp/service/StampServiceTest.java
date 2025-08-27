@@ -30,11 +30,12 @@ import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.exception.PlaceNotFoundException;
 import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
-import region.jidogam.domain.stamp.Repository.StampRepository;
 import region.jidogam.domain.stamp.dto.PlaceStampRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.exception.StampCooldownException;
 import region.jidogam.domain.stamp.exception.StampDuplicateException;
+import region.jidogam.domain.stamp.exception.StampNotFoundException;
+import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.repository.UserRepository;
 
@@ -70,11 +71,6 @@ class StampServiceTest {
   void setUp() {
     // 테스트 쿨타임 5분
     ReflectionTestUtils.setField(stampService, "cooldownTime", Duration.ofMinutes(5));
-
-    ZoneId zone = ZoneId.of("Asia/Seoul");
-    Instant fixed = LocalDateTime.of(2025, 8, 20, 12, 0).atZone(zone).toInstant();
-    when(clock.instant()).thenReturn(fixed);
-    when(clock.getZone()).thenReturn(zone);
 
     userId = UUID.randomUUID();
     placeId = UUID.randomUUID();
@@ -118,6 +114,7 @@ class StampServiceTest {
   @DisplayName("이미 존재하는 장소인 경우 도장 찍기 성공")
   void alreadyExistsPlaceStampSuccess() {
     // given
+    setClock();
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
       .thenReturn(Optional.empty());
@@ -148,6 +145,7 @@ class StampServiceTest {
   @DisplayName("새로운 장소인 경우 도장 찍기 성공")
   void newPlaceStampSuccess() {
     // given
+    setClock();
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
       .thenReturn(Optional.empty());
@@ -171,6 +169,7 @@ class StampServiceTest {
   @DisplayName("장소id로 장소 데이터를 찾을 수 없는 경우 실패")
   void failsByPlaceNotFound() {
     // given
+    setClock();
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
       .thenReturn(Optional.empty());
@@ -186,6 +185,7 @@ class StampServiceTest {
   @DisplayName("이미 도장을 찍은 장소일 경우 실패")
   void failsByAlreadyStamp() {
     // given
+    setClock();
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
       .thenReturn(Optional.empty());
@@ -208,6 +208,7 @@ class StampServiceTest {
     @DisplayName("도장 쿨타임이 남은 경우 실패")
     void failsByCooldownTime() {
       // given
+      setClock();
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
       // CoolTime 5분, 마지막 도장 3분 전
@@ -230,6 +231,7 @@ class StampServiceTest {
     @DisplayName("도장 쿨타임이 지난 경우 성공")
     void cooldownTimeIsAfterNowSuccess() {
       // given
+      setClock();
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
       // CoolTime 5분, 마지막 도장 10분 전
@@ -257,5 +259,39 @@ class StampServiceTest {
       assertThat(savedStamp.getUser()).isEqualTo(user);
       assertThat(savedStamp.getPlace()).isEqualTo(place);
     }
+  }
+
+  @Test
+  @DisplayName("도장 삭제 성공")
+  void cancelStampSuccess() {
+    // given
+    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(stampRepository.deleteByUser_IdAndPlace_Id(userId, placeId)).thenReturn(1);
+
+    // when
+    stampService.cancelStamp(userId, placeId);
+
+    // then
+    verify(userRepository).findById(userId);
+    verify(stampRepository).deleteByUser_IdAndPlace_Id(userId, placeId);
+  }
+
+  @Test
+  @DisplayName("도장이 없으면 예외 발생")
+  void failsCancelStampByStampNotFound() {
+    // given
+    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(stampRepository.deleteByUser_IdAndPlace_Id(userId, placeId)).thenReturn(0);
+
+    // when & then
+    assertThrows(StampNotFoundException.class, () -> stampService.cancelStamp(userId, placeId));
+
+  }
+
+  private void setClock() {
+    ZoneId zone = ZoneId.of("Asia/Seoul");
+    Instant fixed = LocalDateTime.of(2025, 8, 20, 12, 0).atZone(zone).toInstant();
+    when(clock.instant()).thenReturn(fixed);
+    when(clock.getZone()).thenReturn(zone);
   }
 }

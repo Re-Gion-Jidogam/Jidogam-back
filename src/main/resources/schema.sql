@@ -107,6 +107,17 @@ CREATE TABLE refresh_tokens
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
+-- Email auth code table
+CREATE TABLE email_auth_codes
+(
+    id UUID PRIMARY KEY,
+    email VARCHAR(50) NOT NULL UNIQUE,
+    code TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT FALSE
+);
+
 -- Foreign Key Constraints
 ALTER TABLE places
     ADD CONSTRAINT fk_places_area_id
