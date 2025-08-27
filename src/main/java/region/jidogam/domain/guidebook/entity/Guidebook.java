@@ -36,6 +36,9 @@ public class Guidebook extends BaseUpdatableEntity {
   private String thumbnailUrl;
 
   @Column
+  private String mapImageUrl;
+
+  @Column
   private String emoji;
 
   @Column
