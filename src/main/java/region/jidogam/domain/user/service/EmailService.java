@@ -1,4 +1,4 @@
-package region.jidogam.domain.auth.service;
+package region.jidogam.domain.user.service;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
