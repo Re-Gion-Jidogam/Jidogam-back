@@ -54,4 +54,39 @@ public class EmailAuthService {
     SecureRandom secureRandom = new SecureRandom();
     return String.format("%06d", secureRandom.nextInt(1000000));
   }
+
+  public void validateEmailAuthCode(EmailAuthRequest request) {
+    String email = request.email();
+    String authCode = request.authCode();
+
+    EmailAuthCode emailAuthCode = emailAuthCodeRepository.findByEmail(email)
+        .orElseThrow(() -> new EmailAuthNotFoundException(email));
+
+    validateAuthCode(emailAuthCode, authCode);
+    validateNotExpired(emailAuthCode, authCode);
+    validateNotUsed(emailAuthCode, authCode);
+
+    emailAuthCode.use();
+  }
+
+  //인증 코드 일치 여부 확인
+  private void validateAuthCode(EmailAuthCode emailAuthCode, String authCode) {
+    if (!emailAuthCode.getCode().equals(authCode)) {
+      throw new InvalidEmailAuthException(authCode);
+    }
+  }
+
+  //인증 코드 만료 여부 확인
+  private void validateNotExpired(EmailAuthCode emailAuthCode, String authCode) {
+    if (emailAuthCode.getExpiresAt().isBefore(LocalDateTime.now())) {
+      throw new ExpiredEmailAuthException(authCode);
+    }
+  }
+
+  //인증 코드 사용 여부 확인
+  private void validateNotUsed(EmailAuthCode emailAuthCode, String authCode) {
+    if (emailAuthCode.getUsed()) {
+      throw new AlreadyUsedAuthCodeException(authCode);
+    }
+  }
 }

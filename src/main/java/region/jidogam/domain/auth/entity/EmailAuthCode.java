@@ -32,4 +32,7 @@ public class EmailAuthCode extends BaseEntity {
   @Builder.Default
   private Boolean used = false;
 
+  public void use() {
+    this.used = true;
+  }
 }
