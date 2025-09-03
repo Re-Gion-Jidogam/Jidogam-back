@@ -1,6 +1,5 @@
 package region.jidogam.domain.user.service;
 
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -36,8 +35,8 @@ public class EmailAuthService {
   public void sendAuthCodeEmail(String email) {
     String authCode = emailAuthCodeProvider.generateAuthCode();
 
-    emailAuthCodeRepository.findByEmail(email)
-        .ifPresent(emailAuthCodeRepository::delete);
+    emailAuthCodeRepository.findFirstByEmailOrderByCreatedAtDesc(email)
+        .ifPresent(EmailAuthCode::use);
 
     EmailAuthCode emailAuthCode = EmailAuthCode.builder()
         .email(email)
@@ -56,7 +55,7 @@ public class EmailAuthService {
     String email = request.email();
     String authCode = request.authCode();
 
-    EmailAuthCode emailAuthCode = emailAuthCodeRepository.findByEmail(email)
+    EmailAuthCode emailAuthCode = emailAuthCodeRepository.findFirstByEmailOrderByCreatedAtDesc(email)
         .orElseThrow(() -> new EmailAuthNotFoundException(email));
 
     if (!emailAuthCode.getCode().equals(authCode)) {
