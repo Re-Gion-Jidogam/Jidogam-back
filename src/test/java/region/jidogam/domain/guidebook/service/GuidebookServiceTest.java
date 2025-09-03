@@ -25,12 +25,12 @@ import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookPlace;
 import region.jidogam.domain.guidebook.exception.AuthorMismatchException;
 import region.jidogam.domain.guidebook.exception.GuidebookBackgroundRequiredException;
+import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
-import region.jidogam.domain.place.exception.PlaceNotFoundException;
 import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.entity.User;
@@ -163,7 +163,8 @@ class GuidebookServiceTest {
     when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.empty());
 
     // when & then
-    assertThrows(PlaceNotFoundException.class, () -> guidebookService.getById(guidebookId, userId));
+    assertThrows(GuidebookNotFoundException.class,
+      () -> guidebookService.getById(guidebookId, userId));
   }
 
   @Test
