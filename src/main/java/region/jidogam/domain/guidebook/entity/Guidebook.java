@@ -50,7 +50,11 @@ public class Guidebook extends BaseUpdatableEntity {
 
   @Column(nullable = false)
   @Builder.Default
-  private Double score = 0.0;
+  private Long ratingSum = 0L;
+
+  @Column(nullable = false)
+  @Builder.Default
+  private Integer ratingCount = 0;
 
   @Column(nullable = false)
   @Builder.Default
@@ -75,4 +79,11 @@ public class Guidebook extends BaseUpdatableEntity {
     this.mapImageUrl = mapImageUrl;
   }
 
+  public double calculateAverageScore() {
+    if (this.getRatingCount() == 0) {
+      return 0.0;
+    }
+    double average = (double) this.getRatingSum() / this.getRatingCount();
+    return Math.round(average * 10.0) / 10.0;
+  }
 }

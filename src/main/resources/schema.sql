@@ -26,12 +26,14 @@ CREATE TABLE guidebooks
     is_published      BOOLEAN                  NOT NULL,
     published_date    TIMESTAMP WITH TIME ZONE,
     points            INTEGER                  NOT NULL,
-    score             DOUBLE PRECISION         NOT NULL,
+    rating_sum        BIGINT                   NOT NULL,
+    rating_count      INTEGER                  NOT NULL,
     participant_count INTEGER                  NOT NULL,
     total_place_count INTEGER                  NOT NULL,
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at        TIMESTAMP WITH TIME ZONE
 );
+
 
 -- Guidebook participants table
 CREATE TABLE guidebook_participants

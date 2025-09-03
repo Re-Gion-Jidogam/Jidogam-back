@@ -26,7 +26,7 @@ public class GuidebookMapper {
       .updatedAt(guidebook.getUpdatedAt())
       .publishedDate(guidebook.getPublishedDate())
       .mapImageUrl(guidebook.getMapImageUrl())
-      .score(guidebook.getScore())
+      .score(guidebook.calculateAverageScore())
       .participantCount(guidebook.getParticipantCount())
       .totalPlaceCount(guidebook.getTotalPlaceCount())
       .visitedPlaceCount(visitedPlaceCount)
