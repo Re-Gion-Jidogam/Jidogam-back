@@ -16,6 +16,10 @@ public final class PublicApiEndpoints {
   public static final String CHECK_NICKNAME  = "/api/users/check-nickname";
   public static final String CHECK_EMAIL = "/api/users/check-email";
 
+  // 이메일 인증 번호 전송 및 검증 API
+  public static final String EMAIL_AUTH = "/api/users/auth-code";
+  public static final String EMAIL_AUTH_CHECK = "/api/users/check-code";
+
   // 공개 조회 API
   public static final String SWAGGER_UI = "/swagger-ui/**";
 
@@ -26,7 +30,9 @@ public final class PublicApiEndpoints {
     return new String[]{
         AUTH_LOGIN,
         AUTH_REFRESH,
-        USERS_CREATE
+        USERS_CREATE,
+        EMAIL_AUTH,
+        EMAIL_AUTH_CHECK
     };
   }
 
