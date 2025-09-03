@@ -34,6 +34,21 @@ public class EmailAuthService {
     emailService.sendAuthCodeEmail(email, authCode, expiration);
   }
 
+  @Transactional
+  public void validateEmailAuthCode(EmailAuthRequest request) {
+    String email = request.email();
+    String authCode = request.authCode();
+
+    EmailAuthCode emailAuthCode = emailAuthCodeRepository.findByEmail(email)
+        .orElseThrow(() -> new EmailAuthNotFoundException(email));
+
+    validateAuthCode(emailAuthCode, authCode);
+    validateNotExpired(emailAuthCode, authCode);
+    validateNotUsed(emailAuthCode, authCode);
+
+    emailAuthCode.use();
+  }
+
   // 인증 코드 생성 및 저장
   private String createAuthCode(String email) {
     String authCode = generateAuthCode();
@@ -54,21 +69,6 @@ public class EmailAuthService {
   private String generateAuthCode() {
     SecureRandom secureRandom = new SecureRandom();
     return String.format("%06d", secureRandom.nextInt(1000000));
-  }
-
-  @Transactional
-  public void validateEmailAuthCode(EmailAuthRequest request) {
-    String email = request.email();
-    String authCode = request.authCode();
-
-    EmailAuthCode emailAuthCode = emailAuthCodeRepository.findByEmail(email)
-        .orElseThrow(() -> new EmailAuthNotFoundException(email));
-
-    validateAuthCode(emailAuthCode, authCode);
-    validateNotExpired(emailAuthCode, authCode);
-    validateNotUsed(emailAuthCode, authCode);
-
-    emailAuthCode.use();
   }
 
   //인증 코드 일치 여부 확인
