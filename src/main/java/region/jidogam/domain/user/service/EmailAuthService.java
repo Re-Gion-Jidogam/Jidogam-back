@@ -59,12 +59,15 @@ public class EmailAuthService {
     EmailAuthCode emailAuthCode = emailAuthCodeRepository.findByEmail(email)
         .orElseThrow(() -> new EmailAuthNotFoundException(email));
 
-    emailAuthCodeProvider.validateAuthCode(emailAuthCode, authCode);
-    emailAuthCodeProvider.validateNotExpired(emailAuthCode, authCode);
-    emailAuthCodeProvider.validateNotUsed(emailAuthCode, authCode);
-
+    if (!emailAuthCode.getCode().equals(authCode)) {
+      throw InvalidEmailAuthException.withCode(authCode);
+    }
+    if (emailAuthCode.getExpiresAt().isBefore(LocalDateTime.now())) {
+      throw ExpiredEmailAuthException.withCode(authCode);
+    }
+    if(emailAuthCode.getUsed()){
+      throw AlreadyUsedAuthCodeException.withCode(authCode);
+    }
     emailAuthCode.use();
   }
-
-
 }
