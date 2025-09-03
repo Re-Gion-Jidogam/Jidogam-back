@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -16,42 +17,24 @@ import region.jidogam.domain.auth.exception.ExpiredEmailAuthException;
 import region.jidogam.domain.auth.exception.InvalidEmailAuthException;
 import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
 import region.jidogam.domain.user.dto.EmailAuthRequest;
+import region.jidogam.domain.user.event.EmailAuthCodeSendEvent;
+import region.jidogam.domain.user.provider.EmailAuthCodeProvider;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailAuthService {
 
-  private final EmailService emailService;
+  private final EmailAuthCodeProvider emailAuthCodeProvider;
   private final EmailAuthCodeRepository emailAuthCodeRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Value("${jidogam.email.auth.expiration}")
   private Duration expiration;
 
-  public void sendAuthCodeEmail(String email) {
-    String authCode = createAuthCode(email);
-    //todo - 비동기 처리로 개선
-    emailService.sendAuthCodeEmail(email, authCode, expiration);
-  }
-
   @Transactional
-  public void validateEmailAuthCode(EmailAuthRequest request) {
-    String email = request.email();
-    String authCode = request.authCode();
-
-    EmailAuthCode emailAuthCode = emailAuthCodeRepository.findByEmail(email)
-        .orElseThrow(() -> new EmailAuthNotFoundException(email));
-
-    validateAuthCode(emailAuthCode, authCode);
-    validateNotExpired(emailAuthCode, authCode);
-    validateNotUsed(emailAuthCode, authCode);
-
-    emailAuthCode.use();
-  }
-
-  // 인증 코드 생성 및 저장
-  private String createAuthCode(String email) {
-    String authCode = generateAuthCode();
+  public void sendAuthCodeEmail(String email) {
+    String authCode = emailAuthCodeProvider.generateAuthCode();
 
     emailAuthCodeRepository.findByEmail(email)
         .ifPresent(emailAuthCodeRepository::delete);
@@ -63,32 +46,25 @@ public class EmailAuthService {
         .build();
 
     emailAuthCodeRepository.save(emailAuthCode);
-    return authCode;
+
+    eventPublisher.publishEvent(EmailAuthCodeSendEvent.of(email, authCode, expiration));
+    log.info("이메일 인증 코드 이벤트 발행 완료: {}", email);
   }
 
-  private String generateAuthCode() {
-    SecureRandom secureRandom = new SecureRandom();
-    return String.format("%06d", secureRandom.nextInt(1000000));
+  @Transactional
+  public void validateEmailAuthCode(EmailAuthRequest request) {
+    String email = request.email();
+    String authCode = request.authCode();
+
+    EmailAuthCode emailAuthCode = emailAuthCodeRepository.findByEmail(email)
+        .orElseThrow(() -> new EmailAuthNotFoundException(email));
+
+    emailAuthCodeProvider.validateAuthCode(emailAuthCode, authCode);
+    emailAuthCodeProvider.validateNotExpired(emailAuthCode, authCode);
+    emailAuthCodeProvider.validateNotUsed(emailAuthCode, authCode);
+
+    emailAuthCode.use();
   }
 
-  //인증 코드 일치 여부 확인
-  private void validateAuthCode(EmailAuthCode emailAuthCode, String authCode) {
-    if (!emailAuthCode.getCode().equals(authCode)) {
-      throw InvalidEmailAuthException.withCode(authCode);
-    }
-  }
 
-  //인증 코드 만료 여부 확인
-  private void validateNotExpired(EmailAuthCode emailAuthCode, String authCode) {
-    if (emailAuthCode.getExpiresAt().isBefore(LocalDateTime.now())) {
-      throw ExpiredEmailAuthException.withCode(authCode);
-    }
-  }
-
-  //인증 코드 사용 여부 확인
-  private void validateNotUsed(EmailAuthCode emailAuthCode, String authCode) {
-    if (emailAuthCode.getUsed()) {
-      throw AlreadyUsedAuthCodeException.withCode(authCode);
-    }
-  }
 }
