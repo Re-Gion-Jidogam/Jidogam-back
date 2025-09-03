@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.place.entity.Place;
-import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.dto.PlaceStampRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
@@ -33,7 +32,6 @@ public class StampService {
   private final Clock clock;
   private final UserRepository userRepository;
   private final StampRepository stampRepository;
-  private final PlaceRepository placeRepository;
   private final PlaceService placeService;
 
   @Transactional
