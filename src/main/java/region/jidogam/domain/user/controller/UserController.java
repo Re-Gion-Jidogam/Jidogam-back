@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
-import region.jidogam.domain.auth.service.EmailAuthService;
+import region.jidogam.domain.user.service.EmailAuthService;
 import region.jidogam.domain.user.dto.EmailAuthRequest;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
 import region.jidogam.infrastructure.jwt.dto.TokenResponse;
