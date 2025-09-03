@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.place.entity.Place;
-import region.jidogam.domain.place.exception.PlaceNotFoundException;
 import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.dto.PlaceStampRequest;
@@ -48,7 +47,12 @@ public class StampService {
     validateStampCoolTime(user.getId());
 
     // 3. 장소 데이터 조회
-    Place place = getOrCreatePlace(user, request);
+    Place place = placeService.getOrCreatePlace(request.pid(), request.place());
+
+    // 4. 중복 검사
+    if (request.pid() != null) {
+      validateDuplicateStamp(user, place);
+    }
 
     // 4. 도장
     Stamp stamp = Stamp.builder()
@@ -79,26 +83,6 @@ public class StampService {
   private User getUserOrThrow(UUID userId) {
     return userRepository.findById(userId)
       .orElseThrow(() -> UserNotFoundException.withId(userId));
-  }
-
-  private Place getOrCreatePlace(User user, PlaceStampRequest request) {
-    if (request.pid() != null) {
-      return handleExistingPlace(user, request);
-    }
-    return handleNewPlace(request);
-  }
-
-  // 기존 장소
-  private Place handleExistingPlace(User user, PlaceStampRequest request) {
-    Place place = placeRepository.findById(request.pid())
-      .orElseThrow(() -> PlaceNotFoundException.withPlaceName(request.place().placeName()));
-    validateDuplicateStamp(user, place);
-    return place;
-  }
-
-  // 새로운 장소
-  private Place handleNewPlace(PlaceStampRequest request) {
-    return placeService.createPlace(request.place());
   }
 
   // 도장 쿨타임 검사

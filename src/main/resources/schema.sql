@@ -116,12 +116,12 @@ CREATE TABLE refresh_tokens
 -- Email auth code table
 CREATE TABLE email_auth_codes
 (
-    id UUID PRIMARY KEY,
-    email VARCHAR(50) NOT NULL UNIQUE,
-    code TEXT NOT NULL,
+    id         UUID PRIMARY KEY,
+    email      VARCHAR(50)              NOT NULL UNIQUE,
+    code       TEXT                     NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    used BOOLEAN NOT NULL DEFAULT FALSE
+    used       BOOLEAN                  NOT NULL DEFAULT FALSE
 );
 
 -- Foreign Key Constraints

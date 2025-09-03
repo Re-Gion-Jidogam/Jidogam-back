@@ -67,4 +67,12 @@ public class Guidebook extends BaseUpdatableEntity {
   @Column
   private LocalDateTime publishedDate;
 
+  public void increaseTotalPlaceCount() {
+    this.totalPlaceCount += 1;
+  }
+
+  public void updateMapImageUrl(String mapImageUrl) {
+    this.mapImageUrl = mapImageUrl;
+  }
+
 }
