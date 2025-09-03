@@ -15,16 +15,22 @@ CREATE TABLE users
 -- Guidebooks table
 CREATE TABLE guidebooks
 (
-    id            UUID PRIMARY KEY,
-    author_id     UUID                     NOT NULL,
-    title         VARCHAR(50)              NOT NULL,
-    description   VARCHAR(512),
-    thumbnail_url VARCHAR(512),
-    emoji         VARCHAR(100),
-    color         VARCHAR(50),
-    points        INTEGER                  NOT NULL,
-    created_at    TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at    TIMESTAMP WITH TIME ZONE
+    id                UUID PRIMARY KEY,
+    author_id         UUID                     NOT NULL,
+    title             VARCHAR(50)              NOT NULL,
+    description       VARCHAR(512),
+    thumbnail_url     VARCHAR(512),
+    map_image_url     VARCHAR(512),
+    emoji             VARCHAR(100),
+    color             VARCHAR(50),
+    is_published      BOOLEAN                  NOT NULL,
+    published_date    TIMESTAMP WITH TIME ZONE,
+    points            INTEGER                  NOT NULL,
+    score             DOUBLE PRECISION         NOT NULL,
+    participant_count INTEGER                  NOT NULL,
+    total_place_count INTEGER                  NOT NULL,
+    created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at        TIMESTAMP WITH TIME ZONE
 );
 
 -- Guidebook participants table
@@ -100,11 +106,11 @@ CREATE TABLE places
 -- Refresh token table
 CREATE TABLE refresh_tokens
 (
-    id UUID PRIMARY KEY,
-    user_id UUID NOT NULL,
-    refresh_token TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL
+    id            UUID PRIMARY KEY,
+    user_id       UUID                     NOT NULL,
+    refresh_token TEXT                     NOT NULL,
+    created_at    TIMESTAMP WITH TIME ZONE NOT NULL,
+    expires_at    TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 -- Email auth code table

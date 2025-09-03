@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,6 +36,9 @@ public class Guidebook extends BaseUpdatableEntity {
   private String thumbnailUrl;
 
   @Column
+  private String mapImageUrl;
+
+  @Column
   private String emoji;
 
   @Column
@@ -43,4 +47,24 @@ public class Guidebook extends BaseUpdatableEntity {
   @Column(nullable = false)
   @Builder.Default
   private Integer points = 0;
+
+  @Column(nullable = false)
+  @Builder.Default
+  private Double score = 0.0;
+
+  @Column(nullable = false)
+  @Builder.Default
+  private Integer participantCount = 0;
+
+  @Column(nullable = false)
+  @Builder.Default
+  private Integer totalPlaceCount = 0;
+
+  @Column
+  @Builder.Default
+  private Boolean isPublished = false;
+
+  @Column
+  private LocalDateTime publishedDate;
+
 }
