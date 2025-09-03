@@ -6,7 +6,7 @@ public class ExpiredEmailAuthException extends EmailAuthException{
     super(EmailAuthErrorCode.EXPIRED_AUTH_CODE, message);
   }
 
-  public static ExpiredEmailAuthException withEmail(String code) {
+  public static ExpiredEmailAuthException withCode(String code) {
     return new ExpiredEmailAuthException("'"+ code + "'은(는) 이미 만료된 인증번호 입니다.");
   }
 
