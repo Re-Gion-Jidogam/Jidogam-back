@@ -34,20 +34,26 @@ public class EmailAuthService {
   @Transactional
   public void sendAuthCodeEmail(String email) {
     String authCode = emailAuthCodeProvider.generateAuthCode();
-
-    emailAuthCodeRepository.findFirstByEmailOrderByCreatedAtDesc(email)
-        .ifPresent(EmailAuthCode::use);
-
-    EmailAuthCode emailAuthCode = EmailAuthCode.builder()
-        .email(email)
-        .code(authCode)
-        .expiresAt(LocalDateTime.now().plus(expiration))
-        .build();
-
+    EmailAuthCode emailAuthCode = createOrUpdateEmailAuthCode(email, authCode);
     emailAuthCodeRepository.save(emailAuthCode);
 
     eventPublisher.publishEvent(EmailAuthCodeSendEvent.of(email, authCode, expiration));
     log.info("이메일 인증 코드 이벤트 발행 완료: {}", email);
+  }
+
+  private EmailAuthCode createOrUpdateEmailAuthCode(String email, String authCode) {
+    EmailAuthCode emailAuthCode = emailAuthCodeRepository.findByEmail(email).orElse(null);
+
+    if (emailAuthCode == null) {
+      return EmailAuthCode.builder()
+          .email(email)
+          .code(authCode)
+          .expiresAt(LocalDateTime.now().plus(expiration))
+          .build();
+    } else {
+      emailAuthCode.updateCodeWithExpiresAt(authCode, expiration);
+      return emailAuthCode;
+    }
   }
 
   @Transactional
@@ -55,7 +61,7 @@ public class EmailAuthService {
     String email = request.email();
     String authCode = request.authCode();
 
-    EmailAuthCode emailAuthCode = emailAuthCodeRepository.findFirstByEmailOrderByCreatedAtDesc(email)
+    EmailAuthCode emailAuthCode = emailAuthCodeRepository.findByEmail(email)
         .orElseThrow(() -> new EmailAuthNotFoundException(email));
 
     if (!emailAuthCode.getCode().equals(authCode)) {
