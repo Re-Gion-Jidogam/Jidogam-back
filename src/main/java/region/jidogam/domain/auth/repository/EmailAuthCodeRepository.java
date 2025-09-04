@@ -9,5 +9,4 @@ public interface EmailAuthCodeRepository extends JpaRepository<EmailAuthCode, UU
 
   Optional<EmailAuthCode> findByEmail(String email);
 
-  Optional<EmailAuthCode> findFirstByEmailOrderByCreatedAtDesc(String email);
 }
