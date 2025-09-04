@@ -62,7 +62,7 @@ public class EmailAuthServiceTest {
 
       when(emailAuthCodeProvider.generateAuthCode()).thenReturn(authCode);
 
-      when(emailAuthCodeRepository.findFirstByEmailOrderByCreatedAtDesc(email)).thenReturn(Optional.empty());
+      when(emailAuthCodeRepository.findByEmail(email)).thenReturn(Optional.empty());
 
       //when
       emailAuthService.sendAuthCodeEmail(email);
@@ -85,14 +85,16 @@ public class EmailAuthServiceTest {
           .code("12346")
           .build();
 
-      when(emailAuthCodeRepository.findFirstByEmailOrderByCreatedAtDesc(email)).thenReturn(
+      when(emailAuthCodeRepository.findByEmail(email)).thenReturn(
           Optional.ofNullable(mockEmailAuthCode));
 
       //when
       emailAuthService.sendAuthCodeEmail(email);
 
       //then
-      assertEquals(true, mockEmailAuthCode.getUsed());
+      assertEquals(email, mockEmailAuthCode.getEmail());
+      assertEquals(false, mockEmailAuthCode.getUsed());
+      assertEquals(authCode, mockEmailAuthCode.getCode());
 
       verify(eventPublisher, times(1)).publishEvent(any(EmailAuthCodeSendEvent.class));
     }
@@ -117,7 +119,7 @@ public class EmailAuthServiceTest {
 
       EmailAuthRequest emailAuthRequest = new EmailAuthRequest(email, authCode);
 
-      when(emailAuthCodeRepository.findFirstByEmailOrderByCreatedAtDesc(email)).thenReturn(
+      when(emailAuthCodeRepository.findByEmail(email)).thenReturn(
           Optional.ofNullable(mockEmailAuthCode));
 
       //when
@@ -136,7 +138,7 @@ public class EmailAuthServiceTest {
 
       EmailAuthRequest emailAuthRequest = new EmailAuthRequest(email, authCode);
 
-      when(emailAuthCodeRepository.findFirstByEmailOrderByCreatedAtDesc(email)).thenReturn(Optional.empty());
+      when(emailAuthCodeRepository.findByEmail(email)).thenReturn(Optional.empty());
 
       //when & then
       assertThrows(EmailAuthNotFoundException.class,
@@ -159,7 +161,7 @@ public class EmailAuthServiceTest {
 
       EmailAuthRequest emailAuthRequest = new EmailAuthRequest(email, notMatchAuthCode);
 
-      when(emailAuthCodeRepository.findFirstByEmailOrderByCreatedAtDesc(email)).thenReturn(
+      when(emailAuthCodeRepository.findByEmail(email)).thenReturn(
           Optional.ofNullable(mockEmailAuthCode));
 
       //when & then
@@ -182,7 +184,7 @@ public class EmailAuthServiceTest {
 
       EmailAuthRequest emailAuthRequest = new EmailAuthRequest(email, authCode);
 
-      when(emailAuthCodeRepository.findFirstByEmailOrderByCreatedAtDesc(email)).thenReturn(
+      when(emailAuthCodeRepository.findByEmail(email)).thenReturn(
           Optional.ofNullable(mockEmailAuthCode));
 
       //when & then
@@ -206,7 +208,7 @@ public class EmailAuthServiceTest {
 
       EmailAuthRequest emailAuthRequest = new EmailAuthRequest(email, authCode);
 
-      when(emailAuthCodeRepository.findFirstByEmailOrderByCreatedAtDesc(email)).thenReturn(
+      when(emailAuthCodeRepository.findByEmail(email)).thenReturn(
           Optional.ofNullable(mockEmailAuthCode));
 
       //when & then
