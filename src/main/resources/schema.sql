@@ -117,7 +117,7 @@ CREATE TABLE refresh_tokens
 CREATE TABLE email_auth_codes
 (
     id UUID PRIMARY KEY,
-    email VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(50) UNIQUE NOT NULL,
     code TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
