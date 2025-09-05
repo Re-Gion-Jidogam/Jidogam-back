@@ -28,7 +28,6 @@ import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.exception.PlaceNotFoundException;
-import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.dto.PlaceStampRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
@@ -47,9 +46,6 @@ class StampServiceTest {
 
   @Mock
   private StampRepository stampRepository;
-
-  @Mock
-  private PlaceRepository placeRepository;
 
   @Mock
   private PlaceService placeService;
@@ -120,7 +116,7 @@ class StampServiceTest {
       .thenReturn(Optional.empty());
 
     UUID placeId = UUID.randomUUID();
-    when(placeRepository.findById(placeId)).thenReturn(Optional.of(place));
+    when(placeService.getOrCreatePlace(placeId, placeCreateRequest)).thenReturn(place);
     when(stampRepository.existsByUser_IdAndPlace_Id(user.getId(), place.getId()))
       .thenReturn(false);
 
@@ -149,7 +145,7 @@ class StampServiceTest {
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
       .thenReturn(Optional.empty());
-    when(placeService.createPlace(placeCreateRequest)).thenReturn(place);
+    when(placeService.getOrCreatePlace(null, placeCreateRequest)).thenReturn(place);
 
     PlaceStampRequest request = new PlaceStampRequest(null, placeCreateRequest);
 
@@ -173,7 +169,8 @@ class StampServiceTest {
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
       .thenReturn(Optional.empty());
-    when(placeRepository.findById(placeId)).thenReturn(Optional.empty());
+    when(placeService.getOrCreatePlace(placeId, placeCreateRequest)).thenThrow(
+      PlaceNotFoundException.class);
     PlaceStampRequest request = new PlaceStampRequest(placeId, placeCreateRequest);
 
     // when & then
@@ -189,7 +186,7 @@ class StampServiceTest {
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
       .thenReturn(Optional.empty());
-    when(placeRepository.findById(placeId)).thenReturn(Optional.of(place));
+    when(placeService.getOrCreatePlace(placeId, placeCreateRequest)).thenReturn(place);
     when(stampRepository.existsByUser_IdAndPlace_Id(user.getId(), place.getId()))
       .thenReturn(true);
 
@@ -244,7 +241,7 @@ class StampServiceTest {
       when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
         .thenReturn(Optional.of(stamp));
 
-      when(placeService.createPlace(placeCreateRequest)).thenReturn(place);
+      when(placeService.getOrCreatePlace(null, placeCreateRequest)).thenReturn(place);
 
       PlaceStampRequest request = new PlaceStampRequest(null, placeCreateRequest);
 

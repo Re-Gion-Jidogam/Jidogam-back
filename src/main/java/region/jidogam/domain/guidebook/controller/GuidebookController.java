@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.dto.response.ResponseDto;
+import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.service.GuidebookService;
@@ -39,6 +40,16 @@ public class GuidebookController {
     @RequestParam(required = false) UUID userId // 임시
   ) {
     GuidebookResponse response = guidebookService.getById(id, userId);
+    return ResponseEntity.ok(ResponseDto.ok(response));
+  }
+
+  @PostMapping("/{id}/places")
+  public ResponseEntity<ResponseDto<GuidebookResponse>> addPlace(
+    @PathVariable UUID id,
+    @Valid @RequestBody GuidebookAddPlaceRequest request,
+    @RequestParam(required = false) UUID userId // 임시
+  ) {
+    GuidebookResponse response = guidebookService.addPlace(id, userId, request);
     return ResponseEntity.ok(ResponseDto.ok(response));
   }
 }

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.hibernate.validator.constraints.URL;
 
 public record GuidebookCreateRequest(
 
@@ -23,6 +24,7 @@ public record GuidebookCreateRequest(
   String color,
 
   @Schema(description = "가이드북 썸네일 url")
+  @URL(message = "올바른 url 형식이 아닙니다.")
   String thumbnail
 ) {
 

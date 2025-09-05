@@ -5,7 +5,7 @@ import java.util.UUID;
 public class GuidebookNotFoundException extends GuidebookException {
 
   public GuidebookNotFoundException(String message) {
-    super(GuidebookErrorCode.GUIDE_BOOK_NOT_FOUND, message);
+    super(GuidebookErrorCode.GUIDEBOOK_NOT_FOUND, message);
   }
 
   public static GuidebookNotFoundException withId(UUID id) {

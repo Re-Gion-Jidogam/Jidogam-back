@@ -26,12 +26,14 @@ CREATE TABLE guidebooks
     is_published      BOOLEAN                  NOT NULL,
     published_date    TIMESTAMP WITH TIME ZONE,
     points            INTEGER                  NOT NULL,
-    score             DOUBLE PRECISION         NOT NULL,
+    rating_sum        BIGINT                   NOT NULL,
+    rating_count      INTEGER                  NOT NULL,
     participant_count INTEGER                  NOT NULL,
     total_place_count INTEGER                  NOT NULL,
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at        TIMESTAMP WITH TIME ZONE
 );
+
 
 -- Guidebook participants table
 CREATE TABLE guidebook_participants
@@ -116,12 +118,12 @@ CREATE TABLE refresh_tokens
 -- Email auth code table
 CREATE TABLE email_auth_codes
 (
-    id UUID PRIMARY KEY,
-    email VARCHAR(50) UNIQUE NOT NULL,
-    code TEXT NOT NULL,
+    id         UUID PRIMARY KEY,
+    email      VARCHAR(50)              NOT NULL UNIQUE,
+    code       TEXT                     NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    used BOOLEAN NOT NULL DEFAULT FALSE
+    used       BOOLEAN                  NOT NULL DEFAULT FALSE
 );
 
 -- Foreign Key Constraints

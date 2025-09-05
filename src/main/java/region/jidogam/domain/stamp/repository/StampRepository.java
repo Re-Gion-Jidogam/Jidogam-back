@@ -26,3 +26,4 @@ public interface StampRepository extends JpaRepository<Stamp, UUID> {
     @Param("guidebookId") UUID guidebookId
   );
 }
+

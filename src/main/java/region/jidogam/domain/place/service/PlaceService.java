@@ -1,5 +1,6 @@
 package region.jidogam.domain.place.service;
 
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -8,6 +9,7 @@ import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.service.AreaService;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.exception.PlaceNotFoundException;
 import region.jidogam.domain.place.repository.PlaceRepository;
 
 @Slf4j
@@ -17,6 +19,16 @@ public class PlaceService {
 
   private final PlaceRepository placeRepository;
   private final AreaService areaService;
+
+  // 내부 서비스용
+  @Transactional
+  public Place getOrCreatePlace(UUID id, PlaceCreateRequest request) {
+    if (id != null) {
+      return placeRepository.findById(id)
+        .orElseThrow(() -> PlaceNotFoundException.withId(id));
+    }
+    return createPlace(request);
+  }
 
   // 내부 서비스용
   @Transactional
@@ -47,4 +59,5 @@ public class PlaceService {
   private int calculatePoint(Integer weight) {
     return weight * 10; // 임시
   }
+
 }
