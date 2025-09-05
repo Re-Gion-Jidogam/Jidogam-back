@@ -3,6 +3,7 @@ package region.jidogam.domain.auth.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -34,5 +35,10 @@ public class EmailAuthCode extends BaseEntity {
 
   public void use() {
     this.used = true;
+  }
+
+  public void updateCodeWithExpiresAt(String newCode, Duration duration) {
+    this.code = newCode;
+    this.expiresAt = LocalDateTime.now().plusMinutes(duration.toMinutes());
   }
 }
