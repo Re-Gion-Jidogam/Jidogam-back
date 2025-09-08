@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -66,177 +67,192 @@ class GuidebookServiceTest {
 
   private static final LocalDateTime FIXED_DATE_TIME = LocalDateTime.of(2025, 1, 1, 12, 0, 0);
 
-  @Test
-  @DisplayName("가이드북 저장 성공")
-  void success() {
-    // given
-    UUID userId = UUID.randomUUID();
-    User user = mock(User.class);
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+  @Nested
+  @DisplayName("가이드북 생성")
+  class Create {
 
-    GuidebookCreateRequest request = new GuidebookCreateRequest(
-      "title",
-      "description",
-      null,
-      null,
-      "url"
-    );
+    @Test
+    @DisplayName("가이드북 저장 성공")
+    void success() {
+      // given
+      UUID userId = UUID.randomUUID();
+      User user = mock(User.class);
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-    // when
-    guidebookService.create(request, userId);
+      GuidebookCreateRequest request = new GuidebookCreateRequest(
+        "title",
+        "description",
+        null,
+        null,
+        "url"
+      );
 
-    // then
-    verify(guidebookRepository).save(any(Guidebook.class));
+      // when
+      guidebookService.create(request, userId);
+
+      // then
+      verify(guidebookRepository).save(any(Guidebook.class));
+    }
+
+    @Test
+    @DisplayName("배경 데이터가 하나도 없는 경우 예외 발생")
+    void failsWhenBackgroundIsMissing() {
+      // given
+      UUID userId = UUID.randomUUID();
+      User user = mock(User.class);
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      GuidebookCreateRequest request = new GuidebookCreateRequest(
+        "title",
+        "description",
+        null,
+        null,
+        null
+      );
+
+      // when & then
+      assertThrows(GuidebookBackgroundRequiredException.class,
+        () -> guidebookService.create(request, userId));
+
+    }
+
+    @Test
+    @DisplayName("배경 색깔없이 이모지만 있는 경우 예외 발생")
+    void failsWhenOnlyEmojiProvided() {
+      // given
+      UUID userId = UUID.randomUUID();
+      User user = mock(User.class);
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      GuidebookCreateRequest request = new GuidebookCreateRequest(
+        "title",
+        "description",
+        "#emoji",
+        null,
+        null
+      );
+
+      // when & then
+      assertThrows(GuidebookBackgroundRequiredException.class,
+        () -> guidebookService.create(request, userId));
+
+    }
   }
 
-  @Test
-  @DisplayName("배경 데이터가 하나도 없는 경우 예외 발생")
-  void failsWhenBackgroundIsMissing() {
-    // given
-    UUID userId = UUID.randomUUID();
-    User user = mock(User.class);
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
-    GuidebookCreateRequest request = new GuidebookCreateRequest(
-      "title",
-      "description",
-      null,
-      null,
-      null
-    );
-
-    // when & then
-    assertThrows(GuidebookBackgroundRequiredException.class,
-      () -> guidebookService.create(request, userId));
-
-  }
-
-  @Test
-  @DisplayName("배경 색깔없이 이모지만 있는 경우 예외 발생")
-  void failsWhenOnlyEmojiProvided() {
-    // given
-    UUID userId = UUID.randomUUID();
-    User user = mock(User.class);
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
-    GuidebookCreateRequest request = new GuidebookCreateRequest(
-      "title",
-      "description",
-      "#emoji",
-      null,
-      null
-    );
-
-    // when & then
-    assertThrows(GuidebookBackgroundRequiredException.class,
-      () -> guidebookService.create(request, userId));
-
-  }
-
-  @Test
+  @Nested
   @DisplayName("가이드북 상세 조회")
-  void successGet() {
-    // given
-    UUID userId = UUID.randomUUID();
-    UUID guidebookId = UUID.randomUUID();
+  class Get {
 
-    Guidebook guidebook = createGuidebook(userId, guidebookId);
-    GuidebookResponse expectedResponse = createResponse(userId, guidebookId, 3);
+    @Test
+    @DisplayName("가이드북 상세 조회")
+    void successGet() {
+      // given
+      UUID userId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
 
-    when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(3);
-    when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
-    when(guidebookMapper.toResponse(guidebook, 3)).thenReturn(expectedResponse);
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
+      GuidebookResponse expectedResponse = createResponse(userId, guidebookId, 3);
 
-    // when
-    GuidebookResponse result = guidebookService.getById(guidebookId, userId);
+      when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(3);
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(guidebookMapper.toResponse(guidebook, 3)).thenReturn(expectedResponse);
 
-    // then
-    assertThat(result).isEqualTo(expectedResponse);
-    verify(guidebookRepository).findById(guidebookId);
-    verify(guidebookMapper).toResponse(guidebook, 3);
+      // when
+      GuidebookResponse result = guidebookService.getById(guidebookId, userId);
+
+      // then
+      assertThat(result).isEqualTo(expectedResponse);
+      verify(guidebookRepository).findById(guidebookId);
+      verify(guidebookMapper).toResponse(guidebook, 3);
+    }
+
+
+    @Test
+    @DisplayName("가이드북 존재하지 않는 경우 예외 발생")
+    void failsByNotExists() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.empty());
+
+      // when & then
+      assertThrows(GuidebookNotFoundException.class,
+        () -> guidebookService.getById(guidebookId, userId));
+    }
   }
 
-
-  @Test
-  @DisplayName("가이드북 존재하지 않는 경우 예외 발생")
-  void failsByNotExists() {
-    // given
-    UUID guidebookId = UUID.randomUUID();
-    UUID userId = UUID.randomUUID();
-
-    when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.empty());
-
-    // when & then
-    assertThrows(GuidebookNotFoundException.class,
-      () -> guidebookService.getById(guidebookId, userId));
-  }
-
-  @Test
+  @Nested
   @DisplayName("가이드북 장소 추가")
-  void successAddPlace() {
-    // given
-    UUID guidebookId = UUID.randomUUID();
-    UUID userId = UUID.randomUUID();
-    UUID placeId = UUID.randomUUID();
+  class AddPlace {
 
-    Place mockPlace = mock(Place.class);
-    Guidebook mockGuidebook = mock(Guidebook.class);
+    @Test
+    @DisplayName("가이드북 장소 추가")
+    void successAddPlace() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      UUID placeId = UUID.randomUUID();
 
-    User user = createUser(userId);
-    GuidebookResponse expectedResponse = createResponse(userId, guidebookId, 3);
+      Place mockPlace = mock(Place.class);
+      Guidebook mockGuidebook = mock(Guidebook.class);
 
-    PlaceCreateRequest placeCreateRequest = new PlaceCreateRequest(
-      null,
-      "임시마트",
-      "전북 익산시 망산길 11-17",
-      null,
-      BigDecimal.valueOf(35.976749396987046),
-      BigDecimal.valueOf(126.99599512792346)
-    );
+      User user = createUser(userId);
+      GuidebookResponse expectedResponse = createResponse(userId, guidebookId, 3);
 
-    GuidebookAddPlaceRequest request = new GuidebookAddPlaceRequest(
-      placeId,
-      placeCreateRequest,
-      "https://test.com/url"
-    );
+      PlaceCreateRequest placeCreateRequest = new PlaceCreateRequest(
+        null,
+        "임시마트",
+        "전북 익산시 망산길 11-17",
+        null,
+        BigDecimal.valueOf(35.976749396987046),
+        BigDecimal.valueOf(126.99599512792346)
+      );
 
-    when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
-    when(mockGuidebook.getId()).thenReturn(guidebookId);
-    when(mockGuidebook.getAuthor()).thenReturn(user);
+      GuidebookAddPlaceRequest request = new GuidebookAddPlaceRequest(
+        placeId,
+        placeCreateRequest,
+        "https://test.com/url"
+      );
 
-    when(placeService.getOrCreatePlace(request.pid(), request.place())).thenReturn(mockPlace);
-    when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(3);
-    when(guidebookMapper.toResponse(mockGuidebook, 3)).thenReturn(expectedResponse);
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
+      when(mockGuidebook.getId()).thenReturn(guidebookId);
+      when(mockGuidebook.getAuthor()).thenReturn(user);
 
-    // when
-    GuidebookResponse response = guidebookService.addPlace(guidebookId, userId, request);
+      when(placeService.getOrCreatePlace(request.pid(), request.place())).thenReturn(mockPlace);
+      when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(3);
+      when(guidebookMapper.toResponse(mockGuidebook, 3)).thenReturn(expectedResponse);
 
-    // then
-    verify(guidebookPlaceRepository).save(any(GuidebookPlace.class));
-    verify(mockGuidebook).updateMapImageUrl("https://test.com/url");
-    verify(mockGuidebook).increaseTotalPlaceCount();
+      // when
+      GuidebookResponse response = guidebookService.addPlace(guidebookId, userId, request);
 
-  }
+      // then
+      verify(guidebookPlaceRepository).save(any(GuidebookPlace.class));
+      verify(mockGuidebook).updateMapImageUrl("https://test.com/url");
+      verify(mockGuidebook).increaseTotalPlaceCount();
 
-  @Test
-  @DisplayName("가이드북 작성자가 아닌 사용자가 장소 추가를 시도할 경우 예외 발생")
-  void failsByNotAuthor() {
-    // given
-    UUID guidebookId = UUID.randomUUID();
-    UUID authorId = UUID.randomUUID();
-    UUID anotherId = UUID.randomUUID();
+    }
 
-    User user = createUser(authorId);
+    @Test
+    @DisplayName("가이드북 작성자가 아닌 사용자가 장소 추가를 시도할 경우 예외 발생")
+    void failsByNotAuthor() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID authorId = UUID.randomUUID();
+      UUID anotherId = UUID.randomUUID();
 
-    Guidebook mockGuidebook = mock(Guidebook.class);
-    GuidebookAddPlaceRequest mockRequest = mock(GuidebookAddPlaceRequest.class);
+      User user = createUser(authorId);
 
-    when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
-    when(mockGuidebook.getAuthor()).thenReturn(user);
+      Guidebook mockGuidebook = mock(Guidebook.class);
+      GuidebookAddPlaceRequest mockRequest = mock(GuidebookAddPlaceRequest.class);
 
-    // when & then
-    assertThrows(AuthorMismatchException.class,
-      () -> guidebookService.addPlace(guidebookId, anotherId, mockRequest));
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
+      when(mockGuidebook.getAuthor()).thenReturn(user);
+
+      // when & then
+      assertThrows(AuthorMismatchException.class,
+        () -> guidebookService.addPlace(guidebookId, anotherId, mockRequest));
+    }
   }
 
   @Test
