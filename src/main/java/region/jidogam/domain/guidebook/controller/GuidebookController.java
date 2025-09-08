@@ -5,6 +5,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,9 +48,19 @@ public class GuidebookController {
   public ResponseEntity<ResponseDto<GuidebookResponse>> addPlace(
     @PathVariable UUID id,
     @Valid @RequestBody GuidebookAddPlaceRequest request,
-    @RequestParam(required = false) UUID userId // 임시
+    @RequestParam UUID userId // 임시
   ) {
     GuidebookResponse response = guidebookService.addPlace(id, userId, request);
     return ResponseEntity.ok(ResponseDto.ok(response));
+  }
+
+  @DeleteMapping("/{id}/places/{placeId}")
+  public ResponseEntity<Void> removePlace(
+    @PathVariable UUID id,
+    @PathVariable UUID placeId,
+    @RequestParam(required = false) UUID userId // 임시
+  ) {
+    guidebookService.removePlace(id, placeId, userId);
+    return ResponseEntity.noContent().build();
   }
 }
