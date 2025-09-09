@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,5 +35,18 @@ public class AuthController {
 
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(ResponseDto.ok(new TokenResponse(tokenPair.accessToken())));
+  }
+
+  @PostMapping("/logout")
+  public ResponseEntity<?> logout(
+      @CookieValue(value = "refresh", required = false) String refreshToken,
+      HttpServletResponse response) {
+    if (refreshToken == null) {
+      return ResponseEntity.badRequest().body("refresh token이 없습니다.");
+    }
+    authService.logout(refreshToken);
+    ResponseCookie refreshCookie = cookieUtil.deleteRefreshTokenCookie();
+    response.addHeader("Set-Cookie", refreshCookie.toString());
+    return ResponseEntity.noContent().build();
   }
 }
