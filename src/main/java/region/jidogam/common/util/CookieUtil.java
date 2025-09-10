@@ -1,5 +1,6 @@
 package region.jidogam.common.util;
 
+import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
@@ -8,7 +9,7 @@ import org.springframework.stereotype.Component;
 public class CookieUtil {
 
   @Value("${jwt.refresh-token-expiration}")
-  private Long refreshTokenExpiration;
+  private Duration refreshTokenExpiration;
 
   @Value("${app.domain:localhost}")
   private String domain;
@@ -22,7 +23,7 @@ public class CookieUtil {
         .secure(secureCookie)
         .path("/")
         .sameSite("Lax")
-        .maxAge(refreshTokenExpiration / 1000) // 초 단위로 변환
+        .maxAge(refreshTokenExpiration.toSeconds())
         .domain(domain)
         .build();
   }
