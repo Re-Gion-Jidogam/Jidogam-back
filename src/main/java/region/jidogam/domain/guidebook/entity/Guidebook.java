@@ -99,7 +99,7 @@ public class Guidebook extends BaseUpdatableEntity {
     this.totalPlaceCount += 1;
   }
 
-  public void setParticipantCount() {
+  public void increaseParticipantCount() {
     this.participantCount += 1;
   }
 
