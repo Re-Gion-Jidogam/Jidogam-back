@@ -27,6 +27,7 @@ import region.jidogam.domain.guidebook.entity.GuidebookPlace;
 import region.jidogam.domain.guidebook.exception.AuthorMismatchException;
 import region.jidogam.domain.guidebook.exception.GuidebookBackgroundRequiredException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
+import region.jidogam.domain.guidebook.exception.GuidebookPublishedException;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
@@ -181,6 +182,50 @@ class GuidebookServiceTest {
         () -> guidebookService.getById(guidebookId, userId));
     }
   }
+
+  @Nested
+  @DisplayName("가이드북 삭제")
+  class Delete {
+
+    @Test
+    @DisplayName("삭제 성공")
+    void successDelete() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      // when
+      guidebookService.delete(guidebookId, userId);
+
+      // then
+      verify(guidebookPlaceRepository).deleteByGuidebook(guidebook);
+      verify(guidebookRepository).delete(guidebook);
+    }
+
+    @Test
+    @DisplayName("출판된 경우 삭제 실패 예외 발생")
+    void failsByIsPublished() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
+      guidebook.publish();
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      // when & then
+      assertThrows(GuidebookPublishedException.class,
+        () -> guidebookService.delete(guidebookId, userId));
+
+    }
+
+  }
+
 
   @Nested
   @DisplayName("가이드북 장소 추가")
