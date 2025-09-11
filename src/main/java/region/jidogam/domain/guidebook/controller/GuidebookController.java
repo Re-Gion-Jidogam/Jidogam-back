@@ -5,8 +5,10 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,7 +19,9 @@ import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.service.GuidebookService;
+import region.jidogam.infrastructure.security.JidogamUserDetails;
 
 @RestController
 @RequestMapping("/api/guidebooks")
@@ -41,6 +45,16 @@ public class GuidebookController {
     @RequestParam(required = false) UUID userId // 임시
   ) {
     GuidebookResponse response = guidebookService.getById(id, userId);
+    return ResponseEntity.ok(ResponseDto.ok(response));
+  }
+
+  @PatchMapping("/{id}")
+  public ResponseEntity<ResponseDto<GuidebookResponse>> update(
+    @PathVariable UUID id,
+    @Valid @RequestBody GuidebookUpdateRequest request,
+    @AuthenticationPrincipal JidogamUserDetails principal
+  ) {
+    GuidebookResponse response = guidebookService.update(id, principal.getId(), request);
     return ResponseEntity.ok(ResponseDto.ok(response));
   }
 

@@ -12,7 +12,8 @@ public enum GuidebookErrorCode implements ErrorCode {
     "가이드북 배경(컬러 또는 썸네일)은 필수 입니다."),
   GUIDEBOOK_AUTHOR_MISMATCH(HttpStatus.FORBIDDEN, "GUIDE_BOOK_003",
     "가이드북 작성자가 아닙니다."),
-  GUIDEBOOK_PUBLISHED(HttpStatus.BAD_REQUEST, "GUIDE_BOOK_004", "출판된 가이드북입니다.");
+  GUIDEBOOK_PUBLISHED(HttpStatus.BAD_REQUEST, "GUIDE_BOOK_004", "출판된 가이드북입니다."),
+  GUIDEBOOK_UNPUBLISH_VIOLATION(HttpStatus.BAD_REQUEST, "GUIDE_BOOK_005", "출판 취소가 불가능합니다.");
 
   private HttpStatus status;
   private String code;

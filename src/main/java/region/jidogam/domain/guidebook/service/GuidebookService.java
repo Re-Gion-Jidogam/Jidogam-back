@@ -1,5 +1,6 @@
 package region.jidogam.domain.guidebook.service;
 
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,12 +9,14 @@ import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookPlace;
 import region.jidogam.domain.guidebook.exception.AuthorMismatchException;
 import region.jidogam.domain.guidebook.exception.GuidebookBackgroundRequiredException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
 import region.jidogam.domain.guidebook.exception.GuidebookPublishedException;
+import region.jidogam.domain.guidebook.exception.GuidebookUnpublishViolationException;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
@@ -66,6 +69,34 @@ public class GuidebookService {
   public GuidebookResponse getById(UUID id, UUID userId) {
 
     Guidebook guidebook = getOrThrow(id);
+
+    int visitedPlaceCount = getVisitedPlaceCount(guidebook.getId(), userId);
+
+    return guidebookMapper.toResponse(guidebook, visitedPlaceCount);
+  }
+
+  @Transactional
+  public GuidebookResponse update(UUID id, UUID userId, GuidebookUpdateRequest request) {
+
+    Guidebook guidebook = getOrThrow(id);
+
+    checkAuthorOrThrow(guidebook, userId);
+
+    Optional.ofNullable(request.title()).ifPresent(guidebook::updateTitle);
+    Optional.ofNullable(request.description()).ifPresent(guidebook::updateDescription);
+    Optional.ofNullable(request.color()).ifPresent(guidebook::updateColor);
+    Optional.ofNullable(request.emoji()).ifPresent(guidebook::updateEmoji);
+    Optional.ofNullable(request.thumbnail()).ifPresent(guidebook::updateThumbnailUrl);
+    Optional.ofNullable(request.isPublish()).ifPresent(isPublish -> {
+      if (isPublish) {
+        guidebook.publish();
+      } else {
+        if (guidebook.getParticipantCount() > 0) {
+          throw GuidebookUnpublishViolationException.withId(id);
+        }
+        guidebook.unpublish();
+      }
+    });
 
     int visitedPlaceCount = getVisitedPlaceCount(guidebook.getId(), userId);
 
