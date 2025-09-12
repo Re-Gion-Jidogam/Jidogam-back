@@ -44,6 +44,15 @@ public class GuidebookController {
     return ResponseEntity.ok(ResponseDto.ok(response));
   }
 
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> delete(
+    @PathVariable UUID id,
+    @RequestParam UUID userId // 임시
+  ) {
+    guidebookService.delete(id, userId);
+    return ResponseEntity.noContent().build();
+  }
+
   @PostMapping("/{id}/places")
   public ResponseEntity<ResponseDto<GuidebookResponse>> addPlace(
     @PathVariable UUID id,

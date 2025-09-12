@@ -9,4 +9,6 @@ import region.jidogam.domain.place.entity.Place;
 public interface GuidebookPlaceRepository extends JpaRepository<GuidebookPlace, UUID> {
 
   void deleteByGuidebookAndPlace(Guidebook guidebook, Place place);
+
+  void deleteByGuidebook(Guidebook guidebook);
 }

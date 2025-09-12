@@ -13,6 +13,7 @@ import region.jidogam.domain.guidebook.entity.GuidebookPlace;
 import region.jidogam.domain.guidebook.exception.AuthorMismatchException;
 import region.jidogam.domain.guidebook.exception.GuidebookBackgroundRequiredException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
+import region.jidogam.domain.guidebook.exception.GuidebookPublishedException;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
@@ -72,12 +73,26 @@ public class GuidebookService {
   }
 
   @Transactional
+  public void delete(UUID id, UUID userId) {
+
+    Guidebook guidebook = getOrThrow(id);
+
+    checkAuthorOrThrow(guidebook, userId);
+
+    if (guidebook.getIsPublished()) {
+      throw GuidebookPublishedException.withId(id);
+    }
+
+    guidebookPlaceRepository.deleteByGuidebook(guidebook);
+    guidebookRepository.delete(guidebook);
+  }
+
+  @Transactional
   public GuidebookResponse addPlace(UUID id, UUID userId, GuidebookAddPlaceRequest request) {
 
     Guidebook guidebook = getOrThrow(id);
-    if (!guidebook.getAuthor().getId().equals(userId)) {
-      throw AuthorMismatchException.withId(id);
-    }
+
+    checkAuthorOrThrow(guidebook, userId);
 
     if (request.mapImageUrl() != null) {
       guidebook.updateMapImageUrl(request.mapImageUrl());
@@ -102,9 +117,7 @@ public class GuidebookService {
     Guidebook guidebook = getOrThrow(id);
     Place place = getPlaceOrThrow(placeId);
 
-    if (!guidebook.getAuthor().getId().equals(userId)) {
-      throw AuthorMismatchException.withId(id);
-    }
+    checkAuthorOrThrow(guidebook, userId);
 
     guidebookPlaceRepository.deleteByGuidebookAndPlace(guidebook, place);
   }
@@ -129,6 +142,12 @@ public class GuidebookService {
       return 0;
     }
     return stampRepository.countUserStampsInGuidebook(userId, id);
+  }
+
+  private void checkAuthorOrThrow(Guidebook guidebook, UUID userId) {
+    if (!guidebook.getAuthor().getId().equals(userId)) {
+      throw AuthorMismatchException.withId(guidebook.getId());
+    }
   }
 
 }
