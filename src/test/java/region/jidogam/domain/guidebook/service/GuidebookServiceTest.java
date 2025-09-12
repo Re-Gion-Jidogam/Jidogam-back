@@ -31,6 +31,7 @@ import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.entity.User;
@@ -50,6 +51,9 @@ class GuidebookServiceTest {
 
   @Mock
   private StampRepository stampRepository;
+
+  @Mock
+  private PlaceRepository placeRepository;
 
   @Mock
   private PlaceService placeService;
@@ -233,6 +237,27 @@ class GuidebookServiceTest {
     // when & then
     assertThrows(AuthorMismatchException.class,
       () -> guidebookService.addPlace(guidebookId, anotherId, mockRequest));
+  }
+
+  @Test
+  @DisplayName("작성자가 아닌 경우 장소 삭제 실패")
+  void failsRemovePlaceByNotAuthor() {
+    // given
+    UUID userId = UUID.randomUUID();
+    UUID authorId = UUID.randomUUID();
+
+    UUID guidebookId = UUID.randomUUID();
+    Guidebook guidebook = createGuidebook(authorId, guidebookId);
+
+    UUID placeId = UUID.randomUUID();
+    Place mockPlace = mock(Place.class);
+
+    when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+    when(placeRepository.findById(placeId)).thenReturn(Optional.of(mockPlace));
+
+    // when & then
+    assertThrows(AuthorMismatchException.class,
+      () -> guidebookService.removePlace(guidebookId, placeId, userId));
   }
 
   private User createUser(UUID userId) {

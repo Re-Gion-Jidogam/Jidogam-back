@@ -17,6 +17,8 @@ import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.exception.PlaceNotFoundException;
+import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.entity.User;
@@ -34,6 +36,7 @@ public class GuidebookService {
   private final StampRepository stampRepository;
   private final PlaceService placeService;
   private final GuidebookMapper guidebookMapper;
+  private final PlaceRepository placeRepository;
 
   @Transactional
   public void create(GuidebookCreateRequest request, UUID userId) {
@@ -93,6 +96,19 @@ public class GuidebookService {
     return guidebookMapper.toResponse(guidebook, visitedPlaceCount);
   }
 
+  @Transactional
+  public void removePlace(UUID id, UUID placeId, UUID userId) {
+
+    Guidebook guidebook = getOrThrow(id);
+    Place place = getPlaceOrThrow(placeId);
+
+    if (!guidebook.getAuthor().getId().equals(userId)) {
+      throw AuthorMismatchException.withId(id);
+    }
+
+    guidebookPlaceRepository.deleteByGuidebookAndPlace(guidebook, place);
+  }
+
   private Guidebook getOrThrow(UUID id) {
     return guidebookRepository.findById(id)
       .orElseThrow(() -> GuidebookNotFoundException.withId(id));
@@ -101,6 +117,11 @@ public class GuidebookService {
   private User getUserOrThrow(UUID userId) {
     return userRepository.findById(userId)
       .orElseThrow(() -> UserNotFoundException.withId(userId));
+  }
+
+  private Place getPlaceOrThrow(UUID placeId) {
+    return placeRepository.findById(placeId)
+      .orElseThrow(() -> PlaceNotFoundException.withId(placeId));
   }
 
   private int getVisitedPlaceCount(UUID id, UUID userId) {
