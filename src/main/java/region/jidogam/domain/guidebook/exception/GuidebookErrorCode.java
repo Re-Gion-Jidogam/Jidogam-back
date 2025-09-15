@@ -13,7 +13,9 @@ public enum GuidebookErrorCode implements ErrorCode {
   GUIDEBOOK_AUTHOR_MISMATCH(HttpStatus.FORBIDDEN, "GUIDE_BOOK_003",
     "가이드북 작성자가 아닙니다."),
   GUIDEBOOK_PUBLISHED(HttpStatus.BAD_REQUEST, "GUIDE_BOOK_004", "출판된 가이드북입니다."),
-  GUIDEBOOK_UNPUBLISH_VIOLATION(HttpStatus.BAD_REQUEST, "GUIDE_BOOK_005", "출판 취소가 불가능합니다.");
+  GUIDEBOOK_UNPUBLISH_VIOLATION(HttpStatus.BAD_REQUEST, "GUIDE_BOOK_005", "출판 취소가 불가능합니다."),
+  GUIDEBOOK_ALREADY_PARTICIPATED(HttpStatus.CONFLICT, "GUIDE_BOOK_006", "이미 참여중인 가이드북입니다."),
+  GUIDEBOOK_NOT_PUBLISHED(HttpStatus.BAD_REQUEST, "GUIDE_BOOK_007", "출판되지 않은 가이드북입니다.");
 
   private HttpStatus status;
   private String code;

@@ -85,4 +85,13 @@ public class GuidebookController {
     guidebookService.removePlace(id, placeId, principal.getId());
     return ResponseEntity.noContent().build();
   }
+
+  @PostMapping("/{id}/participants")
+  public ResponseEntity<Void> addParticipant(
+    @PathVariable UUID id,
+    @AuthenticationPrincipal JidogamUserDetails principal
+  ) {
+    guidebookService.addParticipant(id, principal.getId());
+    return ResponseEntity.status(HttpStatus.CREATED).build();
+  }
 }
