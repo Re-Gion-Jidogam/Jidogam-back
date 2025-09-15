@@ -92,6 +92,6 @@ public class GuidebookController {
     @AuthenticationPrincipal JidogamUserDetails principal
   ) {
     guidebookService.addParticipant(id, principal.getId());
-    return ResponseEntity.status(HttpStatus.CREATED).build();
+    return ResponseEntity.ok().build();
   }
 }
