@@ -71,12 +71,46 @@ public class Guidebook extends BaseUpdatableEntity {
   @Column
   private LocalDateTime publishedDate;
 
-  public void increaseTotalPlaceCount() {
-    this.totalPlaceCount += 1;
+  public void updateTitle(String title) {
+    this.title = title;
+  }
+
+  public void updateDescription(String description) {
+    this.description = description;
+  }
+
+  public void updateEmoji(String emoji) {
+    this.emoji = emoji;
+  }
+
+  public void updateColor(String color) {
+    this.color = color;
+  }
+
+  public void updateThumbnailUrl(String thumbnailUrl) {
+    this.thumbnailUrl = thumbnailUrl;
   }
 
   public void updateMapImageUrl(String mapImageUrl) {
     this.mapImageUrl = mapImageUrl;
+  }
+
+  public void increaseTotalPlaceCount() {
+    this.totalPlaceCount += 1;
+  }
+
+  public void increaseParticipantCount() {
+    this.participantCount += 1;
+  }
+
+  public void publish() {
+    this.isPublished = true;
+    this.publishedDate = LocalDateTime.now();
+  }
+
+  public void unpublish() {
+    this.isPublished = false;
+    this.publishedDate = null;
   }
 
   public double calculateAverageScore() {
