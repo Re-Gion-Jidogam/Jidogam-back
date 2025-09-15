@@ -25,13 +25,17 @@ import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.entity.Guidebook;
+import region.jidogam.domain.guidebook.entity.GuidebookParticipant;
 import region.jidogam.domain.guidebook.entity.GuidebookPlace;
 import region.jidogam.domain.guidebook.exception.AuthorMismatchException;
+import region.jidogam.domain.guidebook.exception.GuidebookAlreadyParticipatedException;
 import region.jidogam.domain.guidebook.exception.GuidebookBackgroundRequiredException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
+import region.jidogam.domain.guidebook.exception.GuidebookNotPublishedException;
 import region.jidogam.domain.guidebook.exception.GuidebookPublishedException;
 import region.jidogam.domain.guidebook.exception.GuidebookUnpublishViolationException;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
+import region.jidogam.domain.guidebook.repository.GuidebookParticipantRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
@@ -53,6 +57,9 @@ class GuidebookServiceTest {
 
   @Mock
   private GuidebookPlaceRepository guidebookPlaceRepository;
+
+  @Mock
+  private GuidebookParticipantRepository guidebookParticipantRepository;
 
   @Mock
   private StampRepository stampRepository;
@@ -291,7 +298,6 @@ class GuidebookServiceTest {
 
   }
 
-
   @Nested
   @DisplayName("가이드북 장소 추가")
   class AddPlace {
@@ -386,6 +392,85 @@ class GuidebookServiceTest {
       () -> guidebookService.removePlace(guidebookId, placeId, userId));
   }
 
+  @Nested
+  @DisplayName("가이드북 참여")
+  class AddParticipant {
+
+    @Test
+    @DisplayName("가이드북 참여 성공")
+    void success() {
+      // given
+      UUID userId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
+
+      User user = createUser(userId);
+      Guidebook guidebook = createGuidebook(guidebookId, userId);
+      guidebook.publish();
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(guidebookParticipantRepository.existsByGuidebookAndUser(guidebook, user))
+        .thenReturn(false);
+
+      GuidebookParticipant guidebookParticipant = GuidebookParticipant.builder()
+        .guidebook(guidebook)
+        .user(user)
+        .build();
+
+      // when
+      guidebookService.addParticipant(guidebookId, userId);
+
+      // then
+      verify(guidebookParticipantRepository).save(any(GuidebookParticipant.class));
+    }
+
+    @Test
+    @DisplayName("출판되지 않은 경우 예외 발생")
+    void failsByNotPublished() {
+      // given
+      UUID userId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
+
+      User user = createUser(userId);
+      Guidebook guidebook = createGuidebook(guidebookId, userId);
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      // when & then
+      assertThrows(GuidebookNotPublishedException.class,
+        () -> guidebookService.addParticipant(guidebookId, userId));
+
+    }
+
+    @Test
+    @DisplayName("이미 참여중인 경우 예외 발생")
+    void failsByAlreadyParticipated() {
+      // given
+      UUID userId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
+
+      User user = createUser(userId);
+      Guidebook guidebook = createGuidebook(guidebookId, userId);
+      guidebook.publish();
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(guidebookParticipantRepository.existsByGuidebookAndUser(guidebook, user))
+        .thenReturn(true);
+
+      // when & then
+      assertThrows(GuidebookAlreadyParticipatedException.class,
+        () -> guidebookService.addParticipant(guidebookId, userId));
+
+    }
+
+  }
+
+
+  /***
+   * 이하 편의 클래스
+   */
   private User createUser(UUID userId) {
     User user = User.builder()
       .nickname("testName")
