@@ -9,4 +9,6 @@ import region.jidogam.domain.user.entity.User;
 public interface GuidebookParticipantRepository extends JpaRepository<GuidebookParticipant, UUID> {
 
   boolean existsByGuidebookAndUser(Guidebook guidebook, User user);
+
+  int deleteByGuidebook_IdAndUser_Id(UUID guidebookId, UUID userId);
 }

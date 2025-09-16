@@ -156,6 +156,7 @@ public class GuidebookService {
     checkAuthorOrThrow(guidebook, userId);
 
     guidebookPlaceRepository.deleteByGuidebookAndPlace(guidebook, place);
+    // TODO: TotalPlaceCount 줄이기
   }
 
   public void addParticipant(UUID id, UUID userId) {
@@ -177,7 +178,14 @@ public class GuidebookService {
       .build();
 
     guidebookParticipantRepository.save(guidebookParticipant);
+    // TODO: 원자적으로 참여자 수 증가시키기
+  }
 
+  @Transactional
+  public void cancelParticipation(UUID id, UUID userId) {
+    if (guidebookParticipantRepository.deleteByGuidebook_IdAndUser_Id(id, userId) > 0) {
+      guidebookRepository.updateParticipantCount(id, -1);
+    }
   }
 
   private Guidebook getOrThrow(UUID id) {
