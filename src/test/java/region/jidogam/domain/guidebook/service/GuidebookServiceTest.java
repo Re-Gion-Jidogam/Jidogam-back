@@ -296,7 +296,6 @@ class GuidebookServiceTest {
       // when & then
       assertThrows(GuidebookPublishedException.class,
         () -> guidebookService.delete(guidebookId, userId));
-
     }
 
   }
@@ -375,7 +374,7 @@ class GuidebookServiceTest {
 
     @Test
     @DisplayName("가이드북이 출판된 경우 장소 추가 요청 시 예외 발생")
-    void test() {
+    void failsByAlreadyPublished() {
       // given
       UUID guidebookId = UUID.randomUUID();
       UUID authorId = UUID.randomUUID();
@@ -394,25 +393,53 @@ class GuidebookServiceTest {
     }
   }
 
-  @Test
-  @DisplayName("작성자가 아닌 경우 장소 삭제 실패")
-  void failsRemovePlaceByNotAuthor() {
-    // given
-    UUID userId = UUID.randomUUID();
-    UUID authorId = UUID.randomUUID();
+  @Nested
+  @DisplayName("가이드북 장소 제거")
+  class removePlace {
 
-    UUID guidebookId = UUID.randomUUID();
-    Guidebook guidebook = createGuidebook(authorId, guidebookId);
+    @Test
+    @DisplayName("장소 제거 성공")
+    void success() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      UUID placeId = UUID.randomUUID();
 
-    UUID placeId = UUID.randomUUID();
-    Place mockPlace = mock(Place.class);
+      Guidebook mockGuidebook = mock(Guidebook.class);
+      User mockUser = mock(User.class);
 
-    when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
-    when(placeRepository.findById(placeId)).thenReturn(Optional.of(mockPlace));
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
+      when(mockGuidebook.getAuthor()).thenReturn(mockUser);
+      when(mockUser.getId()).thenReturn(userId);
+      when(
+        guidebookPlaceRepository.deleteByGuidebook_IdAndPlace_Id(guidebookId, placeId)).thenReturn(
+        1);
 
-    // when & then
-    assertThrows(AuthorMismatchException.class,
-      () -> guidebookService.removePlace(guidebookId, placeId, userId));
+      // when
+      guidebookService.removePlace(guidebookId, placeId, userId);
+
+      // then
+      verify(mockGuidebook).decreaseTotalPlaceCount();
+    }
+
+    @Test
+    @DisplayName("작성자가 아닌 경우 장소 삭제 시 예외 발생")
+    void failsByNotAuthor() {
+      // given
+      UUID userId = UUID.randomUUID();
+      UUID authorId = UUID.randomUUID();
+
+      UUID guidebookId = UUID.randomUUID();
+      Guidebook guidebook = createGuidebook(authorId, guidebookId);
+
+      UUID placeId = UUID.randomUUID();
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      // when & then
+      assertThrows(AuthorMismatchException.class,
+        () -> guidebookService.removePlace(guidebookId, placeId, userId));
+    }
   }
 
   @Nested
