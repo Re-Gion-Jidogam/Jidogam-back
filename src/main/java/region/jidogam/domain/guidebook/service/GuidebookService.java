@@ -155,12 +155,12 @@ public class GuidebookService {
   public void removePlace(UUID id, UUID placeId, UUID userId) {
 
     Guidebook guidebook = getOrThrow(id);
-    Place place = getPlaceOrThrow(placeId);
-
+    
     checkAuthorOrThrow(guidebook, userId);
 
-    guidebookPlaceRepository.deleteByGuidebookAndPlace(guidebook, place);
-    guidebook.decreaseTotalPlaceCount();
+    if (guidebookPlaceRepository.deleteByGuidebook_IdAndPlace_Id(id, placeId) > 0) {
+      guidebook.decreaseTotalPlaceCount();
+    }
   }
 
   @Transactional
