@@ -48,10 +48,25 @@ public class RefreshTokenService {
     deleteExistingToken(user.getId());
   }
 
-  @Transactional(readOnly = true)
-  public TokenPair refreshAccessToken(String refreshTokenString) throws AuthException {
+  @Transactional
+  public TokenPair refreshTokens(String refreshTokenString) throws AuthException {
     log.info("RefreshToken으로 AccessToken 재발급 시도");
 
+    User user = validateAndGetUser(refreshTokenString);
+
+    // 유저 정보로 accessToken 재발급
+    String accessToken = jwtProvider.generateAccessToken(user);
+    RefreshToken newRefreshToken = create(user);
+
+    log.info("AccessToken 재발급 완료: userId = {}", user.getId());
+
+    return TokenPair.builder()
+        .accessToken(accessToken)
+        .refreshToken(newRefreshToken.getRefreshToken())
+        .build();
+  }
+
+  private User validateAndGetUser(String refreshTokenString) throws AuthException{
     // 토큰 유효성 검사
     if (!jwtProvider.validateToken(refreshTokenString)) {
       throw new AuthException("Refresh Token이 유효하지 않습니다.");
@@ -68,19 +83,8 @@ public class RefreshTokenService {
 
     // 토큰에서 User ID 추출하여 유저 찾기
     UUID userId = jwtProvider.extractUserId(refreshTokenString);
-    User user = userRepository.findById(userId)
+    return userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
-
-    // 유저 정보로 accessToken 재발급
-    String accessToken = jwtProvider.generateAccessToken(user);
-
-    create(user);
-    log.info("AccessToken 재발급 완료: userId = {}", userId);
-
-    return TokenPair.builder()
-        .accessToken(accessToken)
-        .refreshToken(refreshTokenString)
-        .build();
   }
 
   private void deleteExistingToken(UUID userId) {

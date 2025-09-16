@@ -57,7 +57,7 @@ public class AuthController {
       @CookieValue(value = "refresh", required = false) String refreshToken,
       HttpServletResponse response) throws AuthException {
 
-    TokenPair tokenPair = refreshTokenService.refreshAccessToken(refreshToken);
+    TokenPair tokenPair = refreshTokenService.refreshTokens(refreshToken);
 
     ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(tokenPair.refreshToken());
     response.addHeader("Set-Cookie", refreshCookie.toString());
