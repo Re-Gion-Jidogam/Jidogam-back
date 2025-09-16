@@ -159,6 +159,7 @@ public class GuidebookService {
     // TODO: TotalPlaceCount 줄이기
   }
 
+  @Transactional
   public void addParticipant(UUID id, UUID userId) {
 
     Guidebook guidebook = getOrThrow(id);
@@ -178,7 +179,7 @@ public class GuidebookService {
       .build();
 
     guidebookParticipantRepository.save(guidebookParticipant);
-    // TODO: 원자적으로 참여자 수 증가시키기
+    guidebookRepository.updateParticipantCount(id, 1);
   }
 
   @Transactional
