@@ -372,6 +372,26 @@ class GuidebookServiceTest {
       assertThrows(AuthorMismatchException.class,
         () -> guidebookService.addPlace(guidebookId, anotherId, mockRequest));
     }
+
+    @Test
+    @DisplayName("가이드북이 출판된 경우 장소 추가 요청 시 예외 발생")
+    void test() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID authorId = UUID.randomUUID();
+
+      Guidebook guidebook = createGuidebook(authorId, guidebookId);
+      guidebook.publish();
+
+      GuidebookAddPlaceRequest mockRequest = mock(GuidebookAddPlaceRequest.class);
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      // when & then
+      assertThrows(GuidebookPublishedException.class,
+        () -> guidebookService.addPlace(guidebookId, authorId, mockRequest));
+
+    }
   }
 
   @Test
