@@ -466,6 +466,7 @@ class GuidebookServiceTest {
 
       // then
       verify(guidebookParticipantRepository).save(any(GuidebookParticipant.class));
+      verify(guidebookRepository).updateParticipantCount(guidebookId, 1);
     }
 
     @Test
