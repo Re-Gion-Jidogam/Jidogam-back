@@ -116,7 +116,7 @@ public class GuidebookService {
     checkAuthorOrThrow(guidebook, userId);
 
     if (guidebook.getIsPublished()) {
-      throw GuidebookPublishedException.withId(id);
+      throw GuidebookPublishedException.forDeletion(id);
     }
 
     guidebookPlaceRepository.deleteByGuidebook(guidebook);
@@ -129,6 +129,10 @@ public class GuidebookService {
     Guidebook guidebook = getOrThrow(id);
 
     checkAuthorOrThrow(guidebook, userId);
+
+    if (guidebook.getIsPublished()) {
+      throw GuidebookPublishedException.forPlaceAddition(guidebook.getId());
+    }
 
     if (request.mapImageUrl() != null) {
       guidebook.updateMapImageUrl(request.mapImageUrl());
