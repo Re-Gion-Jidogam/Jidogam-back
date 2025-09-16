@@ -156,7 +156,7 @@ public class GuidebookService {
     checkAuthorOrThrow(guidebook, userId);
 
     guidebookPlaceRepository.deleteByGuidebookAndPlace(guidebook, place);
-    // TODO: TotalPlaceCount 줄이기
+    guidebook.decreaseTotalPlaceCount();
   }
 
   @Transactional
