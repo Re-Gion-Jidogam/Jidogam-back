@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.domain.user.repository.UserRepository;
+import region.jidogam.infrastructure.jwt.dto.TokenPair;
 
 @ExtendWith(MockitoExtension.class)
 class RefreshTokenServiceTest {
@@ -150,22 +151,41 @@ class RefreshTokenServiceTest {
       RefreshToken mockRefreshToken = mock(RefreshToken.class);
       String refreshTokenString = "refreshToken";
       LocalDateTime expiresAt = LocalDateTime.now().plusDays(30);
+      RefreshToken mockNewRefreshToken = mock(RefreshToken.class);
+      String newRefreshTokenString = "newRefreshToken";
+      LocalDateTime newExpiresAt = LocalDateTime.now().plusDays(30);
 
+      // 기존 토큰 검증을 위한 모킹
       when(jwtProvider.validateToken(refreshTokenString)).thenReturn(true);
       when(refreshTokenRepository.findByRefreshToken(refreshTokenString))
           .thenReturn(Optional.of(mockRefreshToken));
       when(mockRefreshToken.getExpiresAt()).thenReturn(expiresAt);
 
+      // 사용자 조회를 위한 모킹
       when(jwtProvider.extractUserId(refreshTokenString)).thenReturn(userId);
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(user.getId()).thenReturn(userId);
+
+      // 새 액세스 토큰 생성을 위한 모킹
       when(jwtProvider.generateAccessToken(user)).thenReturn("accessToken");
 
+      // create 메서드 내부에서 호출되는 메서드들을 위한 모킹
+      // 1. deleteExistingToken 호출 시
+      when(refreshTokenRepository.findByUserId(userId)).thenReturn(Optional.empty());
+
+      // 2. 새 리프레시 토큰 생성 시
+      when(jwtProvider.generateRefreshToken(user)).thenReturn(newRefreshTokenString);
+      when(jwtProvider.extractExpirationTime(newRefreshTokenString)).thenReturn(newExpiresAt);
+      when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(mockNewRefreshToken);
+
       //when
-      String accessToken = refreshTokenService.refreshAccessToken(refreshTokenString);
+      TokenPair tokenPair = refreshTokenService.refreshTokens(refreshTokenString);
 
       //then
-      assertNotNull(accessToken);
-      assertEquals("accessToken", accessToken);
+      assertNotNull(tokenPair.accessToken());
+      assertNotNull(tokenPair.refreshToken());
+      assertEquals("accessToken", tokenPair.accessToken());
+      assertEquals(newRefreshTokenString, tokenPair.refreshToken());
     }
 
     @Test
@@ -178,7 +198,7 @@ class RefreshTokenServiceTest {
 
       //when & then
       assertThrows(AuthException.class,
-          () -> refreshTokenService.refreshAccessToken(refreshTokenString));
+          () -> refreshTokenService.refreshTokens(refreshTokenString));
 
     }
 
@@ -194,7 +214,7 @@ class RefreshTokenServiceTest {
 
       //when & then
       assertThrows(AuthException.class,
-          () -> refreshTokenService.refreshAccessToken(refreshTokenString));
+          () -> refreshTokenService.refreshTokens(refreshTokenString));
     }
 
     @Test
@@ -211,7 +231,7 @@ class RefreshTokenServiceTest {
 
       //when & then
       assertThrows(AuthException.class,
-          () -> refreshTokenService.refreshAccessToken(refreshTokenString));
+          () -> refreshTokenService.refreshTokens(refreshTokenString));
     }
 
     @Test
@@ -232,7 +252,7 @@ class RefreshTokenServiceTest {
 
       //when & then
       assertThrows(UserNotFoundException.class,
-          () -> refreshTokenService.refreshAccessToken(refreshTokenString));
+          () -> refreshTokenService.refreshTokens(refreshTokenString));
     }
   }
 }
