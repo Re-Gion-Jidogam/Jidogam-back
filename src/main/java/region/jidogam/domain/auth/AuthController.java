@@ -54,10 +54,15 @@ public class AuthController {
 
   @PostMapping("/refresh")
   public ResponseEntity<?> refresh(
-      @CookieValue(value = "refresh", required = false) String refreshToken)
-      throws AuthException {
-    String accessToken = refreshTokenService.refreshAccessToken(refreshToken);
+      @CookieValue(value = "refresh", required = false) String refreshToken,
+      HttpServletResponse response) throws AuthException {
+
+    TokenPair tokenPair = refreshTokenService.refreshAccessToken(refreshToken);
+
+    ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(tokenPair.refreshToken());
+    response.addHeader("Set-Cookie", refreshCookie.toString());
+
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(ResponseDto.ok(new TokenResponse(accessToken)));
+        .body(ResponseDto.ok(new TokenResponse(tokenPair.accessToken())));
   }
 }

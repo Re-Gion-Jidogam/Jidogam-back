@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.domain.user.repository.UserRepository;
+import region.jidogam.infrastructure.jwt.dto.TokenPair;
 
 @Slf4j
 @Service
@@ -47,15 +48,8 @@ public class RefreshTokenService {
     deleteExistingToken(user.getId());
   }
 
-  private void deleteExistingToken(UUID userId) {
-    refreshTokenRepository.findByUserId(userId).ifPresent(token -> {
-      log.debug("기존 RefreshToken 삭제: userId={}", userId);
-      refreshTokenRepository.delete(token);
-    });
-  }
-
   @Transactional(readOnly = true)
-  public String refreshAccessToken(String refreshTokenString) throws AuthException {
+  public TokenPair refreshAccessToken(String refreshTokenString) throws AuthException {
     log.info("RefreshToken으로 AccessToken 재발급 시도");
 
     // 토큰 유효성 검사
@@ -80,7 +74,19 @@ public class RefreshTokenService {
     // 유저 정보로 accessToken 재발급
     String accessToken = jwtProvider.generateAccessToken(user);
 
+    create(user);
     log.info("AccessToken 재발급 완료: userId = {}", userId);
-    return accessToken;
+
+    return TokenPair.builder()
+        .accessToken(accessToken)
+        .refreshToken(refreshTokenString)
+        .build();
+  }
+
+  private void deleteExistingToken(UUID userId) {
+    refreshTokenRepository.findByUserId(userId).ifPresent(token -> {
+      log.debug("기존 RefreshToken 삭제: userId={}", userId);
+      refreshTokenRepository.delete(token);
+    });
   }
 }
