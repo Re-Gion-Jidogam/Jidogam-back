@@ -146,7 +146,6 @@ class GuidebookServiceTest {
       // when & then
       assertThrows(GuidebookBackgroundRequiredException.class,
         () -> guidebookService.create(request, userId));
-
     }
   }
 
@@ -176,7 +175,6 @@ class GuidebookServiceTest {
       verify(guidebookRepository).findById(guidebookId);
       verify(guidebookMapper).toResponse(guidebook, 3);
     }
-
 
     @Test
     @DisplayName("가이드북 존재하지 않는 경우 예외 발생")
@@ -254,9 +252,7 @@ class GuidebookServiceTest {
       assertThrows(GuidebookUnpublishViolationException.class,
         () -> guidebookService.update(guidebookId, userId, request));
     }
-
   }
-
 
   @Nested
   @DisplayName("가이드북 삭제")
@@ -297,7 +293,6 @@ class GuidebookServiceTest {
       assertThrows(GuidebookPublishedException.class,
         () -> guidebookService.delete(guidebookId, userId));
     }
-
   }
 
   @Nested
@@ -389,7 +384,6 @@ class GuidebookServiceTest {
       // when & then
       assertThrows(GuidebookPublishedException.class,
         () -> guidebookService.addPlace(guidebookId, authorId, mockRequest));
-
     }
   }
 
@@ -512,9 +506,24 @@ class GuidebookServiceTest {
       // when & then
       assertThrows(GuidebookAlreadyParticipatedException.class,
         () -> guidebookService.addParticipant(guidebookId, userId));
-
     }
+  }
 
+  @Test
+  @DisplayName("가이드북 참여 취소 성공")
+  void successCancelParticipation() {
+    // given
+    UUID userId = UUID.randomUUID();
+    UUID guidebookId = UUID.randomUUID();
+
+    when(guidebookParticipantRepository.deleteByGuidebook_IdAndUser_Id(guidebookId, userId))
+      .thenReturn(1);
+
+    // when
+    guidebookService.cancelParticipation(guidebookId, userId);
+
+    // then
+    verify(guidebookRepository).updateParticipantCount(guidebookId, -1);
   }
 
 
