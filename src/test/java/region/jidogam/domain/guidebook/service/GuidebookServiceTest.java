@@ -233,10 +233,13 @@ class GuidebookServiceTest {
       UUID guidebookId = UUID.randomUUID();
       UUID userId = UUID.randomUUID();
 
-      Guidebook guidebook = createGuidebook(userId, guidebookId);
-      guidebook.increaseParticipantCount();
+      Guidebook mockGuidebook = mock(Guidebook.class);
+      User mockUser = mock(User.class);
 
-      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
+      when(mockGuidebook.getAuthor()).thenReturn(mockUser);
+      when(mockUser.getId()).thenReturn(userId);
+      when(mockGuidebook.getParticipantCount()).thenReturn(1);
 
       GuidebookUpdateRequest request = new GuidebookUpdateRequest(
         null,
