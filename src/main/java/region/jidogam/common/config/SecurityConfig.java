@@ -7,7 +7,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.security.JidogamUserDetailsService;
@@ -21,7 +23,10 @@ public class SecurityConfig {
   private final JidogamUserDetailsService jidogamUserDetailsService;
 
   @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain securityFilterChain(
+      HttpSecurity http,
+      AccessDeniedHandler accessDeniedHandler,
+      AuthenticationEntryPoint authenticationEntryPoint) throws Exception {
     http
         .csrf(AbstractHttpConfigurer::disable) // REST API
 
@@ -29,10 +34,15 @@ public class SecurityConfig {
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers(HttpMethod.POST, PublicApiEndpoints.getPublicPostEndpoints()).permitAll()
+            .requestMatchers(HttpMethod.POST, PublicApiEndpoints.getPublicPostEndpoints())
+            .permitAll()
             .requestMatchers(HttpMethod.GET, PublicApiEndpoints.getPublicGetEndpoints()).permitAll()
             .anyRequest().hasRole("USER"))
         //.anyRequest().permitAll()) // 개발용
+
+        .exceptionHandling(e -> e
+            .accessDeniedHandler(accessDeniedHandler)
+            .authenticationEntryPoint(authenticationEntryPoint))
 
         .addFilterBefore(
             new JwtAuthenticationFilter(jwtProvider, jidogamUserDetailsService),

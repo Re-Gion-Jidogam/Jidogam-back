@@ -1,6 +1,7 @@
 package region.jidogam.common.exception;
 
 import jakarta.security.auth.message.AuthException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +9,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -17,6 +20,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
 import region.jidogam.domain.auth.exception.AuthErrorCode;
+import region.jidogam.infrastructure.security.JidogamUserDetails;
 
 @Slf4j
 @RestControllerAdvice
@@ -97,23 +101,23 @@ public class GlobalExceptionHandler {
   }
 
   // method level security
-//  @ExceptionHandler(AuthorizationDeniedException.class)
-//  protected ResponseEntity<ResponseDto<Void>> handleAuthorizationDeniedException(
-//      AuthorizationDeniedException ex,
-//      HttpServletRequest request,
-//      @AuthenticationPrincipal CustomUserDetails principal
-//  ) {
-//    log.warn("Authorization denied: {}, path: {}, userId: {}, role: {}",
-//        ex.getMessage(),
-//        request.getRequestURI(),
-//        principal != null ? principal.getId() : "anonymous",
-//        principal != null ? principal.getAuthorities() : "anonymous"
-//    );
-//
-//    AuthErrorCode errorCode = AuthErrorCode.ACCESS_DENIED;
-//
-//    return createErrorResponse(errorCode.getHttpStatus(), errorResponse);
-//  }
+  @ExceptionHandler(AuthorizationDeniedException.class)
+  protected ResponseEntity<ResponseDto<Void>> handleAuthorizationDeniedException(
+      AuthorizationDeniedException ex,
+      HttpServletRequest request,
+      @AuthenticationPrincipal JidogamUserDetails principal
+  ) {
+    log.warn("Authorization denied: {}, path: {}, userId: {}, role: {}",
+        ex.getMessage(),
+        request.getRequestURI(),
+        principal != null ? principal.getId() : "anonymous",
+        principal != null ? principal.getAuthorities() : "anonymous"
+    );
+
+    AuthErrorCode errorCode = AuthErrorCode.ACCESS_DENIED;
+
+    return createErrorResponse(errorCode, ex.getMessage());
+  }
 
   // auth
   @ExceptionHandler(AuthException.class)
