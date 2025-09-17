@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,12 +15,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
+import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.service.EmailAuthService;
 import region.jidogam.domain.user.dto.EmailAuthRequest;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
 import region.jidogam.infrastructure.jwt.dto.TokenResponse;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.service.UserService;
+import region.jidogam.infrastructure.security.JidogamUserDetails;
 
 @RestController
 @RequestMapping("/api/users")
@@ -46,13 +49,13 @@ public class UserController {
   @GetMapping("/check-nickname")
   public ResponseEntity<?> checkNickname(@RequestParam("nickname") String nickname) {
     userService.validateNickname(nickname);
-    return ResponseEntity.ok((ResponseDto.ok("사용 가능한 닉네임입니다.")));
+    return ResponseEntity.ok(ResponseDto.ok("사용 가능한 닉네임입니다."));
   }
 
   @GetMapping("/check-email")
   public ResponseEntity<?> checkEmail(@RequestParam("email") String email) {
     userService.validateEmail(email);
-    return ResponseEntity.ok((ResponseDto.ok("사용 가능한 이메일입니다.")));
+    return ResponseEntity.ok(ResponseDto.ok("사용 가능한 이메일입니다."));
   }
 
   @PostMapping("/auth-code")
@@ -65,5 +68,11 @@ public class UserController {
   public ResponseEntity<?> checkAuthCode(@RequestBody @Valid EmailAuthRequest request) {
     emailAuthService.validateEmailAuthCode(request);
     return ResponseEntity.ok().build();
+  }
+
+  @GetMapping("/profile")
+  public ResponseEntity<?> getProfile(@AuthenticationPrincipal JidogamUserDetails userDetails) {
+    UserDto userInfo = userService.getUserInfo(userDetails.getId());
+    return ResponseEntity.ok(ResponseDto.ok(userInfo));
   }
 }
