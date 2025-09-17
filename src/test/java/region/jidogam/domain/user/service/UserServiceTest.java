@@ -2,11 +2,15 @@ package region.jidogam.domain.user.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -15,6 +19,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import region.jidogam.domain.stamp.entity.Stamp;
+import region.jidogam.domain.stamp.repository.StampRepository;
+import region.jidogam.domain.stamp.service.StampService;
+import region.jidogam.domain.user.dto.UserDto;
+import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshToken;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
@@ -42,6 +51,9 @@ class UserServiceTest {
 
   @Mock
   private RefreshTokenService refreshTokenService;
+
+  @Mock
+  private StampRepository stampRepository;
 
   @InjectMocks
   private UserService userService;
@@ -290,5 +302,76 @@ class UserServiceTest {
       verify(userRepository, never()).existsByEmail(null);
     }
 
+  }
+
+  @Nested
+  @DisplayName("사용자 정보 조회")
+  class GetUserInfoTest {
+
+    @Test
+    @DisplayName("성공, 도장 찍은 내역 없음")
+    void success() {
+      //given
+      UUID userId = UUID.randomUUID();
+      User user = User.builder()
+          .nickname("테스트유저")
+          .profileImageUrl("https://test.com/url")
+          .exp(1L)
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
+          Optional.empty());
+
+      //when
+      UserDto userInfo = userService.getUserInfo(userId);
+
+      //then
+      assertNotNull(userInfo);
+      assertEquals(user.getNickname(), userInfo.nickname());
+      assertEquals(user.getProfileImageUrl(), userInfo.profileUrl());
+      assertNull(userInfo.lastStampedDate());
+    }
+
+    @Test
+    @DisplayName("성공, 최근 도장 찍은 내역 있음")
+    void successWhenLastStampExist() {
+      //given
+      UUID userId = UUID.randomUUID();
+      User user = User.builder()
+          .nickname("테스트유저")
+          .profileImageUrl("https://test.com/url")
+          .exp(1L)
+          .build();
+
+      Stamp mockStamp = mock(Stamp.class);
+      LocalDateTime stampCreatedAt = LocalDateTime.now();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
+          Optional.of(mockStamp));
+      when(mockStamp.getCreatedAt()).thenReturn(stampCreatedAt);
+
+      //when
+      UserDto userInfo = userService.getUserInfo(userId);
+
+      //then
+      assertNotNull(userInfo);
+      assertEquals(user.getNickname(), userInfo.nickname());
+      assertEquals(user.getProfileImageUrl(), userInfo.profileUrl());
+      assertEquals(stampCreatedAt, userInfo.lastStampedDate());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자")
+    void failsWhenUserNotFound() {
+      //given
+      UUID userId = UUID.randomUUID();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+      //when & then
+      assertThrows(UserNotFoundException.class, () -> userService.getUserInfo(userId));
+    }
   }
 }
