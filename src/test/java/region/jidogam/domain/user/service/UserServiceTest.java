@@ -17,11 +17,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.stamp.service.StampService;
+import region.jidogam.domain.user.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.infrastructure.jwt.JwtProvider;
@@ -54,6 +56,9 @@ class UserServiceTest {
 
   @Mock
   private StampRepository stampRepository;
+
+  @Spy
+  private UserMapper userMapper;
 
   @InjectMocks
   private UserService userService;
