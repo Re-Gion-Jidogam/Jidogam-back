@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
 import region.jidogam.domain.auth.dto.LoginRequest;
+import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
 import region.jidogam.infrastructure.jwt.dto.TokenResponse;
 
@@ -24,6 +25,7 @@ public class AuthController {
 
   private final AuthService authService;
   private final CookieUtil cookieUtil;
+  private final RefreshTokenService refreshTokenService;
 
   @PostMapping("/login")
   public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletResponse response)
@@ -48,5 +50,19 @@ public class AuthController {
     ResponseCookie refreshCookie = cookieUtil.deleteRefreshTokenCookie();
     response.addHeader("Set-Cookie", refreshCookie.toString());
     return ResponseEntity.noContent().build();
+  }
+
+  @PostMapping("/refresh")
+  public ResponseEntity<?> refresh(
+      @CookieValue(value = "refresh", required = false) String refreshToken,
+      HttpServletResponse response) throws AuthException {
+
+    TokenPair tokenPair = refreshTokenService.refreshTokens(refreshToken);
+
+    ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(tokenPair.refreshToken());
+    response.addHeader("Set-Cookie", refreshCookie.toString());
+
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(ResponseDto.ok(new TokenResponse(tokenPair.accessToken())));
   }
 }

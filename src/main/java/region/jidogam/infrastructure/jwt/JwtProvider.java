@@ -9,6 +9,7 @@ import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.entity.User.Role;
+import region.jidogam.infrastructure.jwt.exception.TokenException;
 
 @Slf4j
 @Component
@@ -29,16 +31,16 @@ public class JwtProvider {
   private String jwtSecret;
 
   @Value("${jwt.access-token-expiration}")
-  private Long accessTokenExpiration;
+  private Duration accessTokenExpiration;
 
   @Value("${jwt.refresh-token-expiration}")
-  private Long refreshTokenExpiration;
+  private Duration refreshTokenExpiration;
 
   private static final String ISSUER = "region-jidogam";
 
   public String generateAccessToken(User user) {
     Date now = new Date();
-    Date exp = new Date(now.getTime() + accessTokenExpiration);
+    Date exp = new Date(now.getTime() + accessTokenExpiration.toMillis());
 
     JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
         .subject(user.getId().toString())
@@ -56,7 +58,7 @@ public class JwtProvider {
 
   public String generateRefreshToken(User user) {
     Date now = new Date();
-    Date exp = new Date(now.getTime() + refreshTokenExpiration);
+    Date exp = new Date(now.getTime() + refreshTokenExpiration.toMillis());
 
     JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
         .subject(user.getId().toString())
@@ -131,7 +133,7 @@ public class JwtProvider {
     } catch (Exception e) {
       // todo - 추후에 인가 과정에서 예외처리할지, 전역 예외처리 할지 고민해보기
       log.error("토큰 검증 및 파싱 에러");
-      throw new IllegalArgumentException("토큰 검증 및 파싱 실패");
+      throw TokenException.withMessage(e.getMessage());
     }
   }
 
