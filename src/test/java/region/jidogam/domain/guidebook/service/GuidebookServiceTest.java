@@ -17,16 +17,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookPlace;
 import region.jidogam.domain.guidebook.exception.AuthorMismatchException;
 import region.jidogam.domain.guidebook.exception.GuidebookBackgroundRequiredException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
+import region.jidogam.domain.guidebook.exception.GuidebookPublishedException;
+import region.jidogam.domain.guidebook.exception.GuidebookUnpublishViolationException;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
@@ -59,7 +63,7 @@ class GuidebookServiceTest {
   @Mock
   private PlaceService placeService;
 
-  @Mock
+  @Spy
   private GuidebookMapper guidebookMapper;
 
   @InjectMocks
@@ -181,6 +185,112 @@ class GuidebookServiceTest {
         () -> guidebookService.getById(guidebookId, userId));
     }
   }
+
+  @Nested
+  @DisplayName("가이드북 수정")
+  class Update {
+
+    @Test
+    @DisplayName("가이드북 수정 성공")
+    void successUpdate() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(0);
+
+      GuidebookUpdateRequest request = new GuidebookUpdateRequest(
+        "제목 수정",
+        "설명 수정",
+        null,
+        null,
+        null,
+        true
+      );
+
+      // when
+      GuidebookResponse response = guidebookService.update(guidebookId, userId, request);
+
+      // then
+      assertThat(response.title()).isEqualTo("제목 수정");
+      assertThat(response.description()).isEqualTo("설명 수정");
+      assertThat(response.publishedDate()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("가이드북에 이미 참여자가 존재하는 경우, 출판 취소 불가능 예외 발생")
+    void failsByParticipantsExist() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
+      guidebook.increaseParticipantCount();
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      GuidebookUpdateRequest request = new GuidebookUpdateRequest(
+        null,
+        null,
+        null,
+        null,
+        null,
+        false
+      );
+
+      // when & then
+      assertThrows(GuidebookUnpublishViolationException.class,
+        () -> guidebookService.update(guidebookId, userId, request));
+    }
+
+  }
+
+
+  @Nested
+  @DisplayName("가이드북 삭제")
+  class Delete {
+
+    @Test
+    @DisplayName("가이드북 삭제 성공")
+    void successDelete() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      // when
+      guidebookService.delete(guidebookId, userId);
+
+      // then
+      verify(guidebookPlaceRepository).deleteByGuidebook(guidebook);
+      verify(guidebookRepository).delete(guidebook);
+    }
+
+    @Test
+    @DisplayName("출판된 경우 삭제 실패 예외 발생")
+    void failsByIsPublished() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
+      guidebook.publish();
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      // when & then
+      assertThrows(GuidebookPublishedException.class,
+        () -> guidebookService.delete(guidebookId, userId));
+
+    }
+
+  }
+
 
   @Nested
   @DisplayName("가이드북 장소 추가")
