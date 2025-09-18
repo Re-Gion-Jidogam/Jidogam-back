@@ -87,11 +87,6 @@ public class GuidebookService {
 
     checkAuthorOrThrow(guidebook, userId);
 
-    Optional.ofNullable(request.title()).ifPresent(guidebook::updateTitle);
-    Optional.ofNullable(request.description()).ifPresent(guidebook::updateDescription);
-    Optional.ofNullable(request.color()).ifPresent(guidebook::updateColor);
-    Optional.ofNullable(request.emoji()).ifPresent(guidebook::updateEmoji);
-    Optional.ofNullable(request.thumbnail()).ifPresent(guidebook::updateThumbnailUrl);
     Optional.ofNullable(request.isPublish()).ifPresent(isPublish -> {
       if (isPublish) {
         guidebook.publish();
@@ -102,6 +97,11 @@ public class GuidebookService {
         guidebook.unpublish();
       }
     });
+    Optional.ofNullable(request.title()).ifPresent(guidebook::updateTitle);
+    Optional.ofNullable(request.description()).ifPresent(guidebook::updateDescription);
+    Optional.ofNullable(request.color()).ifPresent(guidebook::updateColor);
+    Optional.ofNullable(request.emoji()).ifPresent(guidebook::updateEmoji);
+    Optional.ofNullable(request.thumbnail()).ifPresent(guidebook::updateThumbnailUrl);
 
     int visitedPlaceCount = getVisitedPlaceCount(guidebook.getId(), userId);
 
