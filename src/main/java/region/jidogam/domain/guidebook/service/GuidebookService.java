@@ -11,13 +11,17 @@ import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.entity.Guidebook;
+import region.jidogam.domain.guidebook.entity.GuidebookParticipant;
 import region.jidogam.domain.guidebook.entity.GuidebookPlace;
 import region.jidogam.domain.guidebook.exception.AuthorMismatchException;
+import region.jidogam.domain.guidebook.exception.GuidebookAlreadyParticipatedException;
 import region.jidogam.domain.guidebook.exception.GuidebookBackgroundRequiredException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
+import region.jidogam.domain.guidebook.exception.GuidebookNotPublishedException;
 import region.jidogam.domain.guidebook.exception.GuidebookPublishedException;
 import region.jidogam.domain.guidebook.exception.GuidebookUnpublishViolationException;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
+import region.jidogam.domain.guidebook.repository.GuidebookParticipantRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.place.entity.Place;
@@ -37,10 +41,11 @@ public class GuidebookService {
   private final UserRepository userRepository;
   private final GuidebookRepository guidebookRepository;
   private final GuidebookPlaceRepository guidebookPlaceRepository;
+  private final GuidebookParticipantRepository guidebookParticipantRepository;
   private final StampRepository stampRepository;
+  private final PlaceRepository placeRepository;
   private final PlaceService placeService;
   private final GuidebookMapper guidebookMapper;
-  private final PlaceRepository placeRepository;
 
   @Transactional
   public void create(GuidebookCreateRequest request, UUID userId) {
@@ -111,7 +116,7 @@ public class GuidebookService {
     checkAuthorOrThrow(guidebook, userId);
 
     if (guidebook.getIsPublished()) {
-      throw GuidebookPublishedException.withId(id);
+      throw GuidebookPublishedException.forDeletion(id);
     }
 
     guidebookPlaceRepository.deleteByGuidebook(guidebook);
@@ -124,6 +129,10 @@ public class GuidebookService {
     Guidebook guidebook = getOrThrow(id);
 
     checkAuthorOrThrow(guidebook, userId);
+
+    if (guidebook.getIsPublished()) {
+      throw GuidebookPublishedException.forPlaceAddition(guidebook.getId());
+    }
 
     if (request.mapImageUrl() != null) {
       guidebook.updateMapImageUrl(request.mapImageUrl());
@@ -146,11 +155,42 @@ public class GuidebookService {
   public void removePlace(UUID id, UUID placeId, UUID userId) {
 
     Guidebook guidebook = getOrThrow(id);
-    Place place = getPlaceOrThrow(placeId);
-
+    
     checkAuthorOrThrow(guidebook, userId);
 
-    guidebookPlaceRepository.deleteByGuidebookAndPlace(guidebook, place);
+    if (guidebookPlaceRepository.deleteByGuidebook_IdAndPlace_Id(id, placeId) > 0) {
+      guidebook.decreaseTotalPlaceCount();
+    }
+  }
+
+  @Transactional
+  public void addParticipant(UUID id, UUID userId) {
+
+    Guidebook guidebook = getOrThrow(id);
+    User user = getUserOrThrow(userId);
+
+    if (!guidebook.getIsPublished()) {
+      throw GuidebookNotPublishedException.withId(guidebook.getId());
+    }
+
+    if (guidebookParticipantRepository.existsByGuidebookAndUser(guidebook, user)) {
+      throw GuidebookAlreadyParticipatedException.withId(guidebook.getId());
+    }
+
+    GuidebookParticipant guidebookParticipant = GuidebookParticipant.builder()
+      .guidebook(guidebook)
+      .user(user)
+      .build();
+
+    guidebookParticipantRepository.save(guidebookParticipant);
+    guidebookRepository.updateParticipantCount(id, 1);
+  }
+
+  @Transactional
+  public void cancelParticipation(UUID id, UUID userId) {
+    if (guidebookParticipantRepository.deleteByGuidebook_IdAndUser_Id(id, userId) > 0) {
+      guidebookRepository.updateParticipantCount(id, -1);
+    }
   }
 
   private Guidebook getOrThrow(UUID id) {
@@ -180,5 +220,4 @@ public class GuidebookService {
       throw AuthorMismatchException.withId(guidebook.getId());
     }
   }
-
 }

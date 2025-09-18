@@ -25,13 +25,17 @@ import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.entity.Guidebook;
+import region.jidogam.domain.guidebook.entity.GuidebookParticipant;
 import region.jidogam.domain.guidebook.entity.GuidebookPlace;
 import region.jidogam.domain.guidebook.exception.AuthorMismatchException;
+import region.jidogam.domain.guidebook.exception.GuidebookAlreadyParticipatedException;
 import region.jidogam.domain.guidebook.exception.GuidebookBackgroundRequiredException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
+import region.jidogam.domain.guidebook.exception.GuidebookNotPublishedException;
 import region.jidogam.domain.guidebook.exception.GuidebookPublishedException;
 import region.jidogam.domain.guidebook.exception.GuidebookUnpublishViolationException;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
+import region.jidogam.domain.guidebook.repository.GuidebookParticipantRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
@@ -53,6 +57,9 @@ class GuidebookServiceTest {
 
   @Mock
   private GuidebookPlaceRepository guidebookPlaceRepository;
+
+  @Mock
+  private GuidebookParticipantRepository guidebookParticipantRepository;
 
   @Mock
   private StampRepository stampRepository;
@@ -139,7 +146,6 @@ class GuidebookServiceTest {
       // when & then
       assertThrows(GuidebookBackgroundRequiredException.class,
         () -> guidebookService.create(request, userId));
-
     }
   }
 
@@ -169,7 +175,6 @@ class GuidebookServiceTest {
       verify(guidebookRepository).findById(guidebookId);
       verify(guidebookMapper).toResponse(guidebook, 3);
     }
-
 
     @Test
     @DisplayName("가이드북 존재하지 않는 경우 예외 발생")
@@ -226,10 +231,13 @@ class GuidebookServiceTest {
       UUID guidebookId = UUID.randomUUID();
       UUID userId = UUID.randomUUID();
 
-      Guidebook guidebook = createGuidebook(userId, guidebookId);
-      guidebook.increaseParticipantCount();
+      Guidebook mockGuidebook = mock(Guidebook.class);
+      User mockUser = mock(User.class);
 
-      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
+      when(mockGuidebook.getAuthor()).thenReturn(mockUser);
+      when(mockUser.getId()).thenReturn(userId);
+      when(mockGuidebook.getParticipantCount()).thenReturn(1);
 
       GuidebookUpdateRequest request = new GuidebookUpdateRequest(
         null,
@@ -244,9 +252,7 @@ class GuidebookServiceTest {
       assertThrows(GuidebookUnpublishViolationException.class,
         () -> guidebookService.update(guidebookId, userId, request));
     }
-
   }
-
 
   @Nested
   @DisplayName("가이드북 삭제")
@@ -286,11 +292,8 @@ class GuidebookServiceTest {
       // when & then
       assertThrows(GuidebookPublishedException.class,
         () -> guidebookService.delete(guidebookId, userId));
-
     }
-
   }
-
 
   @Nested
   @DisplayName("가이드북 장소 추가")
@@ -363,29 +366,171 @@ class GuidebookServiceTest {
       assertThrows(AuthorMismatchException.class,
         () -> guidebookService.addPlace(guidebookId, anotherId, mockRequest));
     }
+
+    @Test
+    @DisplayName("가이드북이 출판된 경우 장소 추가 요청 시 예외 발생")
+    void failsByAlreadyPublished() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID authorId = UUID.randomUUID();
+
+      Guidebook guidebook = createGuidebook(authorId, guidebookId);
+      guidebook.publish();
+
+      GuidebookAddPlaceRequest mockRequest = mock(GuidebookAddPlaceRequest.class);
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      // when & then
+      assertThrows(GuidebookPublishedException.class,
+        () -> guidebookService.addPlace(guidebookId, authorId, mockRequest));
+    }
+  }
+
+  @Nested
+  @DisplayName("가이드북 장소 제거")
+  class removePlace {
+
+    @Test
+    @DisplayName("장소 제거 성공")
+    void success() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      UUID placeId = UUID.randomUUID();
+
+      Guidebook mockGuidebook = mock(Guidebook.class);
+      User mockUser = mock(User.class);
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
+      when(mockGuidebook.getAuthor()).thenReturn(mockUser);
+      when(mockUser.getId()).thenReturn(userId);
+      when(
+        guidebookPlaceRepository.deleteByGuidebook_IdAndPlace_Id(guidebookId, placeId)).thenReturn(
+        1);
+
+      // when
+      guidebookService.removePlace(guidebookId, placeId, userId);
+
+      // then
+      verify(mockGuidebook).decreaseTotalPlaceCount();
+    }
+
+    @Test
+    @DisplayName("작성자가 아닌 경우 장소 삭제 시 예외 발생")
+    void failsByNotAuthor() {
+      // given
+      UUID userId = UUID.randomUUID();
+      UUID authorId = UUID.randomUUID();
+
+      UUID guidebookId = UUID.randomUUID();
+      Guidebook guidebook = createGuidebook(authorId, guidebookId);
+
+      UUID placeId = UUID.randomUUID();
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      // when & then
+      assertThrows(AuthorMismatchException.class,
+        () -> guidebookService.removePlace(guidebookId, placeId, userId));
+    }
+  }
+
+  @Nested
+  @DisplayName("가이드북 참여")
+  class AddParticipant {
+
+    @Test
+    @DisplayName("가이드북 참여 성공")
+    void success() {
+      // given
+      UUID userId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
+
+      User user = createUser(userId);
+      Guidebook guidebook = createGuidebook(guidebookId, userId);
+      guidebook.publish();
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(guidebookParticipantRepository.existsByGuidebookAndUser(guidebook, user))
+        .thenReturn(false);
+
+      GuidebookParticipant guidebookParticipant = GuidebookParticipant.builder()
+        .guidebook(guidebook)
+        .user(user)
+        .build();
+
+      // when
+      guidebookService.addParticipant(guidebookId, userId);
+
+      // then
+      verify(guidebookParticipantRepository).save(any(GuidebookParticipant.class));
+      verify(guidebookRepository).updateParticipantCount(guidebookId, 1);
+    }
+
+    @Test
+    @DisplayName("출판되지 않은 경우 예외 발생")
+    void failsByNotPublished() {
+      // given
+      UUID userId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
+
+      User user = createUser(userId);
+      Guidebook guidebook = createGuidebook(guidebookId, userId);
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      // when & then
+      assertThrows(GuidebookNotPublishedException.class,
+        () -> guidebookService.addParticipant(guidebookId, userId));
+
+    }
+
+    @Test
+    @DisplayName("이미 참여중인 경우 예외 발생")
+    void failsByAlreadyParticipated() {
+      // given
+      UUID userId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
+
+      User user = createUser(userId);
+      Guidebook guidebook = createGuidebook(guidebookId, userId);
+      guidebook.publish();
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(guidebookParticipantRepository.existsByGuidebookAndUser(guidebook, user))
+        .thenReturn(true);
+
+      // when & then
+      assertThrows(GuidebookAlreadyParticipatedException.class,
+        () -> guidebookService.addParticipant(guidebookId, userId));
+    }
   }
 
   @Test
-  @DisplayName("작성자가 아닌 경우 장소 삭제 실패")
-  void failsRemovePlaceByNotAuthor() {
+  @DisplayName("가이드북 참여 취소 성공")
+  void successCancelParticipation() {
     // given
     UUID userId = UUID.randomUUID();
-    UUID authorId = UUID.randomUUID();
-
     UUID guidebookId = UUID.randomUUID();
-    Guidebook guidebook = createGuidebook(authorId, guidebookId);
 
-    UUID placeId = UUID.randomUUID();
-    Place mockPlace = mock(Place.class);
+    when(guidebookParticipantRepository.deleteByGuidebook_IdAndUser_Id(guidebookId, userId))
+      .thenReturn(1);
 
-    when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
-    when(placeRepository.findById(placeId)).thenReturn(Optional.of(mockPlace));
+    // when
+    guidebookService.cancelParticipation(guidebookId, userId);
 
-    // when & then
-    assertThrows(AuthorMismatchException.class,
-      () -> guidebookService.removePlace(guidebookId, placeId, userId));
+    // then
+    verify(guidebookRepository).updateParticipantCount(guidebookId, -1);
   }
 
+
+  /***
+   * 이하 편의 클래스
+   */
   private User createUser(UUID userId) {
     User user = User.builder()
       .nickname("testName")

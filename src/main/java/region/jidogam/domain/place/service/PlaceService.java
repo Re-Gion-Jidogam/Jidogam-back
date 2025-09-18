@@ -23,6 +23,9 @@ public class PlaceService {
   // 내부 서비스용
   @Transactional
   public Place getOrCreatePlace(UUID id, PlaceCreateRequest request) {
+
+    // TODO: id가 없을때, placeId로도 조회하여 확인하는 로직 필요
+
     if (id != null) {
       return placeRepository.findById(id)
         .orElseThrow(() -> PlaceNotFoundException.withId(id));

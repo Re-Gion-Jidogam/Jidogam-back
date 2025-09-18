@@ -77,6 +77,8 @@ public class StampService {
     log.info("장소 도장 취소 완료: userId = {}, placeId = {}", userId, placeId);
   }
 
+  // TODO: 도장 수 조회 메서드 추가 및 캐시 적용 필요
+
   // 유저 확인
   private User getUserOrThrow(UUID userId) {
     return userRepository.findById(userId)
