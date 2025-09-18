@@ -1,12 +1,12 @@
 package region.jidogam.domain.auth;
 
 import jakarta.security.auth.message.AuthException;
-import jakarta.transaction.Transactional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.auth.dto.LoginRequest;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserNotFoundException;
@@ -59,5 +59,6 @@ public class AuthService {
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
     refreshTokenService.delete(user);
+    log.info("사용자 로그아웃 완료: id = {}", userId);
   }
 }
