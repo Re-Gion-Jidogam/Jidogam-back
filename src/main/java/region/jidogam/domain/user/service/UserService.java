@@ -1,6 +1,6 @@
 package region.jidogam.domain.user.service;
 
-import java.time.LocalDateTime;
+
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
+import region.jidogam.domain.user.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.infrastructure.jwt.JwtProvider;
@@ -34,6 +35,7 @@ public class UserService {
   private final JwtProvider jwtProvider;
   private final RefreshTokenService refreshTokenService;
   private final StampRepository stampRepository;
+  private final UserMapper userMapper;
 
   @Transactional
   public TokenPair create(UserCreateRequest request){
@@ -91,11 +93,8 @@ public class UserService {
 
     Stamp lastStamp = stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(id).orElse(null);
 
-    return UserDto.builder()
-        .nickname(user.getNickname())
-        .profileUrl(user.getProfileImageUrl())
-        .level(user.getExp().intValue()) // todo - 경험치 시스템 설계 후 수정 필요
-        .lastStampedDate(lastStamp == null? null : lastStamp.getCreatedAt())
-        .build();
+    int level = 0; // todo - 경험치 시스템 설계 후 수정 필요
+
+    return userMapper.toResponse(user, level, lastStamp);
   }
 }
