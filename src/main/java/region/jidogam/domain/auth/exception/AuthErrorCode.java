@@ -7,7 +7,8 @@ import region.jidogam.common.exception.ErrorCode;
 @Getter
 public enum AuthErrorCode implements ErrorCode {
 
-  UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_001", "잘못된 인증 정보 입니다.");
+  UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_001", "잘못된 인증 정보입니다."),
+  ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH_002", "권한이 없습니다.");
 
   private HttpStatus status;
   private String code;
