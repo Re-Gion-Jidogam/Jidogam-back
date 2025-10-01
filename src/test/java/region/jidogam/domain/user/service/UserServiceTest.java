@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import org.h2.command.dml.MergeUsing.When;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,11 +21,15 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import region.jidogam.domain.auth.entity.EmailAuthCode;
+import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
+import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.stamp.service.StampService;
 import region.jidogam.domain.user.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
+import region.jidogam.domain.user.exception.UnverifiedEmailException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshToken;
@@ -57,6 +62,9 @@ class UserServiceTest {
   @Mock
   private StampRepository stampRepository;
 
+  @Mock
+  private EmailAuthCodeRepository emailAuthCodeRepository;
+
   @Spy
   private UserMapper userMapper;
 
@@ -74,11 +82,15 @@ class UserServiceTest {
       String nickname = "테스트유저";
       String email = "test@email.com";
       String password = "password1234";
+      EmailAuthCode emailAuthCode = mock(EmailAuthCode.class);
 
       UserCreateRequest userCreateRequest = new UserCreateRequest(nickname, email, password);
 
       when(userRepository.existsByNickname(nickname)).thenReturn(false);
       when(userRepository.existsByEmail(email)).thenReturn(false);
+
+      when(emailAuthCodeRepository.findByEmail(email)).thenReturn(Optional.of(emailAuthCode));
+      when(emailAuthCode.getUsed()).thenReturn(true);
 
       when(passwordEncoder.encode("password1234")).thenReturn("encordedPassword1234");
 
@@ -141,6 +153,50 @@ class UserServiceTest {
       //when & then
       assertThrows(UserEmailConflictException.class,
           () -> userService.create(userCreateRequest));
+
+      verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("인증 코드 발송 이력이 없는 이메일")
+    void failsWhenEmailAuthCodeNotFound() {
+      //given
+      String nickname = "테스트유저";
+      String email = "test@email.com";
+      String password = "password1234";
+
+      UserCreateRequest userCreateRequest = new UserCreateRequest(nickname, email, password);
+
+      when(userRepository.existsByNickname(nickname)).thenReturn(false);
+      when(userRepository.existsByEmail(email)).thenReturn(false);
+
+      when(emailAuthCodeRepository.findByEmail(email)).thenReturn(Optional.empty());
+
+      //when & then
+      assertThrows(EmailAuthNotFoundException.class, () -> userService.create(userCreateRequest));
+
+      verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("인증 인증 이력이 없는 이메일")
+    void failsWhenEmailAuthCodeNotVarified() {
+      //given
+      String nickname = "테스트유저";
+      String email = "test@email.com";
+      String password = "password1234";
+      EmailAuthCode emailAuthCode = mock(EmailAuthCode.class);
+
+      UserCreateRequest userCreateRequest = new UserCreateRequest(nickname, email, password);
+
+      when(userRepository.existsByNickname(nickname)).thenReturn(false);
+      when(userRepository.existsByEmail(email)).thenReturn(false);
+
+      when(emailAuthCodeRepository.findByEmail(email)).thenReturn(Optional.of(emailAuthCode));
+      when(emailAuthCode.getUsed()).thenReturn(false);
+
+      //when & then
+      assertThrows(UnverifiedEmailException.class, () -> userService.create(userCreateRequest));
 
       verify(userRepository, never()).save(any(User.class));
     }
