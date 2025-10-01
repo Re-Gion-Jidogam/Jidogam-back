@@ -7,10 +7,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import region.jidogam.domain.auth.entity.EmailAuthCode;
+import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
+import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
+import region.jidogam.domain.user.exception.UnverifiedEmailException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
@@ -35,6 +39,7 @@ public class UserService {
   private final JwtProvider jwtProvider;
   private final RefreshTokenService refreshTokenService;
   private final StampRepository stampRepository;
+  private final EmailAuthCodeRepository emailAuthCodeRepository;
   private final UserMapper userMapper;
 
   @Transactional
@@ -45,6 +50,13 @@ public class UserService {
     }
     if(userRepository.existsByEmail(request.email())){
       throw UserEmailConflictException.withEmail(request.email());
+    }
+
+    EmailAuthCode emailAuthCode = emailAuthCodeRepository.findByEmail(request.email())
+        .orElseThrow(() -> new EmailAuthNotFoundException(request.email())); // 인증 내역 자체가 없음
+
+    if (!emailAuthCode.getUsed()) {
+      throw UnverifiedEmailException.withEmail(request.email()); // 인증되지 않음
     }
 
     User user = User.builder()
