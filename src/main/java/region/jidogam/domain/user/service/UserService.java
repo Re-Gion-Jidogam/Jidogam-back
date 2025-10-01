@@ -53,7 +53,7 @@ public class UserService {
     }
 
     EmailAuthCode emailAuthCode = emailAuthCodeRepository.findByEmail(request.email())
-        .orElseThrow(() -> new EmailAuthNotFoundException(request.email())); // 인증 내역 자체가 없음
+        .orElseThrow(() -> EmailAuthNotFoundException.withEmail(request.email())); // 인증 내역 자체가 없음
 
     if (!emailAuthCode.getUsed()) {
       throw UnverifiedEmailException.withEmail(request.email()); // 인증되지 않음
