@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import region.jidogam.domain.auth.entity.EmailAuthCode;
 import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
 import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
+import region.jidogam.domain.guidebook.service.GuidebookService;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.stamp.service.StampService;

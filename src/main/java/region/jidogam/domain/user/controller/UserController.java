@@ -2,20 +2,28 @@ package region.jidogam.domain.user.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
+import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.user.dto.UserDto;
+import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
 import region.jidogam.domain.user.service.EmailAuthService;
 import region.jidogam.domain.user.dto.EmailAuthRequest;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
@@ -74,5 +82,16 @@ public class UserController {
   public ResponseEntity<?> getProfile(@AuthenticationPrincipal JidogamUserDetails userDetails) {
     UserDto userInfo = userService.getUserInfo(userDetails.getId());
     return ResponseEntity.ok(ResponseDto.ok(userInfo));
+  }
+
+  @GetMapping("/{userId}/guidebooks")
+  public ResponseEntity<?> getGuidebooks(@AuthenticationPrincipal JidogamUserDetails userDetails,
+      @PathVariable UUID userId,
+      @ParameterObject @ModelAttribute UserGuidebookSearchRequest request) {
+    // cursor pagenation
+    CursorPageResponseDto<GuidebookResponse> userGuidebookList = userService.getUserGuidebookList(
+        userDetails == null ? null : userDetails.getId(), userId, request);
+
+    return ResponseEntity.ok(ResponseDto.ok(userGuidebookList));
   }
 }

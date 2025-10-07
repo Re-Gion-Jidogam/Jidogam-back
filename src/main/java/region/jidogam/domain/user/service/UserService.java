@@ -1,19 +1,28 @@
 package region.jidogam.domain.user.service;
 
 
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import region.jidogam.common.dto.Cursor;
+import region.jidogam.common.dto.GuidebookSearchCondition;
+import region.jidogam.common.dto.response.CursorPageResponseDto;
+import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.auth.entity.EmailAuthCode;
 import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
 import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
+import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
+import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
+import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
 import region.jidogam.domain.user.exception.UnverifiedEmailException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.infrastructure.jwt.JwtProvider;
@@ -40,15 +49,20 @@ public class UserService {
   private final RefreshTokenService refreshTokenService;
   private final StampRepository stampRepository;
   private final EmailAuthCodeRepository emailAuthCodeRepository;
+  private final GuidebookRepository guidebookRepository;
+
   private final UserMapper userMapper;
+  private final GuidebookMapper guidebookMapper;
+
+  private final CursorCodecUtil cursorCodecUtil;
 
   @Transactional
-  public TokenPair create(UserCreateRequest request){
+  public TokenPair create(UserCreateRequest request) {
     log.info("유저 생성 시작: nickname = {}, email = {}", request.nickname(), request.email());
-    if(userRepository.existsByNickname(request.nickname())){
+    if (userRepository.existsByNickname(request.nickname())) {
       throw UserNicknameConflictException.withNickname(request.nickname());
     }
-    if(userRepository.existsByEmail(request.email())){
+    if (userRepository.existsByEmail(request.email())) {
       throw UserEmailConflictException.withEmail(request.email());
     }
 
@@ -63,7 +77,7 @@ public class UserService {
         .nickname(request.nickname())
         .email(request.email())
         .password(passwordEncoder.encode(request.password()))
-    .build();
+        .build();
 
     User savedUser = userRepository.save(user);
 
@@ -79,27 +93,27 @@ public class UserService {
   }
 
   @Transactional(readOnly = true)
-  public void validateNickname(String nickname){
-    if(nickname == null || nickname.isBlank() || nickname.length() < 2 || nickname.length() > 20){
+  public void validateNickname(String nickname) {
+    if (nickname == null || nickname.isBlank() || nickname.length() < 2 || nickname.length() > 20) {
       throw UserNicknameLengthException.withNickname(nickname);
     }
-    if (userRepository.existsByNickname(nickname)){
+    if (userRepository.existsByNickname(nickname)) {
       throw UserNicknameConflictException.withNickname(nickname);
     }
   }
 
   @Transactional(readOnly = true)
-  public void validateEmail(String email){
+  public void validateEmail(String email) {
     if (email == null || email.isBlank() || !email.matches(EMAIL_REGEX)) {
       throw InvalidEmailFormatException.withEmail(email);
     }
-    if (userRepository.existsByEmail(email)){
+    if (userRepository.existsByEmail(email)) {
       throw UserEmailConflictException.withEmail(email);
     }
   }
 
   @Transactional(readOnly = true)
-  public UserDto getUserInfo(UUID id){
+  public UserDto getUserInfo(UUID id) {
     User user = userRepository.findById(id)
         .orElseThrow(() -> UserNotFoundException.withId(id));
 
@@ -108,5 +122,35 @@ public class UserService {
     int level = 0; // todo - 경험치 시스템 설계 후 수정 필요
 
     return userMapper.toResponse(user, level, lastStamp);
+  }
+
+  @Transactional(readOnly = true)
+  public CursorPageResponseDto<GuidebookResponse> getUserGuidebookList(UUID userId, UUID ownerId,
+      UserGuidebookSearchRequest request) {
+
+    User user = userRepository.findById(userId).orElseThrow(
+        () -> UserNotFoundException.withId(userId)
+    );
+
+    Cursor cursor = cursorCodecUtil.decodeCursor(request.cursor());
+    GuidebookSearchCondition condition = GuidebookSearchCondition.fromRequestAndCursor(request,
+        cursor);
+
+    List<GuidebookResponse> guidebookResponseList = guidebookRepository
+        .findPublicGuidebooksByAuthor(user, condition)
+        .stream()
+        .map(guidebookMapper::toResponse)
+        .toList();
+
+    //예림님과 상의후 결정나면 마저 수정하기
+    return CursorPageResponseDto.<GuidebookResponse>builder()
+        .data(guidebookResponseList)
+        .hasNext(true)
+        .size(10)
+        .sortBy("name")
+        .sortDirection("ASC")
+        .totalCount(10)
+        .nextCursor("asdfsadf")
+        .build();
   }
 }

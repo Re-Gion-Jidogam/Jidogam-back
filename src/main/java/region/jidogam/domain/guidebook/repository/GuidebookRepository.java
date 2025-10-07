@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 
-public interface GuidebookRepository extends JpaRepository<Guidebook, UUID> {
+public interface GuidebookRepository extends JpaRepository<Guidebook, UUID>, GuidebookRepositoryCustom {
 
   @Modifying
   @Query("""
