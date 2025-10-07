@@ -8,14 +8,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import region.jidogam.common.dto.Cursor;
-import region.jidogam.common.dto.GuidebookSearchCondition;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
-import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.auth.entity.EmailAuthCode;
 import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
 import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.stamp.entity.Stamp;
@@ -53,8 +51,6 @@ public class UserService {
 
   private final UserMapper userMapper;
   private final GuidebookMapper guidebookMapper;
-
-  private final CursorCodecUtil cursorCodecUtil;
 
   @Transactional
   public TokenPair create(UserCreateRequest request) {
@@ -128,29 +124,36 @@ public class UserService {
   public CursorPageResponseDto<GuidebookResponse> getUserGuidebookList(UUID userId, UUID ownerId,
       UserGuidebookSearchRequest request) {
 
-    User user = userRepository.findById(userId).orElseThrow(
+    User user = userRepository.findById(ownerId).orElseThrow(
         () -> UserNotFoundException.withId(userId)
     );
 
-    Cursor cursor = cursorCodecUtil.decodeCursor(request.cursor());
-    GuidebookSearchCondition condition = GuidebookSearchCondition.fromRequestAndCursor(request,
-        cursor);
+    List<Guidebook> guidebookList;
+    long totalCount;
 
-    List<GuidebookResponse> guidebookResponseList = guidebookRepository
-        .findPublicGuidebooksByAuthor(user, condition)
-        .stream()
+    if(user.getId().equals(ownerId)) {
+      guidebookList = guidebookRepository.findByAuthor_Id(ownerId);
+      totalCount = guidebookRepository.countByAuthor_Id(ownerId);
+    }else{
+      guidebookList = guidebookRepository
+          .findByAuthor_IdAndIsPublished(ownerId, true);
+      totalCount = guidebookRepository.countByAuthor_IdAndIsPublished(ownerId, true);
+    }
+
+    List<GuidebookResponse> guidebookResponseList = guidebookList.stream()
         .map(guidebookMapper::toResponse)
         .toList();
 
-    //예림님과 상의후 결정나면 마저 수정하기
+    //임시
+    //예림님과 상의 후 마저 수정하기
     return CursorPageResponseDto.<GuidebookResponse>builder()
         .data(guidebookResponseList)
-        .hasNext(true)
-        .size(10)
-        .sortBy("name")
-        .sortDirection("ASC")
-        .totalCount(10)
-        .nextCursor("asdfsadf")
+        .hasNext(guidebookResponseList.size() == request.size())
+        .size(request.size() == null ? 10 : request.size())
+        .sortBy(request.sortBy() == null ? "createdAt" : request.sortBy())
+        .sortDirection(request.sortDirection() == null ? "DESC" : request.sortDirection())
+        .totalCount(totalCount)
+        .nextCursor(request.cursor() == null ? "" : request.cursor())
         .build();
   }
 }

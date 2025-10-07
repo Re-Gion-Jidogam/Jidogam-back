@@ -1,12 +1,15 @@
 package region.jidogam.domain.guidebook.repository;
 
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.entity.Guidebook;
+import region.jidogam.domain.user.entity.User;
 
-public interface GuidebookRepository extends JpaRepository<Guidebook, UUID>, GuidebookRepositoryCustom {
+public interface GuidebookRepository extends JpaRepository<Guidebook, UUID> {
 
   @Modifying
   @Query("""
@@ -16,4 +19,12 @@ public interface GuidebookRepository extends JpaRepository<Guidebook, UUID>, Gui
     AND g.participantCount + :delta >= 0
     """)
   void updateParticipantCount(UUID guidebookId, int delta);
+
+  List<Guidebook> findByAuthor_IdAndIsPublished(UUID authorId, Boolean isPublished);
+
+  List<Guidebook> findByAuthor_Id(UUID authorId);
+
+  long countByAuthor_IdAndIsPublished(UUID authorId, Boolean isPublished);
+
+  long countByAuthor_Id(UUID authorId);
 }

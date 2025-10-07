@@ -88,7 +88,6 @@ public class UserController {
   public ResponseEntity<?> getGuidebooks(@AuthenticationPrincipal JidogamUserDetails userDetails,
       @PathVariable UUID userId,
       @ParameterObject @ModelAttribute UserGuidebookSearchRequest request) {
-    // cursor pagenation
     CursorPageResponseDto<GuidebookResponse> userGuidebookList = userService.getUserGuidebookList(
         userDetails == null ? null : userDetails.getId(), userId, request);
 
