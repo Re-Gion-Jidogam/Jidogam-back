@@ -3,6 +3,7 @@ package region.jidogam.domain.user.integration;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+import region.jidogam.domain.auth.entity.EmailAuthCode;
+import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserEmailConflictException;
@@ -26,6 +29,9 @@ public class UserCreateIntegrationTest {
   private UserRepository userRepository;
 
   @Autowired
+  private EmailAuthCodeRepository emailAuthCodeRepository;
+
+  @Autowired
   private UserService userService;
 
   @BeforeEach
@@ -37,6 +43,15 @@ public class UserCreateIntegrationTest {
         .build();
 
     userRepository.save(user);
+
+    EmailAuthCode emailAuthCode = EmailAuthCode.builder()
+        .expiresAt(LocalDateTime.now().plusDays(10))
+        .code("TESTAUTHCODE")
+        .email("test@email.com")
+        .used(true)
+        .build();
+
+    emailAuthCodeRepository.save(emailAuthCode);
   }
 
   @Test
@@ -69,7 +84,7 @@ public class UserCreateIntegrationTest {
     UserCreateRequest userCreateRequest = new UserCreateRequest(nickname, email, password);
 
     //when & when
-    assertThrows(UserEmailConflictException.class, ()-> userService.create(userCreateRequest));
+    assertThrows(UserEmailConflictException.class, () -> userService.create(userCreateRequest));
 
     Optional<User> savedUser = userRepository.findByNickname(nickname);
     assertThat(savedUser).isNotPresent();
@@ -86,7 +101,7 @@ public class UserCreateIntegrationTest {
     UserCreateRequest userCreateRequest = new UserCreateRequest(nickname, email, password);
 
     //when & then
-    assertThrows(UserNicknameConflictException.class, ()-> userService.create(userCreateRequest));
+    assertThrows(UserNicknameConflictException.class, () -> userService.create(userCreateRequest));
 
     // then
     Optional<User> savedUser = userRepository.findByEmail(email);
