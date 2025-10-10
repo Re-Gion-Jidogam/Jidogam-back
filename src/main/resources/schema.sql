@@ -126,6 +126,18 @@ CREATE TABLE email_auth_codes
     used       BOOLEAN                  NOT NULL DEFAULT FALSE
 );
 
+-- Email send failure logs table
+CREATE TABLE email_send_failure_logs
+(
+    id               UUID PRIMARY KEY,
+    email            VARCHAR(255) NOT NULL,
+    masked_auth_code VARCHAR(50),
+    error_message    VARCHAR(1000),
+    retry_count      INT          NOT NULL DEFAULT 0,
+    failed_at        TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at       TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
 -- Foreign Key Constraints
 ALTER TABLE places
     ADD CONSTRAINT fk_places_area_id

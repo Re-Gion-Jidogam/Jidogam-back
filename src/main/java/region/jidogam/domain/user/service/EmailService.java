@@ -5,12 +5,19 @@ import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import region.jidogam.domain.auth.entity.EmailSendFailureLog;
+import region.jidogam.domain.auth.repository.EmailSendFailureLogRepository;
 
 @Slf4j
 @Service
@@ -18,21 +25,61 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
   private final JavaMailSender mailSender;
+  private final EmailSendFailureLogRepository emailSendFailureLogRepository;
+  private final ThreadLocal<Integer> retryCountHolder = ThreadLocal.withInitial(() -> 0);
+
   private static final String EMAIL_TEMPLATE_NAME = "auth-code-email-template.html";
 
   // 이메일 발송
+  @Retryable(
+      retryFor = {MailException.class, RuntimeException.class},
+      maxAttempts = 3,
+      backoff = @Backoff(delay = 2000, multiplier = 2)
+  )
   public void sendAuthCodeEmail(String email, String authCode, Duration expiration) {
     try {
-      log.info("HTML 이메일 발송 시작 - 수신자: {}", email);
+      int currentRetry = retryCountHolder.get();
+      retryCountHolder.set(currentRetry + 1);
+
+      log.info("이메일 인증 코드 전송 시도 ({}/3) - email: {}", retryCountHolder.get(), email);
 
       MimeMessage message = createMimeMessage(email, authCode, expiration);
       mailSender.send(message);
 
-      log.info("HTML 이메일 발송 완료 - 수신자: {}", email);
+      log.info("이메일 인증 코드 전송 완료: {}", email);
+      retryCountHolder.remove();
+
     } catch (MessagingException | IOException e) {
-      log.error("이메일 발송 실패 - 수신자: {}, 에러: {}", email, e.getMessage());
+      log.error("이메일 발송 실패 ({}/3) - 수신자: {}", retryCountHolder.get(), email, e);
       throw new RuntimeException("이메일 발송에 실패했습니다.", e);
     }
+  }
+
+  @Recover
+  public void recover(RuntimeException e, String email, String authCode, Duration expiration) {
+    log.error("이메일 전송 최종 실패 (재시도 3회 모두 실패): {}", email, e);
+    saveFailureLog(email, authCode, e, retryCountHolder.get());
+    retryCountHolder.remove();
+  }
+
+  private void saveFailureLog(String email, String authCode, Exception e, int retryCount) {
+    EmailSendFailureLog failureLog = EmailSendFailureLog.builder()
+        .email(email)
+        .maskedAuthCode(maskAuthCode(authCode))
+        .errorMessage(e.getMessage())
+        .retryCount(retryCount - 1)
+        .failedAt(LocalDateTime.now())
+        .build();
+
+    emailSendFailureLogRepository.save(failureLog);
+    log.info("이메일 전송 실패 로그 저장 완료: email = {}", email);
+  }
+
+  private String maskAuthCode(String authCode) {
+    if (authCode == null || authCode.length() < 4) {
+      return "****";
+    }
+    return authCode.substring(0, 2) + "****";
   }
 
   // MIME 메시지 생성
