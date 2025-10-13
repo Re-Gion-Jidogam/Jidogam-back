@@ -5,8 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import region.jidogam.domain.guidebook.entity.Guidebook;
+import region.jidogam.domain.guidebook.repository.querydsl.GuidebookRepositoryCustom;
 
-public interface GuidebookRepository extends JpaRepository<Guidebook, UUID> {
+public interface GuidebookRepository extends JpaRepository<Guidebook, UUID>,
+  GuidebookRepositoryCustom {
 
   @Modifying
   @Query("""

@@ -1,14 +1,23 @@
 package region.jidogam.domain.guidebook.service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import region.jidogam.common.dto.SortDirection;
+import region.jidogam.common.dto.response.CursorPageResponseDto;
+import region.jidogam.common.exception.InvalidCursorException;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
+import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
+import region.jidogam.domain.guidebook.dto.GuidebookCursor;
+import region.jidogam.domain.guidebook.dto.GuidebookFilter;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookSortBy;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookParticipant;
@@ -24,6 +33,7 @@ import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipantRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
+import region.jidogam.domain.guidebook.utils.CursorCodecUtil;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.exception.PlaceNotFoundException;
 import region.jidogam.domain.place.repository.PlaceRepository;
@@ -46,6 +56,68 @@ public class GuidebookService {
   private final PlaceRepository placeRepository;
   private final PlaceService placeService;
   private final GuidebookMapper guidebookMapper;
+  private final CursorCodecUtil cursorCodecUtil;
+
+  public CursorPageResponseDto<GuidebookResponse> preFilter(GuidebookConditionRequest request) {
+    if (request.filter() == GuidebookFilter.POPULAR) {
+      request = new GuidebookConditionRequest(
+        GuidebookFilter.POPULAR,
+        GuidebookSortBy.PARTICIPANT_COUNT,
+        SortDirection.DESC,
+        request.cursor(),
+        request.limit(),
+        null
+      );
+    }
+    return list(request);
+  }
+
+  public CursorPageResponseDto<GuidebookResponse> list(GuidebookConditionRequest request) {
+
+    // 1. 커서 디코딩, 없다면 null 반환
+    GuidebookCursor cursor = cursorCodecUtil.decodeCursor(request.cursor());
+
+    // + 커서 유효성 검증
+    validateCursor(cursor, request.filter(), request.sortBy());
+
+    int limit = request.limit();
+
+    // 2. Repository 호출
+    List<Guidebook> guidebooks = guidebookRepository.searchGuidebook(
+      cursor,
+      request.keyword(),
+      request.sortBy(),
+      request.sortDirection(),
+      limit + 1
+    );
+
+    // 3. 응답 생성
+    boolean hasNext = guidebooks.size() > limit;
+    if (hasNext) {
+      guidebooks.remove(limit);
+    }
+
+    List<GuidebookResponse> responses = guidebooks.stream()
+      .map(guidebookMapper::toResponse)
+      .collect(Collectors.toList());
+
+    String nextCursor = null;
+    if (hasNext) {
+      nextCursor = cursorCodecUtil.encodeNextCursor(
+        responses.get(responses.size() - 1),
+        request.sortBy()
+      );
+    }
+
+    return CursorPageResponseDto.<GuidebookResponse>builder()
+      .data(responses)
+      .size(responses.size())
+      .hasNext(hasNext)
+      .nextCursor(nextCursor)
+      .sortBy(request.sortBy().toString())
+      .sortDirection(request.sortDirection())
+      .build();
+  }
 
   @Transactional
   public void create(GuidebookCreateRequest request, UUID userId) {
@@ -155,7 +227,7 @@ public class GuidebookService {
   public void removePlace(UUID id, UUID placeId, UUID userId) {
 
     Guidebook guidebook = getOrThrow(id);
-    
+
     checkAuthorOrThrow(guidebook, userId);
 
     if (guidebookPlaceRepository.deleteByGuidebook_IdAndPlace_Id(id, placeId) > 0) {
@@ -219,5 +291,23 @@ public class GuidebookService {
     if (!guidebook.getAuthor().getId().equals(userId)) {
       throw AuthorMismatchException.withId(guidebook.getId());
     }
+  }
+
+  private void validateCursor(GuidebookCursor cursor, GuidebookFilter filter,
+    GuidebookSortBy sortBy) {
+    if (cursor == null || cursor.lastId() == null) {
+      return;
+    }
+
+    if (filter == GuidebookFilter.POPULAR || sortBy == GuidebookSortBy.PARTICIPANT_COUNT) {
+      if (cursor.participantCount() == null) {
+        throw InvalidCursorException.withMessage("유효하지 않은 커서입니다.");
+      }
+    } else {
+      if (cursor.createdAt() == null) {
+        throw InvalidCursorException.withMessage("유효하지 않은 커서입니다.");
+      }
+    }
+
   }
 }
