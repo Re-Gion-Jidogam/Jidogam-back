@@ -32,21 +32,24 @@ public class GlobalExceptionHandler {
   // validation
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ResponseDto<Void>> handleMethodArgumentNotValid(
-      MethodArgumentNotValidException ex) {
+    MethodArgumentNotValidException ex) {
 
     ErrorCode ErrorCode = CommonErrorCode.INVALID_INPUT_VALUE;
     FieldError fieldError = ex.getFieldErrors().get(0);
 
     log.info("Validation failed: {} - {}", fieldError.getField(),
-        fieldError.getRejectedValue());
+      fieldError.getRejectedValue());
 
-    return createErrorResponse(ErrorCode, ex.getMessage());
+    String errMsg = "'" + fieldError.getField() + "=" + fieldError.getRejectedValue() + "' "
+      + fieldError.getDefaultMessage();
+
+    return createErrorResponse(ErrorCode, errMsg);
   }
 
   // request method
   @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
   protected ResponseEntity<ResponseDto<Void>> handleHttpRequestMethodNotSupport(
-      HttpRequestMethodNotSupportedException ex) {
+    HttpRequestMethodNotSupportedException ex) {
 
     log.info("Request method not supported: {}", ex.getMethod());
 
@@ -58,7 +61,7 @@ public class GlobalExceptionHandler {
   // resource : 잘못된 uri
   @ExceptionHandler(NoResourceFoundException.class)
   protected ResponseEntity<ResponseDto<Void>> handleNoResourceFoundException(
-      NoResourceFoundException ex) {
+    NoResourceFoundException ex) {
 
     log.info("Request for unsupported URI: {}", ex.getResourcePath());
 
@@ -70,10 +73,10 @@ public class GlobalExceptionHandler {
   // 잘못된 입력 값 : 타입 불일치 등의 json 파싱 실패
   @ExceptionHandler(HttpMessageNotReadableException.class)
   protected ResponseEntity<ResponseDto<Void>> handleHttpMessageNotReadableException(
-      HttpMessageNotReadableException ex) {
+    HttpMessageNotReadableException ex) {
 
     log.info("Request with invalid JSON format: {} | Error: {}",
-        ex.getHttpInputMessage(), ex.getMostSpecificCause().getMessage());
+      ex.getHttpInputMessage(), ex.getMostSpecificCause().getMessage());
 
     ErrorCode ErrorCode = CommonErrorCode.INVALID_JSON_FORMAT;
 
@@ -103,15 +106,15 @@ public class GlobalExceptionHandler {
   // method level security
   @ExceptionHandler(AuthorizationDeniedException.class)
   protected ResponseEntity<ResponseDto<Void>> handleAuthorizationDeniedException(
-      AuthorizationDeniedException ex,
-      HttpServletRequest request,
-      @AuthenticationPrincipal JidogamUserDetails principal
+    AuthorizationDeniedException ex,
+    HttpServletRequest request,
+    @AuthenticationPrincipal JidogamUserDetails principal
   ) {
     log.warn("Authorization denied: {}, path: {}, userId: {}, role: {}",
-        ex.getMessage(),
-        request.getRequestURI(),
-        principal != null ? principal.getId() : "anonymous",
-        principal != null ? principal.getAuthorities() : "anonymous"
+      ex.getMessage(),
+      request.getRequestURI(),
+      principal != null ? principal.getId() : "anonymous",
+      principal != null ? principal.getAuthorities() : "anonymous"
     );
 
     AuthErrorCode errorCode = AuthErrorCode.ACCESS_DENIED;
@@ -122,12 +125,12 @@ public class GlobalExceptionHandler {
   // auth
   @ExceptionHandler(AuthException.class)
   protected ResponseEntity<ResponseDto<Void>> handleAuthException(AuthException ex,
-      HttpServletResponse response) {
+    HttpServletResponse response) {
 
     ErrorCode errorCode = AuthErrorCode.UNAUTHORIZED;
 
     log.info("Authentication failed : {} | Error: {})",
-        errorCode, errorCode.getMessage());
+      errorCode, errorCode.getMessage());
 
     // refresh token 쿠키 무효화
     ResponseCookie refreshCookie = cookieUtil.deleteRefreshTokenCookie();
@@ -137,11 +140,12 @@ public class GlobalExceptionHandler {
   }
 
   // 응답
-  private ResponseEntity<ResponseDto<Void>> createErrorResponse(ErrorCode errorCode, String message) {
+  private ResponseEntity<ResponseDto<Void>> createErrorResponse(ErrorCode errorCode,
+    String message) {
     ResponseDto<Void> responseDto = ResponseDto.error(errorCode.getCode(), message);
     return ResponseEntity
-        .status(errorCode.getStatus())
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(responseDto);
+      .status(errorCode.getStatus())
+      .contentType(MediaType.APPLICATION_JSON)
+      .body(responseDto);
   }
 }
