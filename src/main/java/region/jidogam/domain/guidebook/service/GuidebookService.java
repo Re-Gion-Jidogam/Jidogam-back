@@ -114,7 +114,7 @@ public class GuidebookService {
       .size(responses.size())
       .hasNext(hasNext)
       .nextCursor(nextCursor)
-      .sortBy(request.sortBy().toString())
+      .sortBy(request.sortBy().getValue())
       .sortDirection(request.sortDirection())
       .build();
   }
