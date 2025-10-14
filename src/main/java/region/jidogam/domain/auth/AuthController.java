@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
 import region.jidogam.domain.auth.dto.LoginRequest;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
@@ -29,20 +28,20 @@ public class AuthController {
 
   @PostMapping("/login")
   public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletResponse response)
-      throws AuthException {
+    throws AuthException {
     TokenPair tokenPair = authService.login(request);
 
     ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(tokenPair.refreshToken());
     response.addHeader("Set-Cookie", refreshCookie.toString());
 
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(ResponseDto.ok(new TokenResponse(tokenPair.accessToken())));
+      .body(new TokenResponse(tokenPair.accessToken()));
   }
 
   @PostMapping("/logout")
   public ResponseEntity<?> logout(
-      @CookieValue(value = "refresh", required = false) String refreshToken,
-      HttpServletResponse response) {
+    @CookieValue(value = "refresh", required = false) String refreshToken,
+    HttpServletResponse response) {
     if (refreshToken == null) {
       return ResponseEntity.badRequest().body("refresh token이 없습니다.");
     }
@@ -54,8 +53,8 @@ public class AuthController {
 
   @PostMapping("/refresh")
   public ResponseEntity<?> refresh(
-      @CookieValue(value = "refresh", required = false) String refreshToken,
-      HttpServletResponse response) throws AuthException {
+    @CookieValue(value = "refresh", required = false) String refreshToken,
+    HttpServletResponse response) throws AuthException {
 
     TokenPair tokenPair = refreshTokenService.refreshTokens(refreshToken);
 
@@ -63,6 +62,6 @@ public class AuthController {
     response.addHeader("Set-Cookie", refreshCookie.toString());
 
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(ResponseDto.ok(new TokenResponse(tokenPair.accessToken())));
+      .body(new TokenResponse(tokenPair.accessToken()));
   }
 }
