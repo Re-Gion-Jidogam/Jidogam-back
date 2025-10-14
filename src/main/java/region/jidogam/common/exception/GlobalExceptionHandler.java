@@ -34,13 +34,13 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ResponseDto<Void>> handleMethodArgumentNotValid(
     MethodArgumentNotValidException ex) {
 
-    ErrorCode ErrorCode = CommonErrorCode.INVALID_INPUT_VALUE;
+    ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
     FieldError fieldError = ex.getFieldErrors().get(0);
 
     log.info("Validation failed: {} - {}", fieldError.getField(),
       fieldError.getRejectedValue());
 
-    return createErrorResponse(ErrorCode, ex.getMessage());
+    return createErrorResponse(errorCode, ex.getMessage());
   }
 
   // request method
@@ -50,9 +50,9 @@ public class GlobalExceptionHandler {
 
     log.info("Request method not supported: {}", ex.getMethod());
 
-    ErrorCode ErrorCode = CommonErrorCode.METHOD_NOT_ALLOWED;
+    ErrorCode errorCode = CommonErrorCode.METHOD_NOT_ALLOWED;
 
-    return createErrorResponse(ErrorCode, ex.getMessage());
+    return createErrorResponse(errorCode, ex.getMessage());
   }
 
   // resource : 잘못된 uri
@@ -62,9 +62,9 @@ public class GlobalExceptionHandler {
 
     log.info("Request for unsupported URI: {}", ex.getResourcePath());
 
-    ErrorCode ErrorCode = CommonErrorCode.URI_NOT_FOUND;
+    ErrorCode errorCode = CommonErrorCode.URI_NOT_FOUND;
 
-    return createErrorResponse(ErrorCode, ex.getMessage());
+    return createErrorResponse(errorCode, ex.getMessage());
   }
 
   // 잘못된 입력 값 : 타입 불일치 등의 json 파싱 실패
@@ -75,9 +75,9 @@ public class GlobalExceptionHandler {
     log.info("Request with invalid JSON format: {} | Error: {}",
       ex.getHttpInputMessage(), ex.getMostSpecificCause().getMessage());
 
-    ErrorCode ErrorCode = CommonErrorCode.INVALID_JSON_FORMAT;
+    ErrorCode errorCode = CommonErrorCode.INVALID_JSON_FORMAT;
 
-    return createErrorResponse(ErrorCode, ex.getMessage());
+    return createErrorResponse(errorCode, ex.getMessage());
   }
 
   @ExceptionHandler(IllegalArgumentException.class)
@@ -87,18 +87,18 @@ public class GlobalExceptionHandler {
 
     log.info("Request with invalid input: {}", ex.getMessage());
 
-    ErrorCode ErrorCode = CommonErrorCode.INVALID_INPUT_VALUE;
+    ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
 
-    return createErrorResponse(ErrorCode, ex.getMessage());
+    return createErrorResponse(errorCode, ex.getMessage());
   }
 
   // business
   @ExceptionHandler(JidogamException.class)
   protected ResponseEntity<ResponseDto<Void>> handleBusinessException(JidogamException ex) {
 
-    ErrorCode ErrorCode = ex.getErrorCode();
+    ErrorCode errorCode = ex.getErrorCode();
 
-    return createErrorResponse(ErrorCode, ex.getMessage());
+    return createErrorResponse(errorCode, ex.getMessage());
   }
 
   // other
@@ -107,9 +107,9 @@ public class GlobalExceptionHandler {
 
     log.error("Exception", ex);
 
-    ErrorCode ErrorCode = CommonErrorCode.INTERNAL_SERVER_ERROR;
+    ErrorCode errorCode = CommonErrorCode.INTERNAL_SERVER_ERROR;
 
-    return createErrorResponse(ErrorCode, ex.getMessage());
+    return createErrorResponse(errorCode, errorCode.getMessage());
   }
 
   // method level security
