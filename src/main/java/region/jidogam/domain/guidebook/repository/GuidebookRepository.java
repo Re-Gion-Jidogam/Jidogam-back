@@ -5,9 +5,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.entity.Guidebook;
-import region.jidogam.domain.user.entity.User;
 
 public interface GuidebookRepository extends JpaRepository<Guidebook, UUID> {
 

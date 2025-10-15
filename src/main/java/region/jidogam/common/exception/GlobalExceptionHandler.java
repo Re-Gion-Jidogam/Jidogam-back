@@ -137,7 +137,8 @@ public class GlobalExceptionHandler {
   }
 
   // 응답
-  private ResponseEntity<ResponseDto<Void>> createErrorResponse(ErrorCode errorCode, String message) {
+  private ResponseEntity<ResponseDto<Void>> createErrorResponse(ErrorCode errorCode,
+      String message) {
     ResponseDto<Void> responseDto = ResponseDto.error(errorCode.getCode(), message);
     return ResponseEntity
         .status(errorCode.getStatus())
