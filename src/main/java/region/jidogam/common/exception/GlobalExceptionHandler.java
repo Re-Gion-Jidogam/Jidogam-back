@@ -40,7 +40,10 @@ public class GlobalExceptionHandler {
     log.info("Validation failed: {} - {}", fieldError.getField(),
       fieldError.getRejectedValue());
 
-    return createErrorResponse(ErrorCode, ex.getMessage());
+    String errMsg = "'" + fieldError.getField() + "=" + fieldError.getRejectedValue() + "' "
+      + fieldError.getDefaultMessage();
+
+    return createErrorResponse(ErrorCode, errMsg);
   }
 
   // request method
