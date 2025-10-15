@@ -92,6 +92,18 @@ public class GlobalExceptionHandler {
     return createErrorResponse(errorCode, ex.getMessage());
   }
 
+  @ExceptionHandler(IllegalArgumentException.class)
+  protected ResponseEntity<ResponseDto<Void>> handleIllegalArgumentException(
+    IllegalArgumentException ex
+  ) {
+
+    log.info("Request with invalid input: {}", ex.getMessage());
+
+    ErrorCode ErrorCode = CommonErrorCode.INVALID_INPUT_VALUE;
+
+    return createErrorResponse(ErrorCode, ex.getMessage());
+  }
+
   // business
   @ExceptionHandler(JidogamException.class)
   protected ResponseEntity<ResponseDto<Void>> handleBusinessException(JidogamException ex) {
