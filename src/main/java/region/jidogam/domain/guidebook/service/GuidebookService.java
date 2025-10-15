@@ -75,7 +75,7 @@ public class GuidebookService {
   public CursorPageResponseDto<GuidebookResponse> list(GuidebookConditionRequest request) {
 
     // 1. 커서 디코딩, 없다면 null 반환
-    GuidebookCursor cursor = cursorCodecUtil.decodeCursor(request.cursor());
+    GuidebookCursor cursor = cursorCodecUtil.decodeGuidebookCursor(request.cursor());
 
     // + 커서 유효성 검증
     validateCursor(cursor, request.filter(), request.sortBy());

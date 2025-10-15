@@ -3,6 +3,7 @@ package region.jidogam.domain.user.service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -16,10 +17,12 @@ import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
+import region.jidogam.domain.guidebook.utils.CursorCodecUtil;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
+import region.jidogam.domain.user.dto.UserGuidebookCursor;
 import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
 import region.jidogam.domain.user.exception.UnverifiedEmailException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
@@ -51,6 +54,8 @@ public class UserService {
 
   private final UserMapper userMapper;
   private final GuidebookMapper guidebookMapper;
+
+  private final CursorCodecUtil cursorCodecUtil;
 
   @Transactional
   public TokenPair create(UserCreateRequest request) {
@@ -121,39 +126,52 @@ public class UserService {
   }
 
   @Transactional(readOnly = true)
-  public CursorPageResponseDto<GuidebookResponse> getUserGuidebookList(UUID userId, UUID ownerId,
+  public CursorPageResponseDto<GuidebookResponse> getUserGuidebookList(UUID userId,
+      UUID authorId,
       UserGuidebookSearchRequest request) {
 
-    User user = userRepository.findById(ownerId).orElseThrow(
-        () -> UserNotFoundException.withId(userId)
+    UserGuidebookCursor cursor = cursorCodecUtil.decodeUserCursor(request.cursor());
+
+    int limit = request.limit();
+
+    List<Guidebook> guidebooks = guidebookRepository.searchGuidebookByAuthorId(
+        userId,
+        cursor,
+        request.keyword(),
+        request.sortBy(),
+        request.sortDirection(),
+        limit + 1
     );
+    return buildResponse(guidebooks, limit, request);
+  }
 
-    List<Guidebook> guidebookList;
-    long totalCount;
-
-    if(user.getId().equals(ownerId)) {
-      guidebookList = guidebookRepository.findByAuthor_Id(ownerId);
-      totalCount = guidebookRepository.countByAuthor_Id(ownerId);
-    }else{
-      guidebookList = guidebookRepository
-          .findByAuthor_IdAndIsPublished(ownerId, true);
-      totalCount = guidebookRepository.countByAuthor_IdAndIsPublished(ownerId, true);
+  // 추후 재사용을 위해 분리
+  private CursorPageResponseDto<GuidebookResponse> buildResponse(List<Guidebook> guidebooks,
+      int limit, UserGuidebookSearchRequest request) {
+    boolean hasNext = guidebooks.size() > limit;
+    if (hasNext) {
+      guidebooks.remove(limit);
     }
 
-    List<GuidebookResponse> guidebookResponseList = guidebookList.stream()
+    List<GuidebookResponse> responses = guidebooks.stream()
         .map(guidebookMapper::toResponse)
-        .toList();
+        .collect(Collectors.toList());
 
-    //임시
-    //예림님과 상의 후 마저 수정하기
+    String nextCursor = null;
+    if (hasNext) {
+      nextCursor = cursorCodecUtil.encodeNextCursor(
+          responses.get(responses.size() - 1),
+          request.sortBy()
+      );
+    }
+
     return CursorPageResponseDto.<GuidebookResponse>builder()
-        .data(guidebookResponseList)
-        .hasNext(guidebookResponseList.size() == request.size())
-        .size(request.size() == null ? 10 : request.size())
-        .sortBy(request.sortBy() == null ? "createdAt" : request.sortBy())
-        .sortDirection(request.sortDirection() == null ? "DESC" : request.sortDirection())
-        .totalCount(totalCount)
-        .nextCursor(request.cursor() == null ? "" : request.cursor())
+        .data(responses)
+        .hasNext(hasNext)
+        .size(responses.size())
+        .sortBy(request.sortBy().getValue())
+        .sortDirection(request.sortDirection())
+        .nextCursor(nextCursor)
         .build();
   }
 }
