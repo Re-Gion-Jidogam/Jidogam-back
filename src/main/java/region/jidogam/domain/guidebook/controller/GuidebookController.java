@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
-import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
@@ -33,11 +32,11 @@ public class GuidebookController {
   private final GuidebookService guidebookService;
 
   @GetMapping
-  public ResponseEntity<?> list(
+  public ResponseEntity<CursorPageResponseDto<GuidebookResponse>> list(
     @Valid @ModelAttribute GuidebookConditionRequest request
   ) {
     CursorPageResponseDto<GuidebookResponse> response = guidebookService.preFilter(request);
-    return ResponseEntity.ok(ResponseDto.ok(response));
+    return ResponseEntity.ok(response);
   }
 
   @PostMapping
@@ -50,22 +49,22 @@ public class GuidebookController {
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<ResponseDto<GuidebookResponse>> getById(
+  public ResponseEntity<GuidebookResponse> getById(
     @PathVariable UUID id,
     @AuthenticationPrincipal JidogamUserDetails principal
   ) {
     GuidebookResponse response = guidebookService.getById(id, principal.getId());
-    return ResponseEntity.ok(ResponseDto.ok(response));
+    return ResponseEntity.ok(response);
   }
 
   @PatchMapping("/{id}")
-  public ResponseEntity<ResponseDto<GuidebookResponse>> update(
+  public ResponseEntity<GuidebookResponse> update(
     @PathVariable UUID id,
     @Valid @RequestBody GuidebookUpdateRequest request,
     @AuthenticationPrincipal JidogamUserDetails principal
   ) {
     GuidebookResponse response = guidebookService.update(id, principal.getId(), request);
-    return ResponseEntity.ok(ResponseDto.ok(response));
+    return ResponseEntity.ok(response);
   }
 
   @DeleteMapping("/{id}")
@@ -78,13 +77,13 @@ public class GuidebookController {
   }
 
   @PostMapping("/{id}/places")
-  public ResponseEntity<ResponseDto<GuidebookResponse>> addPlace(
+  public ResponseEntity<GuidebookResponse> addPlace(
     @PathVariable UUID id,
     @Valid @RequestBody GuidebookAddPlaceRequest request,
     @AuthenticationPrincipal JidogamUserDetails principal
   ) {
     GuidebookResponse response = guidebookService.addPlace(id, principal.getId(), request);
-    return ResponseEntity.ok(ResponseDto.ok(response));
+    return ResponseEntity.ok(response);
   }
 
   @DeleteMapping("/{id}/places/{placeId}")

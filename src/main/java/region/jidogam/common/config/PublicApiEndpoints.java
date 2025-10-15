@@ -24,6 +24,9 @@ public final class PublicApiEndpoints {
   public static final String SWAGGER_UI = "/swagger-ui/**";
   public static final String API_DOCS = "/api-docs/**";
 
+  // 비로그인 사용자 접근 가능 API
+  public static final String GUIDEBOOK_LIST = "/api/guidebooks";
+
   /**
    * 모든 공개 POST API 엔드포인트를 반환
    */
@@ -45,7 +48,8 @@ public final class PublicApiEndpoints {
       CHECK_NICKNAME,
       CHECK_EMAIL,
       SWAGGER_UI,
-      API_DOCS
+      API_DOCS,
+      GUIDEBOOK_LIST
     };
   }
 }
