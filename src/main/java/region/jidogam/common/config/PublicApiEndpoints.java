@@ -13,7 +13,7 @@ public final class PublicApiEndpoints {
   public static final String USERS_CREATE = "/api/users";
 
   // 닉네임, 이메일 중복 체크 API
-  public static final String CHECK_NICKNAME  = "/api/users/check-nickname";
+  public static final String CHECK_NICKNAME = "/api/users/check-nickname";
   public static final String CHECK_EMAIL = "/api/users/check-email";
 
   // 이메일 인증 번호 전송 및 검증 API
@@ -22,17 +22,18 @@ public final class PublicApiEndpoints {
 
   // 공개 조회 API
   public static final String SWAGGER_UI = "/swagger-ui/**";
+  public static final String API_DOCS = "/api-docs/**";
 
   /**
    * 모든 공개 POST API 엔드포인트를 반환
    */
   public static String[] getPublicPostEndpoints() {
     return new String[]{
-        AUTH_LOGIN,
-        AUTH_REFRESH,
-        USERS_CREATE,
-        EMAIL_AUTH,
-        EMAIL_AUTH_CHECK
+      AUTH_LOGIN,
+      AUTH_REFRESH,
+      USERS_CREATE,
+      EMAIL_AUTH,
+      EMAIL_AUTH_CHECK
     };
   }
 
@@ -41,9 +42,10 @@ public final class PublicApiEndpoints {
    */
   public static String[] getPublicGetEndpoints() {
     return new String[]{
-        CHECK_NICKNAME,
-        CHECK_EMAIL,
-        SWAGGER_UI
+      CHECK_NICKNAME,
+      CHECK_EMAIL,
+      SWAGGER_UI,
+      API_DOCS
     };
   }
 }
