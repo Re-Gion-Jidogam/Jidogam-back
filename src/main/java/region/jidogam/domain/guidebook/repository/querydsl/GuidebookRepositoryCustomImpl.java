@@ -38,59 +38,11 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
 
     where.and(GuidebookCondition.isPublished());
     where.and(GuidebookCondition.titleContains(keyword));
-
-    if (cursor != null) {
-      // PARTICIPANT_COUNT 기준 정렬
-      if (sortBy == GuidebookSortBy.PARTICIPANT_COUNT) {
-        if (direction == SortDirection.ASC) {
-          where.and(
-            guidebook.participantCount.gt(cursor.participantCount())
-              .or(guidebook.participantCount.eq(cursor.participantCount())
-                .and(guidebook.id.gt(cursor.lastId())))
-          );
-        } else {
-          where.and(
-            guidebook.participantCount.lt(cursor.participantCount())
-              .or(guidebook.participantCount.eq(cursor.participantCount())
-                .and(guidebook.id.lt(cursor.lastId())))
-          );
-        }
-      }
-      // CREATED_AT 기준 정렬
-      else if (sortBy == GuidebookSortBy.CREATED_AT) {
-        if (direction == SortDirection.ASC) {
-          where.and(
-            guidebook.createdAt.gt(cursor.createdAt())
-              .or(guidebook.createdAt.eq(cursor.createdAt())
-                .and(guidebook.id.gt(cursor.lastId())))
-          );
-        } else {
-          where.and(
-            guidebook.createdAt.lt(cursor.createdAt())
-              .or(guidebook.createdAt.eq(cursor.createdAt())
-                .and(guidebook.id.lt(cursor.lastId())))
-          );
-        }
-      }
-    }
+    where.and(GuidebookCursorCondition.buildGuidebookCursor(cursor, sortBy, direction));
 
     query.where(where);
 
-    // 정렬 조건
-    OrderSpecifier<?> orderSpecifier;
-    OrderSpecifier<?> idOrderSpecifier = guidebook.id.asc(); // 보조 정렬 기준
-
-    if (sortBy == GuidebookSortBy.PARTICIPANT_COUNT) {
-      orderSpecifier = direction == SortDirection.ASC
-        ? guidebook.participantCount.asc()
-        : guidebook.participantCount.desc();
-    } else {
-      orderSpecifier = direction == SortDirection.ASC
-        ? guidebook.createdAt.asc()
-        : guidebook.createdAt.desc();
-    }
-
-    query.orderBy(orderSpecifier, idOrderSpecifier);
+    query.orderBy(GuidebookOrderBuilder.forGuidebook(sortBy, direction));
 
     query.limit(limit);
 
