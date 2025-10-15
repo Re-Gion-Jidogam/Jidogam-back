@@ -1,16 +1,22 @@
 package region.jidogam.domain.guidebook.utils;
 
+import static region.jidogam.domain.user.dto.UserGuideBookSortBy.UPDATED_AT;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import region.jidogam.common.dto.Cursor;
 import region.jidogam.common.exception.InvalidCursorException;
 import region.jidogam.domain.guidebook.dto.GuidebookCursor;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookSortBy;
+import region.jidogam.domain.user.dto.UserGuideBookSortBy;
+import region.jidogam.domain.user.dto.UserGuidebookCursor;
 
 @Slf4j
 @Component
@@ -19,12 +25,21 @@ public class CursorCodecUtil {
 
   public final ObjectMapper objectMapper;
 
+  public GuidebookCursor decodeGuidebookCursor(String encodedCursor) {
+    return decodeCursor(encodedCursor, GuidebookCursor.class);
+  }
+
+  public UserGuidebookCursor decodeUserCursor(String encodedCursor) {
+    return decodeCursor(encodedCursor, UserGuidebookCursor.class);
+  }
+
   /**
    * 인코딩된 cursor 값을 디코딩하는 메서드
    *
    * @param encodedCursor 인코딩된 문자열 값
+   * @param clazz         변환시킬 객체 클래스
    */
-  public GuidebookCursor decodeCursor(String encodedCursor) {
+  private <T> T decodeCursor(String encodedCursor, Class<T> clazz) {
     log.info("decodeCursor - cursor 값 Base64 디코딩 시작");
     if (encodedCursor == null || encodedCursor.isBlank()) {
       log.info("null 입력으로 null를 반환");
@@ -36,7 +51,7 @@ public class CursorCodecUtil {
       // 2. Byte → JSON 변환
       String decodedJson = new String(decodedBytes, StandardCharsets.UTF_8);
       // 4. JSON → Cursor 객체 변환및 반환
-      return objectMapper.readValue(decodedJson, GuidebookCursor.class);
+      return objectMapper.readValue(decodedJson, clazz);
     } catch (Exception e) {
       // 에러 커스텀 - 잘못된 입력
       log.info("Base64 문자열을 디코딩하여 객체로 변환 중 오류 발생", e);
@@ -52,15 +67,33 @@ public class CursorCodecUtil {
    */
   public String encodeNextCursor(GuidebookResponse lastItem, GuidebookSortBy sortBy) {
     UUID lastId = lastItem.gid();
-    GuidebookCursor cursor;
     log.info("PARTICIPANT_COUNT: {}, lastId: {}", lastItem.participantCount(), lastId);
+
+    String lastValue;
     switch (sortBy) {
-      case CREATED_AT -> cursor = new GuidebookCursor(null, lastItem.createdAt(), lastId);
-      case PARTICIPANT_COUNT ->
-        cursor = new GuidebookCursor(lastItem.participantCount(), null, lastId);
+      case CREATED_AT -> lastValue = lastItem.createdAt().toString();
+      case PARTICIPANT_COUNT -> lastValue = Integer.toString(lastItem.participantCount());
       default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
     }
-    return encodeNextCursor(cursor);
+    return encodeNextCursor(new Cursor(lastValue, lastId.toString()));
+  }
+
+  /**
+   * 특정 사용자 소유의 가이드북 커서 페이지네이션의 마지막 데이터를 인코딩하여 반환하는 메서드
+   *
+   * @param lastItem GuidebookResponse 타입의 아이템
+   * @param sortBy   정렬 기준
+   */
+  public String encodeNextCursor(GuidebookResponse lastItem, UserGuideBookSortBy sortBy) {
+    UUID lastId = lastItem.gid();
+
+    String lastValue;
+    switch (sortBy) {
+      case CREATED_AT -> lastValue = lastItem.createdAt().toString();
+      case UPDATED_AT -> lastValue = lastItem.updatedAt().toString();
+      default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
+    }
+    return encodeNextCursor(new Cursor(lastValue, lastId.toString()));
   }
 
   /**
@@ -68,7 +101,7 @@ public class CursorCodecUtil {
    *
    * @param cursor dto의 id와 value로 이루어진 커서 객체
    */
-  private String encodeNextCursor(GuidebookCursor cursor) {
+  private String encodeNextCursor(Cursor cursor) {
     try {
       // 1. 객체 → JSON 변환
       String cursorToJson = objectMapper.writeValueAsString(cursor);
