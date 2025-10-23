@@ -136,7 +136,7 @@ public class UserService {
     boolean isOwner = authorId.equals(userId);
 
     List<Guidebook> guidebooks = guidebookRepository.searchGuidebookByAuthorId(
-        userId,
+        authorId,
         cursor,
         request.keyword(),
         request.sortBy(),
