@@ -2,7 +2,6 @@ package region.jidogam.domain.user.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -85,12 +84,12 @@ public class UserController {
   }
 
   @GetMapping("/{userId}/guidebooks")
-  public ResponseEntity<?> getGuidebooks(@AuthenticationPrincipal JidogamUserDetails userDetails,
+  public ResponseEntity<CursorPageResponseDto<GuidebookResponse>> getGuidebooks(@AuthenticationPrincipal JidogamUserDetails userDetails,
       @PathVariable UUID userId,
       @ParameterObject @ModelAttribute UserGuidebookSearchRequest request) {
     CursorPageResponseDto<GuidebookResponse> userGuidebookList = userService.getUserGuidebookList(
         userDetails == null ? null : userDetails.getId(), userId, request);
 
-    return ResponseEntity.ok(ResponseDto.ok(userGuidebookList));
+    return ResponseEntity.ok(userGuidebookList);
   }
 }

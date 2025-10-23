@@ -39,7 +39,6 @@ public class GuidebookOrderBuilder {
     OrderSpecifier<?> primaryOrder = switch (sortBy) {
       case CREATED_AT -> buildOrder(guidebook.createdAt, direction);
       case UPDATED_AT -> buildOrder(guidebook.updatedAt, direction);
-      case PARTICIPANT_COUNT -> buildOrder(guidebook.participantCount, direction);
     };
 
     OrderSpecifier<?> secondaryOrder = buildIdOrder(direction);

@@ -1,10 +1,7 @@
-package region.jidogam.domain.guidebook.utils;
-
-import static region.jidogam.domain.user.dto.UserGuideBookSortBy.UPDATED_AT;
+package region.jidogam.common.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -25,21 +22,23 @@ public class CursorCodecUtil {
 
   public final ObjectMapper objectMapper;
 
-  public GuidebookCursor decodeGuidebookCursor(String encodedCursor) {
-    return decodeCursor(encodedCursor, GuidebookCursor.class);
+  public GuidebookCursor decodeGuidebookCursor(String encodedCursor, GuidebookSortBy sortBy) {
+    Cursor cursor = decodeCursor(encodedCursor);
+    return GuidebookCursor.from(cursor, sortBy);
   }
 
-  public UserGuidebookCursor decodeUserCursor(String encodedCursor) {
-    return decodeCursor(encodedCursor, UserGuidebookCursor.class);
+  public UserGuidebookCursor decodeUserGuidebookCursor(String encodedCursor) {
+    Cursor cursor = decodeCursor(encodedCursor);
+    return UserGuidebookCursor.from(cursor);
+
   }
 
   /**
    * 인코딩된 cursor 값을 디코딩하는 메서드
    *
    * @param encodedCursor 인코딩된 문자열 값
-   * @param clazz         변환시킬 객체 클래스
    */
-  private <T> T decodeCursor(String encodedCursor, Class<T> clazz) {
+  private Cursor decodeCursor(String encodedCursor) {
     log.info("decodeCursor - cursor 값 Base64 디코딩 시작");
     if (encodedCursor == null || encodedCursor.isBlank()) {
       log.info("null 입력으로 null를 반환");
@@ -51,7 +50,7 @@ public class CursorCodecUtil {
       // 2. Byte → JSON 변환
       String decodedJson = new String(decodedBytes, StandardCharsets.UTF_8);
       // 4. JSON → Cursor 객체 변환및 반환
-      return objectMapper.readValue(decodedJson, clazz);
+      return objectMapper.readValue(decodedJson, Cursor.class);
     } catch (Exception e) {
       // 에러 커스텀 - 잘못된 입력
       log.info("Base64 문자열을 디코딩하여 객체로 변환 중 오류 발생", e);

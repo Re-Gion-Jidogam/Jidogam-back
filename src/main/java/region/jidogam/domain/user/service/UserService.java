@@ -17,7 +17,7 @@ import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
-import region.jidogam.domain.guidebook.utils.CursorCodecUtil;
+import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.UserMapper;
@@ -130,7 +130,7 @@ public class UserService {
       UUID authorId,
       UserGuidebookSearchRequest request) {
 
-    UserGuidebookCursor cursor = cursorCodecUtil.decodeUserCursor(request.cursor());
+    UserGuidebookCursor cursor = cursorCodecUtil.decodeUserGuidebookCursor(request.cursor());
 
     int limit = request.limit();
 
