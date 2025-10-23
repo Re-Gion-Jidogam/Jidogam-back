@@ -11,8 +11,8 @@ public record CursorPageResponseDto<T>(
   int size,
   boolean hasNext,
   String sortBy,
-  SortDirection sortDirection
-  //long totalCount
+  SortDirection sortDirection,
+  long totalCount
 ) {
 
 }

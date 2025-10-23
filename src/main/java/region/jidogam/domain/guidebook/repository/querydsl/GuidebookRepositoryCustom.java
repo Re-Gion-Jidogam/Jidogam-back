@@ -28,4 +28,5 @@ public interface GuidebookRepositoryCustom {
       int limit,
       boolean isOwner);
 
+  long countGuidebookByAuthorId(UUID authorId, boolean isOwner, String keyword);
 }

@@ -53,19 +53,35 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
 
   @Override
   public List<Guidebook> searchGuidebookByAuthorId(UUID authorId, UserGuidebookCursor cursor,
-      String keyword, UserGuideBookSortBy sortBy, SortDirection direction, int limit, boolean isOwner) {
+      String keyword, UserGuideBookSortBy sortBy, SortDirection direction, int limit,
+      boolean isOwner) {
 
     //Select 결과 DTO로 받는게 더 빠르고 효율적이라는 이야기가 있음 - 추후 검증/논의 후 수정
     return queryFactory.selectFrom(guidebook)
+        .leftJoin(guidebook.author, user)
         .where(
             guidebook.author.id.eq(authorId),
             GuidebookCondition.titleContains(keyword),
             GuidebookCursorCondition.buildUserGuidebookCursor(cursor, sortBy, direction),
-            isOwner ? null: GuidebookCondition.isPublished()
+            isOwner ? null : GuidebookCondition.isPublished()
         )
-        .leftJoin(guidebook.author, user)
         .orderBy(GuidebookOrderBuilder.forUserGuidebook(sortBy, direction))
         .limit(limit)
         .fetch();
+  }
+
+  @Override
+  public long countGuidebookByAuthorId(UUID authorId, boolean isOwner, String keyword) {
+    Long count = queryFactory
+        .select(guidebook.count())
+        .from(guidebook)
+        .where(
+            guidebook.author.id.eq(authorId),
+            GuidebookCondition.titleContains(keyword),
+            isOwner ? null : GuidebookCondition.isPublished()
+        )
+        .fetchOne();
+
+    return count != null ? count : 0L;
   }
 }

@@ -144,12 +144,14 @@ public class UserService {
         limit + 1,
         isOwner);
 
-    return buildResponse(guidebooks, limit, request);
+    long total = guidebookRepository.countGuidebookByAuthorId(authorId, isOwner, request.keyword());
+
+    return buildResponse(guidebooks, limit, request, total);
   }
 
   // 추후 재사용을 위해 분리
   private CursorPageResponseDto<GuidebookResponse> buildResponse(List<Guidebook> guidebooks,
-      int limit, UserGuidebookSearchRequest request) {
+      int limit, UserGuidebookSearchRequest request, long total) {
     boolean hasNext = guidebooks.size() > limit;
     if (hasNext) {
       guidebooks.remove(limit);
@@ -173,6 +175,7 @@ public class UserService {
         .size(responses.size())
         .sortBy(request.sortBy().getValue())
         .sortDirection(request.sortDirection())
+        .totalCount(total)
         .nextCursor(nextCursor)
         .build();
   }
