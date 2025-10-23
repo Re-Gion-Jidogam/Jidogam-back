@@ -4,9 +4,11 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookParticipant;
+import region.jidogam.domain.guidebook.repository.querydsl.GuidebookParticipantRepositoryCustom;
 import region.jidogam.domain.user.entity.User;
 
-public interface GuidebookParticipantRepository extends JpaRepository<GuidebookParticipant, UUID> {
+public interface GuidebookParticipantRepository extends JpaRepository<GuidebookParticipant, UUID>,
+    GuidebookParticipantRepositoryCustom {
 
   boolean existsByGuidebookAndUser(Guidebook guidebook, User user);
 

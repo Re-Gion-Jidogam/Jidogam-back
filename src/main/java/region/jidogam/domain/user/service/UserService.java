@@ -18,6 +18,7 @@ import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.common.util.CursorCodecUtil;
+import region.jidogam.domain.guidebook.repository.GuidebookParticipantRepository;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.UserMapper;
@@ -51,6 +52,7 @@ public class UserService {
   private final StampRepository stampRepository;
   private final EmailAuthCodeRepository emailAuthCodeRepository;
   private final GuidebookRepository guidebookRepository;
+  private final GuidebookParticipantRepository guidebookParticipantRepository;
 
   private final UserMapper userMapper;
   private final GuidebookMapper guidebookMapper;
