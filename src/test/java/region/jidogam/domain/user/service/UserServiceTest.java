@@ -436,4 +436,22 @@ class UserServiceTest {
       assertThrows(UserNotFoundException.class, () -> userService.getUserInfo(userId));
     }
   }
+  @Nested
+  @DisplayName("사용자")
+  class GetUsersGuideBookTest {
+
+    @Test
+    @DisplayName("파라미터가 없고 검색한 유저와 가이드북 소유자가 같은 경우")
+    void success() {
+      //given
+      UUID userId = UUID.randomUUID();
+
+
+
+      //when
+
+      //then
+
+    }
+  }
 }

@@ -126,13 +126,14 @@ public class UserService {
   }
 
   @Transactional(readOnly = true)
-  public CursorPageResponseDto<GuidebookResponse> getUserGuidebookList(UUID userId,
-      UUID authorId,
+  public CursorPageResponseDto<GuidebookResponse> getUserGuidebookList(UUID userId, UUID authorId,
       UserGuidebookSearchRequest request) {
 
     UserGuidebookCursor cursor = cursorCodecUtil.decodeUserGuidebookCursor(request.cursor());
 
     int limit = request.limit();
+
+    boolean isOwner = authorId.equals(userId);
 
     List<Guidebook> guidebooks = guidebookRepository.searchGuidebookByAuthorId(
         userId,
@@ -140,8 +141,9 @@ public class UserService {
         request.keyword(),
         request.sortBy(),
         request.sortDirection(),
-        limit + 1
-    );
+        limit + 1,
+        isOwner);
+
     return buildResponse(guidebooks, limit, request);
   }
 

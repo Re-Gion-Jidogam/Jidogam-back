@@ -25,5 +25,7 @@ public interface GuidebookRepositoryCustom {
       String keyword,
       UserGuideBookSortBy sortBy,
       SortDirection direction,
-      int limit);
+      int limit,
+      boolean isOwner);
+
 }
