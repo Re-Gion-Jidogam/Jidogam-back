@@ -3,23 +3,29 @@ package region.jidogam.domain.guidebook.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
+import region.jidogam.domain.guidebook.dto.AreaRatioDto;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
@@ -32,15 +38,16 @@ import region.jidogam.domain.guidebook.exception.GuidebookAlreadyParticipatedExc
 import region.jidogam.domain.guidebook.exception.GuidebookBackgroundRequiredException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotPublishedException;
+import region.jidogam.domain.guidebook.exception.GuidebookPublishConditionException;
 import region.jidogam.domain.guidebook.exception.GuidebookPublishedException;
 import region.jidogam.domain.guidebook.exception.GuidebookUnpublishViolationException;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
+import region.jidogam.domain.guidebook.repository.GuidebookAreaRatioRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipantRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
-import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.entity.User;
@@ -62,10 +69,10 @@ class GuidebookServiceTest {
   private GuidebookParticipantRepository guidebookParticipantRepository;
 
   @Mock
-  private StampRepository stampRepository;
+  private GuidebookAreaRatioRepository guidebookAreaRatioRepository;
 
   @Mock
-  private PlaceRepository placeRepository;
+  private StampRepository stampRepository;
 
   @Mock
   private PlaceService placeService;
@@ -91,11 +98,11 @@ class GuidebookServiceTest {
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
       GuidebookCreateRequest request = new GuidebookCreateRequest(
-        "title",
-        "description",
-        null,
-        null,
-        "url"
+          "title",
+          "description",
+          null,
+          null,
+          "url"
       );
 
       // when
@@ -114,16 +121,16 @@ class GuidebookServiceTest {
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
       GuidebookCreateRequest request = new GuidebookCreateRequest(
-        "title",
-        "description",
-        null,
-        null,
-        null
+          "title",
+          "description",
+          null,
+          null,
+          null
       );
 
       // when & then
       assertThrows(GuidebookBackgroundRequiredException.class,
-        () -> guidebookService.create(request, userId));
+          () -> guidebookService.create(request, userId));
 
     }
 
@@ -136,16 +143,16 @@ class GuidebookServiceTest {
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
       GuidebookCreateRequest request = new GuidebookCreateRequest(
-        "title",
-        "description",
-        "#emoji",
-        null,
-        null
+          "title",
+          "description",
+          "#emoji",
+          null,
+          null
       );
 
       // when & then
       assertThrows(GuidebookBackgroundRequiredException.class,
-        () -> guidebookService.create(request, userId));
+          () -> guidebookService.create(request, userId));
     }
   }
 
@@ -187,7 +194,7 @@ class GuidebookServiceTest {
 
       // when & then
       assertThrows(GuidebookNotFoundException.class,
-        () -> guidebookService.getById(guidebookId, userId));
+          () -> guidebookService.getById(guidebookId, userId));
     }
   }
 
@@ -207,12 +214,12 @@ class GuidebookServiceTest {
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(0);
 
       GuidebookUpdateRequest request = new GuidebookUpdateRequest(
-        "제목 수정",
-        "설명 수정",
-        null,
-        null,
-        null,
-        true
+          "제목 수정",
+          "설명 수정",
+          null,
+          null,
+          null,
+          true
       );
 
       // when
@@ -240,18 +247,74 @@ class GuidebookServiceTest {
       when(mockGuidebook.getParticipantCount()).thenReturn(1);
 
       GuidebookUpdateRequest request = new GuidebookUpdateRequest(
-        null,
-        null,
-        null,
-        null,
-        null,
-        false
+          null,
+          null,
+          null,
+          null,
+          null,
+          false
       );
 
       // when & then
       assertThrows(GuidebookUnpublishViolationException.class,
-        () -> guidebookService.update(guidebookId, userId, request));
+          () -> guidebookService.update(guidebookId, userId, request));
     }
+
+    // 출판 시 엣지 조건 확인
+    @Test
+    @DisplayName("장소가 없는 가이드북 출판 시 예외 발생")
+    void failsByNoPlaces() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(guidebookPlaceRepository.findAreasByPlaceCountDesc(any(), any()))
+          .thenReturn(List.of());
+
+      // when & then
+      assertThrows(GuidebookPublishConditionException.class,
+          () -> guidebookService.update(guidebookId, userId,
+              new GuidebookUpdateRequest(null, null, null, null, null, true)));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        // totalCount, firstPlaceCount, isLocal
+        "9, 7, true",     // 9개 중 7개 = 77.78% → Local (70% 이상)
+        "9, 6, false",    // 9개 중 6개 = 66.67% → Not Local (70% 미만)
+        "10, 6, true",    // 10개 중 6개 = 60.0% → Local (60% 이상)
+        "10, 5, false",   // 10개 중 5개 = 50.0% → Not Local (60% 미만)
+        "30, 15, true",   // 30개 중 15개 = 50.0% → Local (50% 이상)
+        "30, 14, false"   // 30개 중 14개 = 46.67% → Not Local (50% 미만)
+    })
+    @DisplayName("장소 개수와 1위 지역 비율에 따른 Local 가이드북 판단")
+    void determineLocalGuidebook(int totalCount, long firstPlaceCount, boolean expectedLocal) {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      Guidebook guidebook = createGuidebook(userId, guidebookId, totalCount);
+      List<AreaRatioDto> areas = List.of(
+          new AreaRatioDto(UUID.randomUUID(), firstPlaceCount, 0.0),
+          new AreaRatioDto(UUID.randomUUID(), totalCount - firstPlaceCount, 0.0)
+      );
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(guidebookPlaceRepository.findAreasByPlaceCountDesc(guidebookId, PageRequest.of(0, 3)))
+          .thenReturn(areas);
+
+      // when
+      guidebookService.update(guidebookId, userId,
+          new GuidebookUpdateRequest(null, null, null, null, null, true));
+
+      // then
+      verify(guidebookAreaRatioRepository).save(argThat(ratio ->
+          ratio.getIsPrimaryArea() == expectedLocal
+      ));
+    }
+
   }
 
   @Nested
@@ -291,7 +354,7 @@ class GuidebookServiceTest {
 
       // when & then
       assertThrows(GuidebookPublishedException.class,
-        () -> guidebookService.delete(guidebookId, userId));
+          () -> guidebookService.delete(guidebookId, userId));
     }
   }
 
@@ -314,18 +377,18 @@ class GuidebookServiceTest {
       GuidebookResponse expectedResponse = createResponse(userId, guidebookId, 3);
 
       PlaceCreateRequest placeCreateRequest = new PlaceCreateRequest(
-        null,
-        "임시마트",
-        "전북 익산시 망산길 11-17",
-        null,
-        BigDecimal.valueOf(35.976749396987046),
-        BigDecimal.valueOf(126.99599512792346)
+          null,
+          "임시마트",
+          "전북 익산시 망산길 11-17",
+          null,
+          BigDecimal.valueOf(35.976749396987046),
+          BigDecimal.valueOf(126.99599512792346)
       );
 
       GuidebookAddPlaceRequest request = new GuidebookAddPlaceRequest(
-        placeId,
-        placeCreateRequest,
-        "https://test.com/url"
+          placeId,
+          placeCreateRequest,
+          "https://test.com/url"
       );
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
@@ -364,7 +427,7 @@ class GuidebookServiceTest {
 
       // when & then
       assertThrows(AuthorMismatchException.class,
-        () -> guidebookService.addPlace(guidebookId, anotherId, mockRequest));
+          () -> guidebookService.addPlace(guidebookId, anotherId, mockRequest));
     }
 
     @Test
@@ -383,7 +446,7 @@ class GuidebookServiceTest {
 
       // when & then
       assertThrows(GuidebookPublishedException.class,
-        () -> guidebookService.addPlace(guidebookId, authorId, mockRequest));
+          () -> guidebookService.addPlace(guidebookId, authorId, mockRequest));
     }
   }
 
@@ -406,8 +469,9 @@ class GuidebookServiceTest {
       when(mockGuidebook.getAuthor()).thenReturn(mockUser);
       when(mockUser.getId()).thenReturn(userId);
       when(
-        guidebookPlaceRepository.deleteByGuidebook_IdAndPlace_Id(guidebookId, placeId)).thenReturn(
-        1);
+          guidebookPlaceRepository.deleteByGuidebook_IdAndPlace_Id(guidebookId,
+              placeId)).thenReturn(
+          1);
 
       // when
       guidebookService.removePlace(guidebookId, placeId, userId);
@@ -432,7 +496,7 @@ class GuidebookServiceTest {
 
       // when & then
       assertThrows(AuthorMismatchException.class,
-        () -> guidebookService.removePlace(guidebookId, placeId, userId));
+          () -> guidebookService.removePlace(guidebookId, placeId, userId));
     }
   }
 
@@ -454,12 +518,12 @@ class GuidebookServiceTest {
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
       when(guidebookParticipantRepository.existsByGuidebookAndUser(guidebook, user))
-        .thenReturn(false);
+          .thenReturn(false);
 
       GuidebookParticipant guidebookParticipant = GuidebookParticipant.builder()
-        .guidebook(guidebook)
-        .user(user)
-        .build();
+          .guidebook(guidebook)
+          .user(user)
+          .build();
 
       // when
       guidebookService.addParticipant(guidebookId, userId);
@@ -484,7 +548,7 @@ class GuidebookServiceTest {
 
       // when & then
       assertThrows(GuidebookNotPublishedException.class,
-        () -> guidebookService.addParticipant(guidebookId, userId));
+          () -> guidebookService.addParticipant(guidebookId, userId));
 
     }
 
@@ -502,11 +566,11 @@ class GuidebookServiceTest {
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
       when(guidebookParticipantRepository.existsByGuidebookAndUser(guidebook, user))
-        .thenReturn(true);
+          .thenReturn(true);
 
       // when & then
       assertThrows(GuidebookAlreadyParticipatedException.class,
-        () -> guidebookService.addParticipant(guidebookId, userId));
+          () -> guidebookService.addParticipant(guidebookId, userId));
     }
   }
 
@@ -518,7 +582,7 @@ class GuidebookServiceTest {
     UUID guidebookId = UUID.randomUUID();
 
     when(guidebookParticipantRepository.deleteByGuidebook_IdAndUser_Id(guidebookId, userId))
-      .thenReturn(1);
+        .thenReturn(1);
 
     // when
     guidebookService.cancelParticipation(guidebookId, userId);
@@ -533,10 +597,10 @@ class GuidebookServiceTest {
    */
   private User createUser(UUID userId) {
     User user = User.builder()
-      .nickname("testName")
-      .password("password")
-      .email("test@test.com")
-      .build();
+        .nickname("testName")
+        .password("password")
+        .email("test@test.com")
+        .build();
 
     ReflectionTestUtils.setField(user, "id", userId);
 
@@ -544,23 +608,27 @@ class GuidebookServiceTest {
   }
 
   private Guidebook createGuidebook(UUID userId, UUID guidebookId) {
+    return createGuidebook(userId, guidebookId, 10);
+  }
+
+  private Guidebook createGuidebook(UUID userId, UUID guidebookId, int totalPlaceCount) {
     User user = createUser(userId);
 
     Guidebook guidebook = Guidebook.builder()
-      .title("테스트 가이드북")
-      .description("테스트용 가이드북 설명")
-      .thumbnailUrl("https://test.com/url")
-      .emoji("😭")
-      .color("#12345")
-      .points(100)
-      .publishedDate(FIXED_DATE_TIME)
-      .mapImageUrl("https://test.com/url")
-      .participantCount(3)
-      .totalPlaceCount(10)
-      .ratingSum(11L)
-      .ratingCount(10)
-      .author(user)
-      .build();
+        .title("테스트 가이드북")
+        .description("테스트용 가이드북 설명")
+        .thumbnailUrl("https://test.com/url")
+        .emoji("😭")
+        .color("#12345")
+        .points(100)
+        .publishedDate(FIXED_DATE_TIME)
+        .mapImageUrl("https://test.com/url")
+        .participantCount(3)
+        .totalPlaceCount(totalPlaceCount)
+        .ratingSum(11L)
+        .ratingCount(10)
+        .author(user)
+        .build();
 
     ReflectionTestUtils.setField(guidebook, "id", guidebookId);
     ReflectionTestUtils.setField(guidebook, "createdAt", FIXED_DATE_TIME);
@@ -572,27 +640,27 @@ class GuidebookServiceTest {
   private GuidebookResponse createResponse(UUID userId, UUID guidebookId, int visitedPlaceCount) {
 
     return GuidebookResponse.builder()
-      .gid(guidebookId)
-      .title("테스트 가이드북")
-      .description("테스트용 가이드북 설명")
-      .thumbnailUrl("https://test.com/url")
-      .emoji("😭")
-      .color("#12345")
-      .point(100)
-      .createdAt(FIXED_DATE_TIME)
-      .updatedAt(FIXED_DATE_TIME)
-      .publishedDate(FIXED_DATE_TIME)
-      .mapImageUrl("https://test.com/url")
-      .score(1.1)
-      .participantCount(3)
-      .totalPlaceCount(10)
-      .visitedPlaceCount(visitedPlaceCount)
-      .author(new GuidebookResponse.AuthorDto(
-        userId,
-        "testName",
-        null
-      ))
-      .build();
+        .gid(guidebookId)
+        .title("테스트 가이드북")
+        .description("테스트용 가이드북 설명")
+        .thumbnailUrl("https://test.com/url")
+        .emoji("😭")
+        .color("#12345")
+        .point(100)
+        .createdAt(FIXED_DATE_TIME)
+        .updatedAt(FIXED_DATE_TIME)
+        .publishedDate(FIXED_DATE_TIME)
+        .mapImageUrl("https://test.com/url")
+        .score(1.1)
+        .participantCount(3)
+        .totalPlaceCount(10)
+        .visitedPlaceCount(visitedPlaceCount)
+        .author(new GuidebookResponse.AuthorDto(
+            userId,
+            "testName",
+            null
+        ))
+        .build();
   }
 
 }

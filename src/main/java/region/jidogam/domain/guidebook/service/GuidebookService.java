@@ -40,7 +40,6 @@ import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.guidebook.utils.CursorCodecUtil;
 import region.jidogam.domain.place.entity.Place;
-import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.entity.User;
@@ -64,7 +63,6 @@ public class GuidebookService {
   private final GuidebookParticipantRepository guidebookParticipantRepository;
   private final GuidebookAreaRatioRepository guidebookAreaRatioRepository;
   private final StampRepository stampRepository;
-  private final PlaceRepository placeRepository;
   private final PlaceService placeService;
   private final GuidebookMapper guidebookMapper;
   private final CursorCodecUtil cursorCodecUtil;
