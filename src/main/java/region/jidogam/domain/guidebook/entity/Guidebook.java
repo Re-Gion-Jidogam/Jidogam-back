@@ -124,4 +124,8 @@ public class Guidebook extends BaseUpdatableEntity {
     double average = (double) this.getRatingSum() / this.getRatingCount();
     return Math.round(average * 10.0) / 10.0;
   }
+
+  public void invalidateAreaRatio() {
+    this.areaRatio = null;
+  }
 }

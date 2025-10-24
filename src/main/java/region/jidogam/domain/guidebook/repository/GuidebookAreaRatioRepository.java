@@ -6,4 +6,5 @@ import region.jidogam.domain.guidebook.entity.GuidebookAreaRatio;
 
 public interface GuidebookAreaRatioRepository extends JpaRepository<GuidebookAreaRatio, UUID> {
 
+  void deleteByGuidebook_Id(UUID guidebookId);
 }

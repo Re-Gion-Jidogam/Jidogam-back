@@ -200,9 +200,7 @@ public class GuidebookService {
         publish(guidebook);
         guidebook.publish();
       } else {
-        if (guidebook.getParticipantCount() > 0) {
-          throw GuidebookUnpublishViolationException.withId(id);
-        }
+        unpublish(guidebook);
         guidebook.unpublish();
       }
     });
@@ -406,6 +404,14 @@ public class GuidebookService {
     }
     // 30개 이상: 50% 이상
     return topRatio >= LARGE_GUIDEBOOK_LOCAL_RATIO;
+  }
+
+  private void unpublish(Guidebook guidebook) {
+    if (guidebook.getParticipantCount() > 0) {
+      throw GuidebookUnpublishViolationException.withId(guidebook.getId());
+    }
+    guidebook.invalidateAreaRatio();
+    guidebookAreaRatioRepository.deleteByGuidebook_Id(guidebook.getId());
   }
 
 }
