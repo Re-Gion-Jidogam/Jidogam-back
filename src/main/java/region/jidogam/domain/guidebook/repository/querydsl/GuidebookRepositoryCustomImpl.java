@@ -105,4 +105,20 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
 
     return query.fetch();
   }
+
+  @Override
+  public long countPublishedGuidebooksByKeyword(String keyword) {
+    BooleanBuilder where = new BooleanBuilder();
+
+    where.and(GuidebookCondition.isPublished());
+    where.and(GuidebookCondition.titleContains(keyword));
+
+    Long count = queryFactory
+        .select(guidebook.count())
+        .from(guidebook)
+        .where(where)
+        .fetchOne();
+
+    return count != null ? count : 0L;
+  }
 }

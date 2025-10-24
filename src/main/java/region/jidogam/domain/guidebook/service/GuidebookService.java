@@ -98,7 +98,10 @@ public class GuidebookService {
         limit + 1
     );
 
-    // 3. 응답 생성
+    // 3. 검색 결과: totalCount
+    long totalCount = guidebookRepository.countPublishedGuidebooksByKeyword(request.keyword());
+
+    // 4. 응답 생성
     boolean hasNext = guidebooks.size() > limit;
     if (hasNext) {
       guidebooks.remove(limit);
@@ -123,6 +126,7 @@ public class GuidebookService {
         .nextCursor(nextCursor)
         .sortBy(request.sortBy().getValue())
         .sortDirection(request.sortDirection())
+        .totalCount(totalCount)
         .build();
   }
 

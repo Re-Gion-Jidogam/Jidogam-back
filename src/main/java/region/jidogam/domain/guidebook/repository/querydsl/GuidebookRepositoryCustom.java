@@ -9,10 +9,12 @@ import region.jidogam.domain.guidebook.entity.Guidebook;
 public interface GuidebookRepositoryCustom {
 
   List<Guidebook> searchGuidebook(
-    GuidebookCursor cursor,
-    String keyword,
-    GuidebookSortBy sortBy,
-    SortDirection direction,
-    int limit
+      GuidebookCursor cursor,
+      String keyword,
+      GuidebookSortBy sortBy,
+      SortDirection direction,
+      int limit
   );
+
+  long countPublishedGuidebooksByKeyword(String keyword);
 }
