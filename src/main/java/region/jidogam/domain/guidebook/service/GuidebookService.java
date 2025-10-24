@@ -67,18 +67,23 @@ public class GuidebookService {
   private final GuidebookMapper guidebookMapper;
   private final CursorCodecUtil cursorCodecUtil;
 
-  public CursorPageResponseDto<GuidebookResponse> popularList(GuidebookConditionRequest request) {
-    request = new GuidebookConditionRequest(
-        GuidebookFilter.POPULAR,
+  @Transactional(readOnly = true)
+  public List<GuidebookResponse> popularList(int limit) {
+
+    List<Guidebook> guidebooks = guidebookRepository.searchGuidebook(
+        null,
+        null,
         GuidebookSortBy.PARTICIPANT_COUNT,
         SortDirection.DESC,
-        request.cursor(),
-        request.limit(),
-        null
+        limit
     );
-    return list(request);
+
+    return guidebooks.stream()
+        .map(guidebookMapper::toResponse)
+        .collect(Collectors.toList());
   }
 
+  @Transactional(readOnly = true)
   public CursorPageResponseDto<GuidebookResponse> list(GuidebookConditionRequest request) {
 
     // 1. 커서 디코딩, 없다면 null 반환

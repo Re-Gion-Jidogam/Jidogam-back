@@ -1,6 +1,7 @@
 package region.jidogam.domain.guidebook.controller;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
@@ -40,10 +42,10 @@ public class GuidebookController {
   }
 
   @GetMapping("/popular")
-  public ResponseEntity<CursorPageResponseDto<GuidebookResponse>> popularList(
-      @Valid @ModelAttribute GuidebookConditionRequest request
+  public ResponseEntity<List<GuidebookResponse>> popularList(
+      @RequestParam(required = false, defaultValue = "20") int limit
   ) {
-    CursorPageResponseDto<GuidebookResponse> response = guidebookService.popularList(request);
+    List<GuidebookResponse> response = guidebookService.popularList(limit);
     return ResponseEntity.ok(response);
   }
 
