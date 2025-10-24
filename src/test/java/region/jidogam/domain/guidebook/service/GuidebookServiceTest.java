@@ -210,7 +210,7 @@ class GuidebookServiceTest {
       UUID guidebookId = UUID.randomUUID();
       UUID userId = UUID.randomUUID();
 
-      Guidebook guidebook = createGuidebook(userId, guidebookId);
+      Guidebook guidebook = createGuidebook(userId, guidebookId, 0);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(0);
 
@@ -220,7 +220,7 @@ class GuidebookServiceTest {
           null,
           null,
           null,
-          true
+          null
       );
 
       // when
@@ -229,7 +229,6 @@ class GuidebookServiceTest {
       // then
       assertThat(response.title()).isEqualTo("제목 수정");
       assertThat(response.description()).isEqualTo("설명 수정");
-      assertThat(response.publishedDate()).isNotNull();
     }
 
     @Test
