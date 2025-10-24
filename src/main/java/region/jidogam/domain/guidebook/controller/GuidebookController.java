@@ -43,7 +43,7 @@ public class GuidebookController {
   public ResponseEntity<CursorPageResponseDto<GuidebookResponse>> popularList(
       @Valid @ModelAttribute GuidebookConditionRequest request
   ) {
-    CursorPageResponseDto<GuidebookResponse> response = guidebookService.list(request);
+    CursorPageResponseDto<GuidebookResponse> response = guidebookService.popularList(request);
     return ResponseEntity.ok(response);
   }
 
