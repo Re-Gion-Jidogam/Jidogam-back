@@ -142,7 +142,7 @@ CREATE TABLE email_send_failure_logs
 CREATE TABLE guidebook_area_ratios
 (
     id                UUID PRIMARY KEY,
-    guidebook_id      UUID                     NOT NULL,
+    guidebook_id      UUID                     NOT NULL UNIQUE,
     first_area_id     UUID                     NOT NULL,
     first_area_ratio  DOUBLE PRECISION         NOT NULL,
     second_area_id    UUID                     NULL,
