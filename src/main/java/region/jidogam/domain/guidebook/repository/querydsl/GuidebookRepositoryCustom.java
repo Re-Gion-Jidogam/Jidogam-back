@@ -13,8 +13,9 @@ public interface GuidebookRepositoryCustom {
       String keyword,
       GuidebookSortBy sortBy,
       SortDirection direction,
+      Boolean isLocal,
       int limit
   );
 
-  long countPublishedGuidebooksByKeyword(String keyword);
+  long countPublishedGuidebooksByKeyword(String keyword, Boolean isLocal);
 }

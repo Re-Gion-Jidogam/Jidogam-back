@@ -50,10 +50,10 @@ public class GuidebookController {
   }
 
   @GetMapping("/local")
-  public ResponseEntity<CursorPageResponseDto<GuidebookResponse>> localList(
-      @Valid @ModelAttribute GuidebookConditionRequest request
+  public ResponseEntity<List<GuidebookResponse>> localList(
+      @RequestParam(required = false, defaultValue = "20") int limit
   ) {
-    CursorPageResponseDto<GuidebookResponse> response = guidebookService.list(request);
+    List<GuidebookResponse> response = guidebookService.localList(limit);
     return ResponseEntity.ok(response);
   }
 

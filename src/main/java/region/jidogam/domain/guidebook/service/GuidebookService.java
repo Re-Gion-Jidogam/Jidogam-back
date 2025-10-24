@@ -75,6 +75,24 @@ public class GuidebookService {
         null,
         GuidebookSortBy.PARTICIPANT_COUNT,
         SortDirection.DESC,
+        null,
+        limit
+    );
+
+    return guidebooks.stream()
+        .map(guidebookMapper::toResponse)
+        .collect(Collectors.toList());
+  }
+
+  @Transactional(readOnly = true)
+  public List<GuidebookResponse> localList(int limit) {
+
+    List<Guidebook> guidebooks = guidebookRepository.searchGuidebook(
+        null,
+        null,
+        GuidebookSortBy.PARTICIPANT_COUNT,
+        SortDirection.DESC,
+        true,
         limit
     );
 
@@ -100,11 +118,13 @@ public class GuidebookService {
         request.keyword(),
         request.sortBy(),
         request.sortDirection(),
+        null,
         limit + 1
     );
 
     // 3. 검색 결과: totalCount
-    long totalCount = guidebookRepository.countPublishedGuidebooksByKeyword(request.keyword());
+    long totalCount = guidebookRepository.countPublishedGuidebooksByKeyword(
+        request.keyword(), null);
 
     // 4. 응답 생성
     boolean hasNext = guidebooks.size() > limit;

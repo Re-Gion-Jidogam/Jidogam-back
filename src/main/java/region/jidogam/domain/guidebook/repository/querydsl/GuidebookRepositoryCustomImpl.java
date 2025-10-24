@@ -29,6 +29,7 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
       String keyword,
       GuidebookSortBy sortBy,
       SortDirection direction,
+      Boolean isLocal,
       int limit
   ) {
     QArea firstArea = new QArea("firstArea");
@@ -47,6 +48,7 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
 
     where.and(GuidebookCondition.isPublished());
     where.and(GuidebookCondition.titleContains(keyword));
+    where.and(GuidebookCondition.isLocalGuidebook(isLocal));
 
     if (cursor != null) {
       // PARTICIPANT_COUNT 기준 정렬
@@ -107,11 +109,12 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
   }
 
   @Override
-  public long countPublishedGuidebooksByKeyword(String keyword) {
+  public long countPublishedGuidebooksByKeyword(String keyword, Boolean isLocal) {
     BooleanBuilder where = new BooleanBuilder();
 
     where.and(GuidebookCondition.isPublished());
     where.and(GuidebookCondition.titleContains(keyword));
+    where.and(GuidebookCondition.isLocalGuidebook(isLocal));
 
     Long count = queryFactory
         .select(guidebook.count())
