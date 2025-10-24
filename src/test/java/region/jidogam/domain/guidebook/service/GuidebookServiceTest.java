@@ -25,6 +25,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
+import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.guidebook.dto.AreaRatioDto;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
@@ -297,8 +298,8 @@ class GuidebookServiceTest {
 
       Guidebook guidebook = createGuidebook(userId, guidebookId, totalCount);
       List<AreaRatioDto> areas = List.of(
-          new AreaRatioDto(UUID.randomUUID(), firstPlaceCount, 0.0),
-          new AreaRatioDto(UUID.randomUUID(), totalCount - firstPlaceCount, 0.0)
+          new AreaRatioDto(mock(Area.class), firstPlaceCount, 0.0),
+          new AreaRatioDto(mock(Area.class), totalCount - firstPlaceCount, 0.0)
       );
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));

@@ -2,14 +2,17 @@ package region.jidogam.domain.guidebook.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import region.jidogam.common.entity.BaseEntity;
+import region.jidogam.domain.area.entity.Area;
 
 @Entity
 @Table(name = "guidebook_area_ratios")
@@ -19,23 +22,27 @@ import region.jidogam.common.entity.BaseEntity;
 @Builder
 public class GuidebookAreaRatio extends BaseEntity {
 
-  @Column(nullable = false)
-  private UUID guidebookId;
+  @OneToOne
+  @JoinColumn(nullable = false)
+  private Guidebook guidebook;
 
-  @Column(nullable = false)
-  private UUID firstAreaId;
+  @ManyToOne
+  @JoinColumn(name = "first_area_id", nullable = false)
+  private Area firstArea;
 
   @Column
   private Double firstAreaRatio;
 
-  @Column
-  private UUID secondAreaId;
+  @ManyToOne
+  @JoinColumn(name = "second_area_id")
+  private Area secondArea;
 
   @Column
   private Double secondAreaRatio;
 
-  @Column
-  private UUID thirdAreaId;
+  @ManyToOne
+  @JoinColumn(name = "third_area_id")
+  private Area thirdArea;
 
   @Column
   private Double thirdAreaRatio;
@@ -44,13 +51,13 @@ public class GuidebookAreaRatio extends BaseEntity {
   @Column(nullable = false)
   private Boolean isPrimaryArea = false;
 
-  public void setSecondArea(UUID secondAreaId, Double secondAreaRatio) {
-    this.secondAreaId = secondAreaId;
+  public void setSecondArea(Area secondArea, Double secondAreaRatio) {
+    this.secondArea = secondArea;
     this.secondAreaRatio = secondAreaRatio;
   }
 
-  public void setThirdArea(UUID thirdAreaId, Double thirdAreaRatio) {
-    this.thirdAreaId = thirdAreaId;
+  public void setThirdArea(Area thirdArea, Double thirdAreaRatio) {
+    this.thirdArea = thirdArea;
     this.thirdAreaRatio = thirdAreaRatio;
   }
 }

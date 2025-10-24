@@ -1,14 +1,14 @@
 package region.jidogam.domain.guidebook.dto;
 
-import java.util.UUID;
+import region.jidogam.domain.area.entity.Area;
 
 public record AreaRatioDto(
-    UUID areaId,
+    Area area,
     Long placeCount,
     Double ratio
 ) {
 
-  public AreaRatioDto(UUID areaId, Long placeCount) {
-    this(areaId, placeCount, null);
+  public AreaRatioDto(Area area, Long placeCount) {
+    this(area, placeCount, null);
   }
 }

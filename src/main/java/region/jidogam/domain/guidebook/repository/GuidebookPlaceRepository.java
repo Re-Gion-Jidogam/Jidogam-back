@@ -18,7 +18,7 @@ public interface GuidebookPlaceRepository extends JpaRepository<GuidebookPlace, 
 
   @Query("""
       SELECT new region.jidogam.domain.guidebook.dto.AreaRatioDto (
-            a.id,
+            a,
             COUNT(gp.id)
       )
       FROM GuidebookPlace gp

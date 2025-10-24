@@ -329,7 +329,7 @@ public class GuidebookService {
     // 비율 계산하기
     List<AreaRatioDto> withRatios = top3Areas.stream()
         .map(area -> new AreaRatioDto(
-            area.areaId(),
+            area.area(),
             area.placeCount(),
             calculateRatio(area.placeCount(), guidebook.getTotalPlaceCount())
         ))
@@ -342,17 +342,17 @@ public class GuidebookService {
     );
 
     GuidebookAreaRatio guidebookAreaRatio = GuidebookAreaRatio.builder()
-        .guidebookId(guidebook.getId())
-        .firstAreaId(withRatios.get(0).areaId())
+        .guidebook(guidebook)
+        .firstArea(withRatios.get(0).area())
         .firstAreaRatio(withRatios.get(0).ratio())
         .isPrimaryArea(isLocalGuidebook)
         .build();
 
     if (withRatios.size() > 1) {
-      guidebookAreaRatio.setSecondArea(withRatios.get(1).areaId(), withRatios.get(1).ratio());
+      guidebookAreaRatio.setSecondArea(withRatios.get(1).area(), withRatios.get(1).ratio());
     }
     if (withRatios.size() > 2) {
-      guidebookAreaRatio.setThirdArea(withRatios.get(2).areaId(), withRatios.get(2).ratio());
+      guidebookAreaRatio.setThirdArea(withRatios.get(2).area(), withRatios.get(2).ratio());
     }
 
     guidebookAreaRatioRepository.save(guidebookAreaRatio);
