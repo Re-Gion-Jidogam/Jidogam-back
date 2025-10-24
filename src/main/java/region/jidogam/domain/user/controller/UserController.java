@@ -2,21 +2,29 @@ package region.jidogam.domain.user.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import region.jidogam.common.dto.response.CursorPageResponseDto;
+import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
 import region.jidogam.domain.user.dto.EmailAuthRequest;
 import region.jidogam.domain.user.dto.UserCreateRequest;
+import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.user.dto.UserDto;
+import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
 import region.jidogam.domain.user.service.EmailAuthService;
 import region.jidogam.domain.user.service.UserService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
@@ -34,44 +42,56 @@ public class UserController {
 
   @PostMapping
   public ResponseEntity<?> register(@RequestBody @Valid UserCreateRequest request,
-    HttpServletResponse response) {
+      HttpServletResponse response) {
 
     TokenPair tokenPair = userService.create(request);
     ResponseCookie refreshTokenCookie = cookieUtil.createRefreshTokenCookie(
-      tokenPair.refreshToken());
+        tokenPair.refreshToken());
     response.addHeader("Set-Cookie", refreshTokenCookie.toString());
 
     return ResponseEntity.status(HttpStatus.CREATED)
-      .body(new TokenResponse(tokenPair.accessToken()));
+        .body(ResponseDto.ok(new TokenResponse(tokenPair.accessToken())));
   }
 
   @GetMapping("/check-nickname")
-  public ResponseEntity<?> checkNickname(@RequestParam("nickname") String nickname) {
+  public ResponseEntity<String> checkNickname(@RequestParam("nickname") String nickname) {
     userService.validateNickname(nickname);
     return ResponseEntity.ok("사용 가능한 닉네임입니다.");
   }
 
   @GetMapping("/check-email")
-  public ResponseEntity<?> checkEmail(@RequestParam("email") String email) {
+  public ResponseEntity<String> checkEmail(@RequestParam("email") String email) {
     userService.validateEmail(email);
     return ResponseEntity.ok("사용 가능한 이메일입니다.");
   }
 
   @PostMapping("/auth-code")
-  public ResponseEntity<?> sendAuthCode(@RequestParam("email") String email) {
+  public ResponseEntity<Void> sendAuthCode(@RequestParam("email") String email) {
     emailAuthService.sendAuthCodeEmail(email);
     return ResponseEntity.ok().build();
   }
 
   @PostMapping("/check-code")
-  public ResponseEntity<?> checkAuthCode(@RequestBody @Valid EmailAuthRequest request) {
+  public ResponseEntity<Void> checkAuthCode(@RequestBody @Valid EmailAuthRequest request) {
     emailAuthService.validateEmailAuthCode(request);
     return ResponseEntity.ok().build();
   }
 
   @GetMapping("/profile")
-  public ResponseEntity<?> getProfile(@AuthenticationPrincipal JidogamUserDetails userDetails) {
+  public ResponseEntity<UserDto> getProfile(
+      @AuthenticationPrincipal JidogamUserDetails userDetails) {
     UserDto userInfo = userService.getUserInfo(userDetails.getId());
     return ResponseEntity.ok(userInfo);
+  }
+
+  @GetMapping("/{userId}/guidebooks")
+  public ResponseEntity<CursorPageResponseDto<GuidebookResponse>> getGuidebooks(
+      @AuthenticationPrincipal JidogamUserDetails userDetails,
+      @PathVariable UUID userId,
+      @ParameterObject @ModelAttribute UserGuidebookSearchRequest request) {
+    CursorPageResponseDto<GuidebookResponse> userGuidebookList = userService.getUserGuidebookList(
+        userDetails == null ? null : userDetails.getId(), userId, request);
+
+    return ResponseEntity.ok(userGuidebookList);
   }
 }

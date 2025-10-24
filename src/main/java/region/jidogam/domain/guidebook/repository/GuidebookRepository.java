@@ -18,4 +18,5 @@ public interface GuidebookRepository extends JpaRepository<Guidebook, UUID>,
     AND g.participantCount + :delta >= 0
     """)
   void updateParticipantCount(UUID guidebookId, int delta);
+
 }
