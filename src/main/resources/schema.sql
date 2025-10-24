@@ -144,11 +144,11 @@ CREATE TABLE guidebook_area_ratios
     id                UUID PRIMARY KEY,
     guidebook_id      UUID                     NOT NULL,
     first_area_id     UUID                     NOT NULL,
-    first_area_ratio  DECIMAL(5, 2)            NOT NULL,
+    first_area_ratio  DOUBLE PRECISION         NOT NULL,
     second_area_id    UUID                     NULL,
-    second_area_ratio DECIMAL(5, 2)            NULL,
+    second_area_ratio DOUBLE PRECISION         NULL,
     third_area_id     UUID                     NULL,
-    third_area_ratio  DECIMAL(5, 2)            NULL,
+    third_area_ratio  DOUBLE PRECISION         NULL,
     is_primary_area   BOOLEAN                  NOT NULL DEFAULT FALSE,
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL
 );
