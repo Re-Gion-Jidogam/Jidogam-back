@@ -38,7 +38,7 @@ import region.jidogam.domain.guidebook.repository.GuidebookAreaRatioRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipantRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
-import region.jidogam.domain.guidebook.utils.CursorCodecUtil;
+import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.repository.StampRepository;
@@ -105,7 +105,7 @@ public class GuidebookService {
   public CursorPageResponseDto<GuidebookResponse> list(GuidebookConditionRequest request) {
 
     // 1. 커서 디코딩, 없다면 null 반환
-    GuidebookCursor cursor = cursorCodecUtil.decodeCursor(request.cursor());
+    GuidebookCursor cursor = cursorCodecUtil.decodeGuidebookCursor(request.cursor(), request.sortBy());
 
     // + 커서 유효성 검증
     validateCursor(cursor, request.filter(), request.sortBy());

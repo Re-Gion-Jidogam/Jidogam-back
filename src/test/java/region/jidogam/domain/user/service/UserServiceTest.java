@@ -24,6 +24,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import region.jidogam.domain.auth.entity.EmailAuthCode;
 import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
 import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
+import region.jidogam.domain.guidebook.service.GuidebookService;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.stamp.service.StampService;
@@ -433,6 +434,24 @@ class UserServiceTest {
 
       //when & then
       assertThrows(UserNotFoundException.class, () -> userService.getUserInfo(userId));
+    }
+  }
+  @Nested
+  @DisplayName("사용자")
+  class GetUsersGuideBookTest {
+
+    @Test
+    @DisplayName("파라미터가 없고 검색한 유저와 가이드북 소유자가 같은 경우")
+    void success() {
+      //given
+      UUID userId = UUID.randomUUID();
+
+
+
+      //when
+
+      //then
+
     }
   }
 }
