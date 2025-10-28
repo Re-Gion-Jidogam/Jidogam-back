@@ -27,7 +27,7 @@ public class AuthController {
   private final RefreshTokenService refreshTokenService;
 
   @PostMapping("/login")
-  public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletResponse response)
+  public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request, HttpServletResponse response)
     throws AuthException {
     TokenPair tokenPair = authService.login(request);
 
@@ -39,7 +39,7 @@ public class AuthController {
   }
 
   @PostMapping("/logout")
-  public ResponseEntity<?> logout(
+  public ResponseEntity<String> logout(
     @CookieValue(value = "refresh", required = false) String refreshToken,
     HttpServletResponse response) {
     if (refreshToken == null) {
@@ -52,7 +52,7 @@ public class AuthController {
   }
 
   @PostMapping("/refresh")
-  public ResponseEntity<?> refresh(
+  public ResponseEntity<TokenResponse> refresh(
     @CookieValue(value = "refresh", required = false) String refreshToken,
     HttpServletResponse response) throws AuthException {
 
