@@ -130,12 +130,23 @@ CREATE TABLE email_auth_codes
 CREATE TABLE email_send_failure_logs
 (
     id               UUID PRIMARY KEY,
-    email            VARCHAR(255) NOT NULL,
+    email            VARCHAR(255)             NOT NULL,
     masked_auth_code VARCHAR(50),
     error_message    VARCHAR(1000),
-    retry_count      INT          NOT NULL DEFAULT 0,
+    retry_count      INT                      NOT NULL DEFAULT 0,
     failed_at        TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at       TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+-- Password reset code table
+CREATE TABLE password_reset_tokens
+(
+    id         UUID PRIMARY KEY,
+    email      VARCHAR(50)              NOT NULL UNIQUE,
+    token      TEXT                     NOT NULL,
+    used       BOOLEAN                  NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 -- Foreign Key Constraints
