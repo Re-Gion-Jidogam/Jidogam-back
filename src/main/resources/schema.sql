@@ -138,6 +138,21 @@ CREATE TABLE email_send_failure_logs
     created_at       TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
+-- Guidebook area ratios table
+CREATE TABLE guidebook_area_ratios
+(
+    id                UUID PRIMARY KEY,
+    guidebook_id      UUID                     NOT NULL UNIQUE,
+    first_area_id     UUID                     NOT NULL,
+    first_area_ratio  DOUBLE PRECISION         NOT NULL,
+    second_area_id    UUID                     NULL,
+    second_area_ratio DOUBLE PRECISION         NULL,
+    third_area_id     UUID                     NULL,
+    third_area_ratio  DOUBLE PRECISION         NULL,
+    is_primary_area   BOOLEAN                  NOT NULL DEFAULT FALSE,
+    created_at        TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
 -- Password reset code table
 CREATE TABLE password_reset_tokens
 (
@@ -189,3 +204,19 @@ ALTER TABLE stamps
 ALTER TABLE refresh_tokens
     ADD CONSTRAINT fk_refresh_tokens_user_id
         FOREIGN KEY (user_id) REFERENCES users (id);
+
+ALTER TABLE guidebook_area_ratios
+    ADD CONSTRAINT fk_guidebook_area_ratios_guidebook
+        FOREIGN KEY (guidebook_id) REFERENCES guidebooks (id);
+
+ALTER TABLE guidebook_area_ratios
+    ADD CONSTRAINT fk_guidebook_area_ratios_first_area
+        FOREIGN KEY (first_area_id) REFERENCES areas (id);
+
+ALTER TABLE guidebook_area_ratios
+    ADD CONSTRAINT fk_guidebook_area_ratios_second_area
+        FOREIGN KEY (second_area_id) REFERENCES areas (id);
+
+ALTER TABLE guidebook_area_ratios
+    ADD CONSTRAINT fk_guidebook_area_ratios_third_area
+        FOREIGN KEY (third_area_id) REFERENCES areas (id);

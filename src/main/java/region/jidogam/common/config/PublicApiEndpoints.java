@@ -27,18 +27,18 @@ public final class PublicApiEndpoints {
 
   // 비로그인 사용자 접근 가능 API
   public static final String GUIDEBOOK_LIST = "/api/guidebooks";
+  public static final String POPULAR_GUIDEBOOK_LIST = "/api/guidebooks/popular";
 
   /**
    * 모든 공개 POST API 엔드포인트를 반환
    */
   public static String[] getPublicPostEndpoints() {
     return new String[]{
-        AUTH_LOGIN,
-        AUTH_REFRESH,
-        USERS_CREATE,
-        EMAIL_AUTH,
-        EMAIL_AUTH_CHECK,
-        PASSWORD_RESET
+      AUTH_LOGIN,
+      AUTH_REFRESH,
+      USERS_CREATE,
+      EMAIL_AUTH,
+      EMAIL_AUTH_CHECK
     };
   }
 
@@ -51,7 +51,8 @@ public final class PublicApiEndpoints {
         CHECK_EMAIL,
         SWAGGER_UI,
         API_DOCS,
-        GUIDEBOOK_LIST
+        GUIDEBOOK_LIST,
+        POPULAR_GUIDEBOOK_LIST
     };
   }
 }
