@@ -27,7 +27,8 @@ public interface GuidebookRepositoryCustom {
       UserGuideBookSortBy sortBy,
       SortDirection direction,
       int limit,
-      boolean isOwner);
+      boolean isOwner
+  );
 
   long countGuidebookByAuthorId(UUID authorId, boolean isOwner, String keyword);
 
