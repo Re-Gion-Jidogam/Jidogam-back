@@ -51,4 +51,9 @@ public class GuidebookCondition {
     return dateTime != null ? guidebook.createdAt.gt(dateTime) : null;
   }
 
+  // local 조건
+  public static BooleanExpression isLocalGuidebook(Boolean isLocal) {
+    return isLocal != null ? guidebook.areaRatio.isPrimaryArea.eq(isLocal) : null;
+  }
+
 }

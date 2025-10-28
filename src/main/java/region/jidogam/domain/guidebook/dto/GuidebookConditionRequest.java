@@ -9,25 +9,25 @@ import region.jidogam.common.dto.SortDirection;
 @ParameterObject
 public record GuidebookConditionRequest(
 
-  @Schema(description = "필터 타입", nullable = true)
-  GuidebookFilter filter,
+    @Schema(description = "필터 타입", nullable = true)
+    GuidebookFilter filter,
 
-  @Schema(description = "정렬 기준", defaultValue = "CREATED_AT", nullable = true)
-  GuidebookSortBy sortBy,
+    @Schema(description = "정렬 기준", defaultValue = "createdAt", nullable = true)
+    GuidebookSortBy sortBy,
 
-  @Schema(description = "정렬 방향", defaultValue = "desc", nullable = true)
-  SortDirection sortDirection,
+    @Schema(description = "정렬 방향", defaultValue = "desc", nullable = true)
+    SortDirection sortDirection,
 
-  @Schema(description = "커서 값")
-  String cursor,
+    @Schema(description = "커서 값", nullable = true)
+    String cursor,
 
-  @Min(1)
-  @Max(100)
-  @Schema(description = "페이지 크기", defaultValue = "20", minimum = "1", maximum = "100")
-  Integer limit,
+    @Min(1)
+    @Max(100)
+    @Schema(description = "페이지 크기", defaultValue = "20", minimum = "1", maximum = "100")
+    Integer limit,
 
-  @Schema(description = "검색 키워드", maxLength = 50)
-  String keyword
+    @Schema(description = "검색 키워드", maxLength = 50, nullable = true)
+    String keyword
 
 ) {
 

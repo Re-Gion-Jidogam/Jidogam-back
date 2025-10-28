@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
@@ -25,6 +26,9 @@ public class Guidebook extends BaseUpdatableEntity {
   @ManyToOne
   @JoinColumn(name = "author_id", nullable = false)
   private User author;
+
+  @OneToOne(mappedBy = "guidebook")
+  private GuidebookAreaRatio areaRatio;
 
   @Column(nullable = false)
   private String title;
@@ -119,5 +123,9 @@ public class Guidebook extends BaseUpdatableEntity {
     }
     double average = (double) this.getRatingSum() / this.getRatingCount();
     return Math.round(average * 10.0) / 10.0;
+  }
+
+  public void invalidateAreaRatio() {
+    this.areaRatio = null;
   }
 }
