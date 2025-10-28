@@ -15,7 +15,8 @@ public record PlaceResponse(
     LocalDateTime visitedDate,
     int guidebookCount,
     int stampCount,
-    String category
+    String category,
+    Double distanceInKm
 ) {
 
 }

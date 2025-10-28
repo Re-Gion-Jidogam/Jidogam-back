@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.service.AreaService;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
+import region.jidogam.domain.place.dto.PlacePopularRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.exception.PlaceNotFoundException;
@@ -26,12 +27,13 @@ public class PlaceService {
   private final PlaceMapper placeMapper;
 
   @Transactional(readOnly = true)
-  public List<PlaceResponse> popularList(int size) {
+  public List<PlaceResponse> popularList(PlacePopularRequest request) {
 
-    List<Place> topNPlace = placeRepository.findAllByOrderByStampCountDesc(PageRequest.of(0, size));
+    List<Place> topNPlaces = placeRepository.findAllByOrderByStampCountDesc(
+        PageRequest.of(0, request.limit()));
 
-    return topNPlace.stream()
-        .map(placeMapper::toResponse)
+    return topNPlaces.stream()
+        .map(place -> placeMapper.toResponse(place, request.lat(), request.lon()))
         .toList();
   }
 
