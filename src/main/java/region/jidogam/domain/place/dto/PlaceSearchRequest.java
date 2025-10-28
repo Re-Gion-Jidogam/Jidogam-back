@@ -48,7 +48,7 @@ public record PlaceSearchRequest(
       limit = 20;
     }
     if (sortBy == null) {
-      sortBy = PlaceSortBy.CREATED_AT;
+      sortBy = PlaceSortBy.STAMP_COUNT;
     }
     if (sortDirection == null) {
       sortDirection = SortDirection.DESC;
