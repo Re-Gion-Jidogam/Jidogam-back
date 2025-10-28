@@ -44,4 +44,12 @@ public class Place extends BaseEntity {
   @Column(nullable = false)
   @Builder.Default
   private Integer points = 0;
+
+  @Column
+  @Builder.Default
+  private Integer guidebookCount = 0;
+
+  @Column
+  @Builder.Default
+  private Integer stampCount = 0;
 }
