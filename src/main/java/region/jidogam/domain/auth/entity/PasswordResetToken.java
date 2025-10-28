@@ -23,6 +23,11 @@ public class PasswordResetToken extends BaseEntity {
   @Column(nullable = false, unique = true)
   private String email;
 
+  /**
+   * JWT 토큰의 ID (jti - JWT ID)를 저장
+   * 실제 비밀번호 재설정 시 전체 JWT 토큰에서 jti를 추출하여 이 값과 비교
+   * 이를 통해 토큰 재사용을 방지
+   */
   @Column(nullable = false)
   private String token;
 

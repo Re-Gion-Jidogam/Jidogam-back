@@ -36,6 +36,9 @@ public class JwtProvider {
   @Value("${jwt.refresh-token-expiration}")
   private Duration refreshTokenExpiration;
 
+  @Value("${jidogam.email.password-reset.expiration}")
+  private Duration passwordResetTokenExpiration;
+
   private static final String ISSUER = "region-jidogam";
 
   public String generateAccessToken(User user) {
@@ -66,6 +69,23 @@ public class JwtProvider {
         .issueTime(now)
         .expirationTime(exp)
         .claim("type", "refresh")
+        .build();
+
+    return signToken(claimsSet);
+  }
+
+  public String generatePasswordResetToken(String email) {
+    Date now = new Date();
+    Date exp = new Date(now.getTime() + passwordResetTokenExpiration.toMillis());
+    String jti = UUID.randomUUID().toString(); // JWT ID로 UUID 사용
+
+    JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+        .jwtID(jti) // 토큰 고유 식별자
+        .issuer(ISSUER)
+        .issueTime(now)
+        .expirationTime(exp)
+        .claim("email", email)
+        .claim("type", "password-reset")
         .build();
 
     return signToken(claimsSet);
@@ -103,6 +123,16 @@ public class JwtProvider {
   public UUID extractUserId(String token) {
     JWTClaimsSet claims = extractClaims(token);
     return UUID.fromString(claims.getSubject());
+  }
+
+  public String extractJwtId(String token) {
+    JWTClaimsSet claims = extractClaims(token);
+    return claims.getJWTID();
+  }
+
+  public String extractEmailFromPasswordResetToken(String token) {
+    JWTClaimsSet claims = extractClaims(token);
+    return claims.getClaim("email").toString();
   }
 
   // 검증

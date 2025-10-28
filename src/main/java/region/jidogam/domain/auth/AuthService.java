@@ -87,29 +87,31 @@ public class AuthService {
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> UserNotFoundException.withEmail(email));
 
-    // 토큰 생성
-    String token = UUID.randomUUID().toString();
-    LocalDateTime expiresAt = LocalDateTime.now().plus(passwordResetTokenExpiration);
+    // JWT 토큰 생성 (내부에 UUID(jti), 이메일, 만료시간 포함)
+    String jwtToken = jwtProvider.generatePasswordResetToken(email);
+    String jti = jwtProvider.extractJwtId(jwtToken); // JWT ID 추출
+    LocalDateTime expiresAt = jwtProvider.extractExpirationTime(jwtToken);
 
     // 기존 토큰이 있으면 업데이트, 없으면 새로 생성
+    // DB에는 JWT ID(jti)만 저장하여 재사용 방지
     Optional<PasswordResetToken> existingToken = passwordResetTokenRepository.findByEmail(email);
 
     if (existingToken.isPresent()) {
-      existingToken.get().updateTokenWithExpiresAt(token, passwordResetTokenExpiration);
-      log.info("기존 비밀번호 재설정 토큰 업데이트: email = {}", email);
+      existingToken.get().updateTokenWithExpiresAt(jti, passwordResetTokenExpiration);
+      log.info("기존 비밀번호 재설정 토큰 업데이트: email = {}, jti = {}", email, jti);
     } else {
       PasswordResetToken passwordResetToken = PasswordResetToken.builder()
           .email(email)
-          .token(token)
+          .token(jti) // JWT ID만 저장
           .expiresAt(expiresAt)
           .used(false)
           .build();
       passwordResetTokenRepository.save(passwordResetToken);
-      log.info("새로운 비밀번호 재설정 토큰 생성: email = {}", email);
+      log.info("새로운 비밀번호 재설정 토큰 생성: email = {}, jti = {}", email, jti);
     }
 
-    // 비밀번호 재설정 URL 생성
-    String resetUrl = frontendUrl + "/password/reset?token=" + token;
+    // 비밀번호 재설정 URL 생성 (전체 JWT 토큰 사용)
+    String resetUrl = frontendUrl + "/password/reset?token=" + jwtToken;
 
     // 이메일 전송 이벤트 발행
     eventPublisher.publishEvent(
