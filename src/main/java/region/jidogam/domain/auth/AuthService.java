@@ -1,16 +1,23 @@
 package region.jidogam.domain.auth;
 
 import jakarta.security.auth.message.AuthException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.auth.dto.LoginRequest;
+import region.jidogam.domain.auth.entity.PasswordResetToken;
+import region.jidogam.domain.auth.repository.PasswordResetTokenRepository;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.domain.user.repository.UserRepository;
+import region.jidogam.domain.user.service.EmailService;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
@@ -24,6 +31,15 @@ public class AuthService {
   private final JwtProvider jwtProvider;
   private final PasswordEncoder passwordEncoder;
   private final RefreshTokenService refreshTokenService;
+  private final PasswordResetTokenRepository passwordResetTokenRepository;
+  private final EmailService emailService;
+
+  @Value("${jidogam.email.password-reset.expiration}")
+  private Duration passwordResetTokenExpiration;
+
+  @Value("${jidogam.email.password-reset.frontend-url}")
+  private String frontendUrl;
+
 
   @Transactional
   public TokenPair login(LoginRequest request) throws AuthException {
@@ -60,5 +76,43 @@ public class AuthService {
 
     refreshTokenService.delete(user);
     log.info("사용자 로그아웃 완료: id = {}", userId);
+  }
+
+  @Transactional
+  public void sendEmailWithPasswordResetUrl(String email) {
+    log.info("비밀번호 재설정 이메일 발송 시도: email = {}", email);
+
+    // 사용자 존재 여부 확인
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> UserNotFoundException.withEmail(email));
+
+    // 토큰 생성
+    String token = UUID.randomUUID().toString();
+    LocalDateTime expiresAt = LocalDateTime.now().plus(passwordResetTokenExpiration);
+
+    // 기존 토큰이 있으면 업데이트, 없으면 새로 생성
+    Optional<PasswordResetToken> existingToken = passwordResetTokenRepository.findByEmail(email);
+
+    if (existingToken.isPresent()) {
+      existingToken.get().updateTokenWithExpiresAt(token, passwordResetTokenExpiration);
+      log.info("기존 비밀번호 재설정 토큰 업데이트: email = {}", email);
+    } else {
+      PasswordResetToken passwordResetToken = PasswordResetToken.builder()
+          .email(email)
+          .token(token)
+          .expiresAt(expiresAt)
+          .used(false)
+          .build();
+      passwordResetTokenRepository.save(passwordResetToken);
+      log.info("새로운 비밀번호 재설정 토큰 생성: email = {}", email);
+    }
+
+    // 비밀번호 재설정 URL 생성
+    String resetUrl = frontendUrl + "/password/reset?token=" + token;
+
+    // 이메일 전송
+    emailService.sendPasswordResetEmail(email, resetUrl, passwordResetTokenExpiration);
+
+    log.info("비밀번호 재설정 이메일 발송 완료: email = {}", email);
   }
 }

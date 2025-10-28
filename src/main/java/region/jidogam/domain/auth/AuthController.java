@@ -2,6 +2,7 @@ package region.jidogam.domain.auth;
 
 import jakarta.security.auth.message.AuthException;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.util.CookieUtil;
 import region.jidogam.domain.auth.dto.LoginRequest;
+import region.jidogam.domain.auth.dto.PasswordResetRequest;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
 import region.jidogam.infrastructure.jwt.dto.TokenResponse;
@@ -63,5 +65,13 @@ public class AuthController {
 
     return ResponseEntity.status(HttpStatus.CREATED)
       .body(new TokenResponse(tokenPair.accessToken()));
+  }
+
+  @PostMapping("/password/reset-link")
+  public ResponseEntity<Void> sendEmailWithPasswordResetUrl(
+      @Valid @RequestBody PasswordResetRequest request) {
+
+    authService.sendEmailWithPasswordResetUrl(request.email());
+    return ResponseEntity.ok().build();
   }
 }
