@@ -2,13 +2,14 @@ package region.jidogam.domain.place.validaton;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-import region.jidogam.domain.place.dto.PlaceSearchRequest;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * 위도 경도 동시 입력 검증 어노테이션
  */
 public class CoordinatesValidator implements
-    ConstraintValidator<ValidCoordinates, PlaceSearchRequest> {
+    ConstraintValidator<ValidCoordinates, Object> {
 
   @Override
   public void initialize(ValidCoordinates constraintAnnotation) {
@@ -16,18 +17,25 @@ public class CoordinatesValidator implements
   }
 
   @Override
-  public boolean isValid(PlaceSearchRequest request, ConstraintValidatorContext context) {
-
-    if (request == null) {
+  public boolean isValid(Object obj, ConstraintValidatorContext context) {
+    if (obj == null) {
       return true;
     }
 
-    Double lat = request.lat();
-    Double lng = request.lng();
+    try {
+      Method latMethod = obj.getClass().getMethod("lat");
+      Method lonMethod = obj.getClass().getMethod("lon");
 
-    boolean bothNull = (lat == null && lng == null);
-    boolean bothPresent = (lat != null && lng != null);
+      Double lat = (Double) latMethod.invoke(obj);
+      Double lon = (Double) lonMethod.invoke(obj);
 
-    return bothNull || bothPresent;
+      boolean bothNull = (lat == null && lon == null);
+      boolean bothPresent = (lat != null && lon != null);
+
+      return bothNull || bothPresent;
+
+    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+      return false;
+    }
   }
 }
