@@ -8,6 +8,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,9 +16,9 @@ import region.jidogam.domain.auth.dto.LoginRequest;
 import region.jidogam.domain.auth.entity.PasswordResetToken;
 import region.jidogam.domain.auth.repository.PasswordResetTokenRepository;
 import region.jidogam.domain.user.entity.User;
+import region.jidogam.domain.user.event.PasswordResetEmailSendEvent;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.domain.user.repository.UserRepository;
-import region.jidogam.domain.user.service.EmailService;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
@@ -32,7 +33,7 @@ public class AuthService {
   private final PasswordEncoder passwordEncoder;
   private final RefreshTokenService refreshTokenService;
   private final PasswordResetTokenRepository passwordResetTokenRepository;
-  private final EmailService emailService;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Value("${jidogam.email.password-reset.expiration}")
   private Duration passwordResetTokenExpiration;
@@ -110,9 +111,11 @@ public class AuthService {
     // 비밀번호 재설정 URL 생성
     String resetUrl = frontendUrl + "/password/reset?token=" + token;
 
-    // 이메일 전송
-    emailService.sendPasswordResetEmail(email, resetUrl, passwordResetTokenExpiration);
+    // 이메일 전송 이벤트 발행
+    eventPublisher.publishEvent(
+        PasswordResetEmailSendEvent.of(email, resetUrl, passwordResetTokenExpiration)
+    );
 
-    log.info("비밀번호 재설정 이메일 발송 완료: email = {}", email);
+    log.info("비밀번호 재설정 이메일 발송 이벤트 발행 완료: email = {}", email);
   }
 }
