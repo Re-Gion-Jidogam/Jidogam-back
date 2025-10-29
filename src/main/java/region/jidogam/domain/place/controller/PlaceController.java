@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import region.jidogam.domain.place.dto.PlaceNearByRequest;
 import region.jidogam.domain.place.dto.PlacePopularRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.place.service.PlaceService;
@@ -24,6 +25,14 @@ public class PlaceController {
       @Valid @ModelAttribute PlacePopularRequest request
   ) {
     List<PlaceResponse> responses = placeService.popularList(request);
+    return ResponseEntity.ok(responses);
+  }
+
+  @GetMapping("/nearby")
+  public ResponseEntity<List<PlaceResponse>> nearbyList(
+      @Valid @ModelAttribute PlaceNearByRequest request
+  ) {
+    List<PlaceResponse> responses = placeService.nearbyList(request);
     return ResponseEntity.ok(responses);
   }
 }

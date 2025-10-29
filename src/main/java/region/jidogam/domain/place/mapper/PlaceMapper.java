@@ -28,7 +28,7 @@ public class PlaceMapper {
         .guidebookCount(place.getGuidebookCount())
         .stampCount(place.getStampCount())
         .category(place.getCategory())
-        .distanceInKm(DistanceCalculatorUtil.calculate(userLat, userLon, y, x))
+        .distanceInKm(DistanceCalculatorUtil.calculateDistance(userLat, userLon, y, x))
         .build();
   }
 }

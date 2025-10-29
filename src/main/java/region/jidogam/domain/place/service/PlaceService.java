@@ -7,9 +7,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import region.jidogam.common.dto.CoordinateRange;
+import region.jidogam.common.util.DistanceCalculatorUtil;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.service.AreaService;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
+import region.jidogam.domain.place.dto.PlaceNearByRequest;
 import region.jidogam.domain.place.dto.PlacePopularRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.place.entity.Place;
@@ -22,6 +25,8 @@ import region.jidogam.domain.place.repository.PlaceRepository;
 @RequiredArgsConstructor
 public class PlaceService {
 
+  private final double DEFAULT_SEARCH_RADIUS_KM = 1.0;
+
   private final PlaceRepository placeRepository;
   private final AreaService areaService;
   private final PlaceMapper placeMapper;
@@ -33,6 +38,34 @@ public class PlaceService {
         PageRequest.of(0, request.limit()));
 
     return topNPlaces.stream()
+        .map(place -> placeMapper.toResponse(place, request.lat(), request.lon()))
+        .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public List<PlaceResponse> nearbyList(PlaceNearByRequest request) {
+
+    double userLat = request.lat();
+    double userLon = request.lon();
+
+    CoordinateRange coordinateRange = DistanceCalculatorUtil.getCoordinateRange(
+        userLat,
+        userLon,
+        DEFAULT_SEARCH_RADIUS_KM
+    );
+
+    List<Place> nearbyPlaces = placeRepository.findNearbyPlaces(
+        userLat,
+        userLon,
+        coordinateRange.latMin(),
+        coordinateRange.latMax(),
+        coordinateRange.lonMin(),
+        coordinateRange.lonMax(),
+        DEFAULT_SEARCH_RADIUS_KM,
+        PageRequest.of(0, request.limit())
+    );
+
+    return nearbyPlaces.stream()
         .map(place -> placeMapper.toResponse(place, request.lat(), request.lon()))
         .toList();
   }

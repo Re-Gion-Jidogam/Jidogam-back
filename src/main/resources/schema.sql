@@ -106,6 +106,7 @@ CREATE TABLE places
     created_at      TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at      TIMESTAMP WITH TIME ZONE
 );
+CREATE INDEX idx_place_coordinates ON places (y, x);
 
 -- Refresh token table
 CREATE TABLE refresh_tokens
