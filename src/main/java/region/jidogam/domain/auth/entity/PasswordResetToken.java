@@ -45,6 +45,7 @@ public class PasswordResetToken extends BaseEntity {
   public void updateTokenWithExpiresAt(String newToken, Duration duration) {
     this.token = newToken;
     this.expiresAt = LocalDateTime.now().plusMinutes(duration.toMinutes());
+    this.used = false;
   }
 
   public boolean isExpired() {

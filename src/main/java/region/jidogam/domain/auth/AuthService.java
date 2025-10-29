@@ -156,7 +156,9 @@ public class AuthService {
     passwordResetTokenRepository.save(passwordResetToken);
 
     userRepository.findByEmail(passwordResetToken.getEmail()).ifPresent(user -> {
-      user.changePassword(request.newPassword());
+      user.changePassword(passwordEncoder.encode((request.newPassword())));
     });
+
+    log.info("비밀번호 재설정 완료: email = {}", passwordResetToken.getEmail());
   }
 }
