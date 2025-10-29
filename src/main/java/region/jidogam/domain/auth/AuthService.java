@@ -154,5 +154,9 @@ public class AuthService {
 
     passwordResetToken.use();
     passwordResetTokenRepository.save(passwordResetToken);
+
+    userRepository.findByEmail(passwordResetToken.getEmail()).ifPresent(user -> {
+      user.changePassword(request.newPassword());
+    });
   }
 }
