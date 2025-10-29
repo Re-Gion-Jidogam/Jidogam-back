@@ -253,6 +253,7 @@ class AuthServiceTest {
       then(jwtProvider).should(never()).extractJwtId(anyString());
       then(passwordResetTokenRepository).should(never()).findByToken(anyString());
       then(userRepository).should(never()).findByEmail(anyString());
+      then(passwordEncoder).should(never()).encode(anyString());
     }
 
     @Test
@@ -269,6 +270,7 @@ class AuthServiceTest {
 
       then(passwordResetTokenRepository).should(never()).save(any(PasswordResetToken.class));
       then(userRepository).should(never()).findByEmail(anyString());
+      then(passwordEncoder).should(never()).encode(anyString());
     }
 
     @Test
@@ -293,6 +295,7 @@ class AuthServiceTest {
 
       then(passwordResetTokenRepository).should(never()).save(any(PasswordResetToken.class));
       then(userRepository).should(never()).findByEmail(anyString());
+      then(passwordEncoder).should(never()).encode(anyString());
     }
 
     @Test
@@ -317,6 +320,7 @@ class AuthServiceTest {
 
       then(passwordResetTokenRepository).should(never()).save(any(PasswordResetToken.class));
       then(userRepository).should(never()).findByEmail(anyString());
+      then(passwordEncoder).should(never()).encode(anyString());
     }
 
     @Test
@@ -330,11 +334,14 @@ class AuthServiceTest {
           .used(false)
           .build();
 
+      String encodedPassword = "encodedPassword123!";
+
       given(jwtProvider.validateToken(jwtToken)).willReturn(true);
       given(jwtProvider.extractJwtId(jwtToken)).willReturn(jti);
       given(passwordResetTokenRepository.findByToken(jti)).willReturn(
           Optional.of(passwordResetToken));
       given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+      given(passwordEncoder.encode(newPassword)).willReturn(encodedPassword);
 
       // when
       authService.changePassword(request);
@@ -343,6 +350,7 @@ class AuthServiceTest {
       then(passwordResetTokenRepository).should(times(1)).save(passwordResetToken);
       assertThat(passwordResetToken.getUsed()).isTrue();
       then(userRepository).should(times(1)).findByEmail(eq(email));
+      then(passwordEncoder).should(times(1)).encode(eq(newPassword));
     }
 
     @Test
@@ -356,11 +364,14 @@ class AuthServiceTest {
           .used(false)
           .build();
 
+      String encodedPassword = "encodedPassword123!";
+
       given(jwtProvider.validateToken(jwtToken)).willReturn(true);
       given(jwtProvider.extractJwtId(jwtToken)).willReturn(jti);
       given(passwordResetTokenRepository.findByToken(jti)).willReturn(
           Optional.of(passwordResetToken));
       given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+      given(passwordEncoder.encode(newPassword)).willReturn(encodedPassword);
 
       // when
       authService.changePassword(request);
@@ -395,6 +406,7 @@ class AuthServiceTest {
       then(passwordResetTokenRepository).should(times(1)).save(passwordResetToken);
       assertThat(passwordResetToken.getUsed()).isTrue();
       then(userRepository).should(times(1)).findByEmail(eq(email));
+      then(passwordEncoder).should(never()).encode(anyString());
     }
   }
 }
