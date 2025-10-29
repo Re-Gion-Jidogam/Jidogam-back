@@ -27,7 +27,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 import region.jidogam.domain.auth.AuthService;
+import region.jidogam.domain.auth.dto.NewPasswordChangeRequest;
 import region.jidogam.domain.auth.entity.PasswordResetToken;
+import region.jidogam.domain.auth.exception.AlreadyUsedPasswordResetTokenException;
+import region.jidogam.domain.auth.exception.InvalidPasswordResetTokenException;
 import region.jidogam.domain.auth.repository.PasswordResetTokenRepository;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.event.PasswordResetEmailSendEvent;
@@ -207,6 +210,149 @@ class AuthServiceTest {
       then(jwtProvider).should(times(1)).generatePasswordResetToken(eq(email));
       then(jwtProvider).should(times(1)).extractJwtId(eq(jwtToken));
       then(jwtProvider).should(times(1)).extractExpirationTime(eq(jwtToken));
+    }
+  }
+
+  @Nested
+  @DisplayName("changePassword 메서드는")
+  class ChangePasswordTest {
+
+    private String jwtToken;
+    private String jti;
+    private String newPassword;
+    private NewPasswordChangeRequest request;
+    private PasswordResetToken passwordResetToken;
+
+    @BeforeEach
+    void setUp() {
+      jwtToken = "valid.jwt.token";
+      jti = UUID.randomUUID().toString();
+      newPassword = "newPassword123!";
+      request = new NewPasswordChangeRequest(newPassword, jwtToken);
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 JWT 토큰이면 InvalidPasswordResetTokenException을 던진다")
+    void throwsInvalidPasswordResetTokenExceptionWhenJwtTokenIsInvalid() {
+      // given
+      given(jwtProvider.validateToken(jwtToken)).willReturn(false);
+
+      // when & then
+      assertThatThrownBy(() -> authService.changePassword(request))
+          .isInstanceOf(InvalidPasswordResetTokenException.class);
+
+      then(jwtProvider).should(never()).extractJwtId(anyString());
+      then(passwordResetTokenRepository).should(never()).findByToken(anyString());
+    }
+
+    @Test
+    @DisplayName("DB에 토큰이 존재하지 않으면 InvalidPasswordResetTokenException을 던진다")
+    void throwsInvalidPasswordResetTokenExceptionWhenTokenNotFoundInDatabase() {
+      // given
+      given(jwtProvider.validateToken(jwtToken)).willReturn(true);
+      given(jwtProvider.extractJwtId(jwtToken)).willReturn(jti);
+      given(passwordResetTokenRepository.findByToken(jti)).willReturn(Optional.empty());
+
+      // when & then
+      assertThatThrownBy(() -> authService.changePassword(request))
+          .isInstanceOf(InvalidPasswordResetTokenException.class);
+
+      then(passwordResetTokenRepository).should(never()).save(any(PasswordResetToken.class));
+    }
+
+    @Test
+    @DisplayName("토큰이 만료되었으면 InvalidPasswordResetTokenException을 던진다")
+    void throwsInvalidPasswordResetTokenExceptionWhenTokenIsExpired() {
+      // given
+      passwordResetToken = PasswordResetToken.builder()
+          .email("test@example.com")
+          .token(jti)
+          .expiresAt(LocalDateTime.now().minusMinutes(5)) // 만료된 토큰
+          .used(false)
+          .build();
+
+      given(jwtProvider.validateToken(jwtToken)).willReturn(true);
+      given(jwtProvider.extractJwtId(jwtToken)).willReturn(jti);
+      given(passwordResetTokenRepository.findByToken(jti)).willReturn(
+          Optional.of(passwordResetToken));
+
+      // when & then
+      assertThatThrownBy(() -> authService.changePassword(request))
+          .isInstanceOf(InvalidPasswordResetTokenException.class);
+
+      then(passwordResetTokenRepository).should(never()).save(any(PasswordResetToken.class));
+    }
+
+    @Test
+    @DisplayName("이미 사용된 토큰이면 AlreadyUsedPasswordResetTokenException을 던진다")
+    void throwsAlreadyUsedPasswordResetTokenExceptionWhenTokenIsAlreadyUsed() {
+      // given
+      passwordResetToken = PasswordResetToken.builder()
+          .email("test@example.com")
+          .token(jti)
+          .expiresAt(LocalDateTime.now().plusMinutes(15))
+          .used(true) // 이미 사용된 토큰
+          .build();
+
+      given(jwtProvider.validateToken(jwtToken)).willReturn(true);
+      given(jwtProvider.extractJwtId(jwtToken)).willReturn(jti);
+      given(passwordResetTokenRepository.findByToken(jti)).willReturn(
+          Optional.of(passwordResetToken));
+
+      // when & then
+      assertThatThrownBy(() -> authService.changePassword(request))
+          .isInstanceOf(AlreadyUsedPasswordResetTokenException.class);
+
+      then(passwordResetTokenRepository).should(never()).save(any(PasswordResetToken.class));
+    }
+
+    @Test
+    @DisplayName("유효한 토큰이면 토큰을 사용 처리하고 저장한다")
+    void marksTokenAsUsedAndSavesWhenTokenIsValid() {
+      // given
+      passwordResetToken = PasswordResetToken.builder()
+          .email("test@example.com")
+          .token(jti)
+          .expiresAt(LocalDateTime.now().plusMinutes(15))
+          .used(false)
+          .build();
+
+      given(jwtProvider.validateToken(jwtToken)).willReturn(true);
+      given(jwtProvider.extractJwtId(jwtToken)).willReturn(jti);
+      given(passwordResetTokenRepository.findByToken(jti)).willReturn(
+          Optional.of(passwordResetToken));
+
+      // when
+      authService.changePassword(request);
+
+      // then
+      then(passwordResetTokenRepository).should(times(1)).save(passwordResetToken);
+      assertThat(passwordResetToken.getUsed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("JWT 토큰 검증과 jti 추출이 올바르게 수행된다")
+    void validatesJwtTokenAndExtractsJtiCorrectly() {
+      // given
+      passwordResetToken = PasswordResetToken.builder()
+          .email("test@example.com")
+          .token(jti)
+          .expiresAt(LocalDateTime.now().plusMinutes(15))
+          .used(false)
+          .build();
+
+      given(jwtProvider.validateToken(jwtToken)).willReturn(true);
+      given(jwtProvider.extractJwtId(jwtToken)).willReturn(jti);
+      given(passwordResetTokenRepository.findByToken(jti)).willReturn(
+          Optional.of(passwordResetToken));
+
+      // when
+      authService.changePassword(request);
+
+      // then
+      then(jwtProvider).should(times(1)).validateToken(eq(jwtToken));
+      then(jwtProvider).should(times(1)).extractJwtId(eq(jwtToken));
+      then(passwordResetTokenRepository).should(times(1)).findByToken(eq(jti));
     }
   }
 }
