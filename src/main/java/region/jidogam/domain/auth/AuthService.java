@@ -13,7 +13,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.auth.dto.LoginRequest;
+import region.jidogam.domain.auth.dto.NewPasswordChangeRequest;
 import region.jidogam.domain.auth.entity.PasswordResetToken;
+import region.jidogam.domain.auth.exception.AlreadyUsedPasswordResetTokenException;
+import region.jidogam.domain.auth.exception.InvalidPasswordResetTokenException;
 import region.jidogam.domain.auth.repository.PasswordResetTokenRepository;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.event.PasswordResetEmailSendEvent;
@@ -119,5 +122,37 @@ public class AuthService {
     );
 
     log.info("비밀번호 재설정 이메일 발송 이벤트 발행 완료: email = {}", email);
+  }
+
+  @Transactional
+  public void changePassword(NewPasswordChangeRequest request) {
+    log.info("비밀번호 재설정 시도");
+
+    String jwtToken = request.authCode();
+
+    // 토큰 검증(만료 시간까지 검증)
+    if (!jwtProvider.validateToken(jwtToken)) {
+      throw InvalidPasswordResetTokenException.withToken(jwtToken);
+    }
+
+    // JWT ID 추출
+    String jti = jwtProvider.extractJwtId(jwtToken);
+    PasswordResetToken passwordResetToken = passwordResetTokenRepository.findByToken(jti)
+        .orElseThrow(
+            () -> InvalidPasswordResetTokenException.withToken(jwtToken)
+        );
+
+    // 만료시간 한번 더 검증
+    if(passwordResetToken.isExpired()){
+      throw InvalidPasswordResetTokenException.withToken(jwtToken);
+    }
+
+    // 사용 여부 판단
+    if(passwordResetToken.getUsed()){
+      throw AlreadyUsedPasswordResetTokenException.withToken(jwtToken);
+    }
+
+    passwordResetToken.use();
+    passwordResetTokenRepository.save(passwordResetToken);
   }
 }
