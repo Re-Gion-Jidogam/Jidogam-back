@@ -153,6 +153,17 @@ CREATE TABLE guidebook_area_ratios
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
+-- Password reset code table
+CREATE TABLE password_reset_tokens
+(
+    id         UUID PRIMARY KEY,
+    email      VARCHAR(50)              NOT NULL UNIQUE,
+    token      TEXT                     NOT NULL,
+    used       BOOLEAN                  NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
 -- Foreign Key Constraints
 ALTER TABLE places
     ADD CONSTRAINT fk_places_area_id
