@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import region.jidogam.domain.place.entity.Place;
@@ -50,4 +51,14 @@ public interface PlaceRepository extends JpaRepository<Place, UUID> {
       @Param("maxDistance") Double maxDistance,
       Pageable pageable
   );
+
+  @Modifying
+  @Query("""
+      UPDATE Place p
+      SET p.stampCount = p.stampCount + :delta
+      WHERE p.id = :placeId
+      AND p.stampCount + :delta >= 0
+      """)
+  void updateStampCount(UUID placeId, int delta);
+
 }
