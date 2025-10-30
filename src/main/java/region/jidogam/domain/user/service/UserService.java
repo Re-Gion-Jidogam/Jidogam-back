@@ -24,6 +24,7 @@ import region.jidogam.domain.user.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.dto.UserGuidebookCursor;
 import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
+import region.jidogam.domain.user.dto.UserUpdateRequest;
 import region.jidogam.domain.user.exception.UnverifiedEmailException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.infrastructure.jwt.JwtProvider;
@@ -178,5 +179,23 @@ public class UserService {
         .totalCount(total)
         .nextCursor(nextCursor)
         .build();
+  }
+
+  @Transactional
+  public UserDto update(UUID userId, UserUpdateRequest request) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    user.changeNickname(request.nickname());
+    user.changePassword(passwordEncoder.encode(request.password()));
+    // TODO
+    // 이미지 업로드 기능 추가 시 수정
+    user.changeProfileImage(request.profileImageUrl());
+
+    userRepository.save(user);
+
+    Stamp stamp = stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId).orElse(null);
+
+    return userMapper.toResponse(user, 0, stamp);
   }
 }
