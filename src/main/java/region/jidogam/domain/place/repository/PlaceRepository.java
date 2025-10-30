@@ -7,9 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import region.jidogam.domain.place.entity.Place;
-import region.jidogam.domain.place.repository.querydsl.PlaceRepositoryCustom;
 
-public interface PlaceRepository extends JpaRepository<Place, UUID>, PlaceRepositoryCustom {
+public interface PlaceRepository extends JpaRepository<Place, UUID> {
 
   List<Place> findAllByOrderByStampCountDesc(Pageable pageable);
 
