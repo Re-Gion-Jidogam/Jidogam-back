@@ -49,6 +49,7 @@ import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.entity.User;
@@ -74,6 +75,9 @@ class GuidebookServiceTest {
 
   @Mock
   private StampRepository stampRepository;
+
+  @Mock
+  private PlaceRepository placeRepository;
 
   @Mock
   private PlaceService placeService;
@@ -396,6 +400,7 @@ class GuidebookServiceTest {
       when(mockGuidebook.getAuthor()).thenReturn(user);
 
       when(placeService.getOrCreatePlace(request.pid(), request.place())).thenReturn(mockPlace);
+      when(mockPlace.getId()).thenReturn(placeId);
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(3);
       when(guidebookMapper.toResponse(mockGuidebook, 3)).thenReturn(expectedResponse);
 
@@ -406,6 +411,7 @@ class GuidebookServiceTest {
       verify(guidebookPlaceRepository).save(any(GuidebookPlace.class));
       verify(mockGuidebook).updateMapImageUrl("https://test.com/url");
       verify(mockGuidebook).increaseTotalPlaceCount();
+      verify(placeRepository).updateGuidebookCount(placeId, 1);
 
     }
 
@@ -468,16 +474,15 @@ class GuidebookServiceTest {
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
       when(mockGuidebook.getAuthor()).thenReturn(mockUser);
       when(mockUser.getId()).thenReturn(userId);
-      when(
-          guidebookPlaceRepository.deleteByGuidebook_IdAndPlace_Id(guidebookId,
-              placeId)).thenReturn(
-          1);
+      when(guidebookPlaceRepository.deleteByGuidebook_IdAndPlace_Id(guidebookId, placeId))
+          .thenReturn(1);
 
       // when
       guidebookService.removePlace(guidebookId, placeId, userId);
 
       // then
       verify(mockGuidebook).decreaseTotalPlaceCount();
+      verify(placeRepository).updateGuidebookCount(placeId, -1);
     }
 
     @Test
