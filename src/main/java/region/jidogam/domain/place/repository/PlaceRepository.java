@@ -61,4 +61,12 @@ public interface PlaceRepository extends JpaRepository<Place, UUID> {
       """)
   void updateStampCount(UUID placeId, int delta);
 
+  @Modifying
+  @Query("""
+      UPDATE Place p
+      SET p.guidebookCount = p.guidebookCount + :delta
+      WHERE p.id = :placeId
+      AND p.guidebookCount + :delta >= 0
+      """)
+  void updateGuidebookCount(UUID placeId, int delta);
 }

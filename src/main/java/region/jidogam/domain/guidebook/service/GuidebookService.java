@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.common.dto.SortDirection;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.common.exception.InvalidCursorException;
+import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.guidebook.dto.AreaRatioDto;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
@@ -38,8 +39,8 @@ import region.jidogam.domain.guidebook.repository.GuidebookAreaRatioRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipantRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
-import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.entity.User;
@@ -63,6 +64,7 @@ public class GuidebookService {
   private final GuidebookParticipantRepository guidebookParticipantRepository;
   private final GuidebookAreaRatioRepository guidebookAreaRatioRepository;
   private final StampRepository stampRepository;
+  private final PlaceRepository placeRepository;
   private final PlaceService placeService;
   private final GuidebookMapper guidebookMapper;
   private final CursorCodecUtil cursorCodecUtil;
@@ -105,7 +107,8 @@ public class GuidebookService {
   public CursorPageResponseDto<GuidebookResponse> list(GuidebookConditionRequest request) {
 
     // 1. 커서 디코딩, 없다면 null 반환
-    GuidebookCursor cursor = cursorCodecUtil.decodeGuidebookCursor(request.cursor(), request.sortBy());
+    GuidebookCursor cursor = cursorCodecUtil.decodeGuidebookCursor(request.cursor(),
+        request.sortBy());
 
     // + 커서 유효성 검증
     validateCursor(cursor, request.filter(), request.sortBy());
@@ -247,12 +250,15 @@ public class GuidebookService {
 
     // 장소 추가
     Place place = placeService.getOrCreatePlace(request.pid(), request.place());
+
     GuidebookPlace guidebookPlace = GuidebookPlace.builder()
         .guidebook(guidebook)
         .place(place)
         .build();
     guidebookPlaceRepository.save(guidebookPlace);
+
     guidebook.increaseTotalPlaceCount();
+    placeRepository.updateGuidebookCount(place.getId(), 1);
 
     int visitedPlaceCount = getVisitedPlaceCount(guidebook.getId(), userId);
     return guidebookMapper.toResponse(guidebook, visitedPlaceCount);
@@ -265,8 +271,10 @@ public class GuidebookService {
 
     checkAuthorOrThrow(guidebook, userId);
 
-    if (guidebookPlaceRepository.deleteByGuidebook_IdAndPlace_Id(id, placeId) > 0) {
+    int deleted = guidebookPlaceRepository.deleteByGuidebook_IdAndPlace_Id(id, placeId);
+    if (deleted > 0) {
       guidebook.decreaseTotalPlaceCount();
+      placeRepository.updateGuidebookCount(placeId, -1);
     }
   }
 
