@@ -37,6 +37,7 @@ import region.jidogam.infrastructure.jwt.RefreshToken;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
 import region.jidogam.domain.user.dto.UserCreateRequest;
+import region.jidogam.domain.user.dto.UserUpdateRequest;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.InvalidEmailFormatException;
 import region.jidogam.domain.user.exception.UserEmailConflictException;
@@ -452,6 +453,116 @@ class UserServiceTest {
 
       //then
 
+    }
+  }
+
+  @Nested
+  @DisplayName("사용자 정보 수정")
+  class UpdateUserTest {
+
+    @Test
+    @DisplayName("성공, 도장 찍은 내역 없음")
+    void success() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String newNickname = "새닉네임";
+      String newPassword = "newPassword1234";
+      String newProfileImageUrl = "https://new-image.com/profile.jpg";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          newNickname,
+          newPassword,
+          newProfileImageUrl
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .profileImageUrl("https://old-image.com/profile.jpg")
+          .exp(10L)
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(passwordEncoder.encode(newPassword)).thenReturn("encodedNewPassword1234");
+      when(userRepository.save(any(User.class))).thenReturn(user);
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
+          Optional.empty());
+
+      //when
+      UserDto result = userService.update(userId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(newNickname, result.nickname());
+      assertNull(result.lastStampedDate());
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, times(1)).save(user);
+      verify(passwordEncoder, times(1)).encode(newPassword);
+    }
+
+    @Test
+    @DisplayName("성공, 최근 도장 찍은 내역 있음")
+    void successWhenLastStampExist() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String newNickname = "새닉네임";
+      String newPassword = "newPassword1234";
+      String newProfileImageUrl = "https://new-image.com/profile.jpg";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          newNickname,
+          newPassword,
+          newProfileImageUrl
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .profileImageUrl("https://old-image.com/profile.jpg")
+          .exp(10L)
+          .build();
+
+      Stamp mockStamp = mock(Stamp.class);
+      LocalDateTime stampCreatedAt = LocalDateTime.now();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(passwordEncoder.encode(newPassword)).thenReturn("encodedNewPassword1234");
+      when(userRepository.save(any(User.class))).thenReturn(user);
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
+          Optional.of(mockStamp));
+      when(mockStamp.getCreatedAt()).thenReturn(stampCreatedAt);
+
+      //when
+      UserDto result = userService.update(userId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(newNickname, result.nickname());
+      assertEquals(stampCreatedAt, result.lastStampedDate());
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, times(1)).save(user);
+      verify(passwordEncoder, times(1)).encode(newPassword);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 사용자")
+    void failsWhenUserNotFound() {
+      //given
+      UUID userId = UUID.randomUUID();
+      UserUpdateRequest request = new UserUpdateRequest(
+          "새닉네임",
+          "newPassword1234",
+          "https://new-image.com/profile.jpg"
+      );
+
+      when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+      //when & then
+      assertThrows(UserNotFoundException.class, () -> userService.update(userId, request));
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, never()).save(any(User.class));
     }
   }
 }
