@@ -16,7 +16,8 @@ public record PlaceResponse(
     int guidebookCount,
     int stampCount,
     String category,
-    Double distanceInKm
+    Double distanceInKm,
+    int points
 ) {
 
 }

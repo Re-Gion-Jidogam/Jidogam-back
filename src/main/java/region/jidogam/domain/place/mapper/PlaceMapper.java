@@ -29,6 +29,7 @@ public class PlaceMapper {
         .stampCount(place.getStampCount())
         .category(place.getCategory())
         .distanceInKm(DistanceCalculatorUtil.calculateDistance(userLat, userLon, y, x))
+        .points(place.getPoints())
         .build();
   }
 }
