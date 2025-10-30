@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +13,7 @@ import region.jidogam.domain.place.dto.PlaceNearByRequest;
 import region.jidogam.domain.place.dto.PlacePopularRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.place.service.PlaceService;
+import region.jidogam.infrastructure.security.JidogamUserDetails;
 
 @RestController
 @RequestMapping("/api/places")
@@ -30,9 +32,13 @@ public class PlaceController {
 
   @GetMapping("/nearby")
   public ResponseEntity<List<PlaceResponse>> nearbyList(
-      @Valid @ModelAttribute PlaceNearByRequest request
+      @Valid @ModelAttribute PlaceNearByRequest request,
+      @AuthenticationPrincipal JidogamUserDetails principal
   ) {
-    List<PlaceResponse> responses = placeService.nearbyList(request);
+    List<PlaceResponse> responses = placeService.nearbyList(
+        request,
+        principal != null ? principal.getId() : null
+    );
     return ResponseEntity.ok(responses);
   }
 }

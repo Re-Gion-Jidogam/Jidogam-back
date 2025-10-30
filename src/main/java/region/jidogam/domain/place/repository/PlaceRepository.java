@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import region.jidogam.domain.place.dto.PlaceVisitInfo;
 import region.jidogam.domain.place.entity.Place;
 
 public interface PlaceRepository extends JpaRepository<Place, UUID> {
@@ -69,4 +70,15 @@ public interface PlaceRepository extends JpaRepository<Place, UUID> {
       AND p.guidebookCount + :delta >= 0
       """)
   void updateGuidebookCount(UUID placeId, int delta);
+
+  @Query("""
+      SELECT new region.jidogam.domain.place.dto.PlaceVisitInfo(s.place.id, s.createdAt)
+      FROM Stamp s
+      WHERE s.user.id = :userId 
+        AND s.place.id IN :placeIds
+      """)
+  List<PlaceVisitInfo> findVisitedDatesByUserAndPlaces(
+      @Param("userId") UUID userId,
+      @Param("placeIds") List<UUID> placeIds
+  );
 }

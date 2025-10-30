@@ -27,6 +27,7 @@ public final class PublicApiEndpoints {
   // 비로그인 사용자 접근 가능 API
   public static final String GUIDEBOOK_LIST = "/api/guidebooks";
   public static final String POPULAR_GUIDEBOOK_LIST = "/api/guidebooks/popular";
+  public static final String NEARBY_PLACE_LIST = "/api/places/nearby";
 
   /**
    * 모든 공개 POST API 엔드포인트를 반환
@@ -51,7 +52,8 @@ public final class PublicApiEndpoints {
         SWAGGER_UI,
         API_DOCS,
         GUIDEBOOK_LIST,
-        POPULAR_GUIDEBOOK_LIST
+        POPULAR_GUIDEBOOK_LIST,
+        NEARBY_PLACE_LIST
     };
   }
 }

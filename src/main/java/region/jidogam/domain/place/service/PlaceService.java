@@ -1,7 +1,11 @@
 package region.jidogam.domain.place.service;
 
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -15,6 +19,7 @@ import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.dto.PlaceNearByRequest;
 import region.jidogam.domain.place.dto.PlacePopularRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
+import region.jidogam.domain.place.dto.PlaceVisitInfo;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.exception.PlaceNotFoundException;
 import region.jidogam.domain.place.mapper.PlaceMapper;
@@ -43,7 +48,7 @@ public class PlaceService {
   }
 
   @Transactional(readOnly = true)
-  public List<PlaceResponse> nearbyList(PlaceNearByRequest request) {
+  public List<PlaceResponse> nearbyList(PlaceNearByRequest request, UUID userId) {
 
     double userLat = request.lat();
     double userLon = request.lon();
@@ -65,8 +70,14 @@ public class PlaceService {
         PageRequest.of(0, request.limit())
     );
 
+    Map<UUID, LocalDateTime> visitedDateMap = getVisitedDateMap(userId, nearbyPlaces);
+
     return nearbyPlaces.stream()
-        .map(place -> placeMapper.toResponse(place, request.lat(), request.lon()))
+        .map(place -> placeMapper.toResponse(
+            place,
+            request.lat(),
+            request.lon(),
+            visitedDateMap.get(place.getId())))
         .toList();
   }
 
@@ -111,6 +122,23 @@ public class PlaceService {
 
   private int calculatePoint(Integer weight) {
     return weight * 10; // 임시
+  }
+
+  private Map<UUID, LocalDateTime> getVisitedDateMap(UUID userId, List<Place> places) {
+    if (userId == null || places.isEmpty()) {
+      return Collections.emptyMap();
+    }
+
+    List<UUID> placeIds = places.stream()
+        .map(Place::getId)
+        .toList();
+
+    return placeRepository.findVisitedDatesByUserAndPlaces(userId, placeIds)
+        .stream()
+        .collect(Collectors.toMap(
+            PlaceVisitInfo::placeId,
+            PlaceVisitInfo::visitedDate
+        ));
   }
 
 }

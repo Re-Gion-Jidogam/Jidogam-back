@@ -10,11 +10,11 @@ import region.jidogam.domain.place.entity.Place;
 public class PlaceMapper {
 
   public PlaceResponse toResponse(Place place, Double userLat, Double userLon) {
-    return toResponse(place, null, userLat, userLon);
+    return toResponse(place, userLat, userLon, null);
   }
 
-  public PlaceResponse toResponse(Place place, LocalDateTime visitedDate, Double userLat,
-      Double userLon) {
+  public PlaceResponse toResponse(Place place, Double userLat, Double userLon,
+      LocalDateTime visitedDate) {
     double y = place.getY().doubleValue();
     double x = place.getX().doubleValue();
 
