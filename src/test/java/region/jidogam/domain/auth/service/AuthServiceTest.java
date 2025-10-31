@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 
 import java.time.Duration;
@@ -335,12 +336,13 @@ class AuthServiceTest {
           .build();
 
       String encodedPassword = "encodedPassword123!";
+      User spyUser = spy(user);
 
       given(jwtProvider.validateToken(jwtToken)).willReturn(true);
       given(jwtProvider.extractJwtId(jwtToken)).willReturn(jti);
       given(passwordResetTokenRepository.findByToken(jti)).willReturn(
           Optional.of(passwordResetToken));
-      given(userRepository.findByEmail(email)).willReturn(Optional.of(user));
+      given(userRepository.findByEmail(email)).willReturn(Optional.of(spyUser));
       given(passwordEncoder.encode(newPassword)).willReturn(encodedPassword);
 
       // when
@@ -351,6 +353,7 @@ class AuthServiceTest {
       assertThat(passwordResetToken.getUsed()).isTrue();
       then(userRepository).should(times(1)).findByEmail(eq(email));
       then(passwordEncoder).should(times(1)).encode(eq(newPassword));
+      then(spyUser).should(times(1)).changePassword(eq(encodedPassword));
     }
 
     @Test
@@ -383,8 +386,8 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("사용자가 존재하지 않아도 토큰은 사용 처리된다")
-    void marksTokenAsUsedEvenWhenUserNotFound() {
+    @DisplayName("사용자가 존재하지 않으면 토큰을 사용 처리한 후 UserNotFoundException을 던진다")
+    void marksTokenAsUsedAndThrowsUserNotFoundExceptionWhenUserDoesNotExist() {
       // given
       passwordResetToken = PasswordResetToken.builder()
           .email(email)
@@ -399,10 +402,10 @@ class AuthServiceTest {
           Optional.of(passwordResetToken));
       given(userRepository.findByEmail(email)).willReturn(Optional.empty());
 
-      // when
-      authService.changePassword(request);
+      // when & then
+      assertThatThrownBy(() -> authService.changePassword(request))
+          .isInstanceOf(UserNotFoundException.class);
 
-      // then
       then(passwordResetTokenRepository).should(times(1)).save(passwordResetToken);
       assertThat(passwordResetToken.getUsed()).isTrue();
       then(userRepository).should(times(1)).findByEmail(eq(email));

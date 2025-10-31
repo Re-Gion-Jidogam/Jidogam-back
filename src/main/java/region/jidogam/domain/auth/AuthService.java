@@ -143,21 +143,24 @@ public class AuthService {
         );
 
     // 만료시간 한번 더 검증
-    if(passwordResetToken.isExpired()){
+    if (passwordResetToken.isExpired()) {
       throw InvalidPasswordResetTokenException.withToken(jwtToken);
     }
 
     // 사용 여부 판단
-    if(passwordResetToken.getUsed()){
+    if (passwordResetToken.getUsed()) {
       throw AlreadyUsedPasswordResetTokenException.withToken(jwtToken);
     }
 
     passwordResetToken.use();
     passwordResetTokenRepository.save(passwordResetToken);
 
-    userRepository.findByEmail(passwordResetToken.getEmail()).ifPresent(user -> {
-      user.changePassword(passwordEncoder.encode((request.newPassword())));
-    });
+    User user = userRepository.findByEmail(passwordResetToken.getEmail())
+        .orElseThrow(
+            () -> UserNotFoundException.withEmail(passwordResetToken.getEmail())
+        );
+
+    user.changePassword(passwordEncoder.encode((request.newPassword())));
 
     log.info("비밀번호 재설정 완료: email = {}", passwordResetToken.getEmail());
   }
