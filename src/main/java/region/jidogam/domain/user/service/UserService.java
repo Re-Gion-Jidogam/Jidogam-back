@@ -186,14 +186,16 @@ public class UserService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
-    user.changeNickname(request.nickname());
-    user.changePassword(passwordEncoder.encode(request.password()));
+    request.nickname().ifPresent(user::changeNickname);
+    request.password().ifPresent(password -> user.changePassword(passwordEncoder.encode(password)));
     // TODO
     // 이미지 업로드 기능 추가 시 수정
-    user.changeProfileImage(request.profileImageUrl());
+    request.profileImageUrl().ifPresent(user::changeProfileImage);
 
     userRepository.save(user);
 
+    // TODO
+    // 도장 수가 많아질 경우 성능 우려. user에 lastStampedAt을 추가하는 방향 고려
     Stamp stamp = stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId).orElse(null);
 
     return userMapper.toResponse(user, 0, stamp);
