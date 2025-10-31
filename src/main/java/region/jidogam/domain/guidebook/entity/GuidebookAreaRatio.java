@@ -2,6 +2,7 @@ package region.jidogam.domain.guidebook.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
@@ -22,25 +23,25 @@ import region.jidogam.domain.area.entity.Area;
 @Builder
 public class GuidebookAreaRatio extends BaseEntity {
 
-  @OneToOne
+  @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(nullable = false)
   private Guidebook guidebook;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "first_area_id", nullable = false)
   private Area firstArea;
 
   @Column
   private Double firstAreaRatio;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "second_area_id")
   private Area secondArea;
 
   @Column
   private Double secondAreaRatio;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "third_area_id")
   private Area thirdArea;
 

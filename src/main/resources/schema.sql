@@ -93,17 +93,20 @@ CREATE TABLE areas
 -- Places table
 CREATE TABLE places
 (
-    id         UUID PRIMARY KEY,
-    area_id    UUID                     NOT NULL,
-    name       VARCHAR(255)             NOT NULL,
-    x          DECIMAL(18, 14)          NOT NULL,
-    y          DECIMAL(17, 14)          NOT NULL,
-    address    VARCHAR(255)             NOT NULL,
-    category   VARCHAR(50)              NULL,
-    points     INTEGER                  NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE
+    id              UUID PRIMARY KEY,
+    area_id         UUID                     NOT NULL,
+    name            VARCHAR(255)             NOT NULL,
+    x               DECIMAL(18, 14)          NOT NULL,
+    y               DECIMAL(17, 14)          NOT NULL,
+    address         VARCHAR(255)             NOT NULL,
+    category        VARCHAR(50)              NULL,
+    points          INTEGER                  NOT NULL,
+    guidebook_count INTEGER                  NOT NULL,
+    stamp_count     INTEGER                  NOT NULL,
+    created_at      TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at      TIMESTAMP WITH TIME ZONE
 );
+CREATE INDEX idx_place_coordinates ON places (y, x);
 
 -- Refresh token table
 CREATE TABLE refresh_tokens
