@@ -17,12 +17,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import region.jidogam.common.annotation.CurrentUserId;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
+import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.user.dto.EmailAuthRequest;
 import region.jidogam.domain.user.dto.UserCreateRequest;
-import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
 import region.jidogam.domain.user.service.EmailAuthService;
@@ -78,9 +79,8 @@ public class UserController {
   }
 
   @GetMapping("/profile")
-  public ResponseEntity<UserDto> getProfile(
-      @AuthenticationPrincipal JidogamUserDetails userDetails) {
-    UserDto userInfo = userService.getUserInfo(userDetails.getId());
+  public ResponseEntity<UserDto> getProfile(@CurrentUserId UUID userId) {
+    UserDto userInfo = userService.getUserInfo(userId);
     return ResponseEntity.ok(userInfo);
   }
 
