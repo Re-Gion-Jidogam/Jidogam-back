@@ -6,7 +6,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import region.jidogam.common.annotation.CurrentUserId;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
@@ -24,7 +24,6 @@ import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.service.GuidebookService;
-import region.jidogam.infrastructure.security.JidogamUserDetails;
 
 @RestController
 @RequestMapping("/api/guidebooks")
@@ -60,18 +59,18 @@ public class GuidebookController {
   @PostMapping
   public ResponseEntity<Void> create(
       @Valid @RequestBody GuidebookCreateRequest request,
-      @AuthenticationPrincipal JidogamUserDetails principal
+      @CurrentUserId UUID userId
   ) {
-    guidebookService.create(request, principal.getId());
+    guidebookService.create(request, userId);
     return ResponseEntity.status(HttpStatus.CREATED).build();
   }
 
   @GetMapping("/{id}")
   public ResponseEntity<GuidebookResponse> getById(
       @PathVariable UUID id,
-      @AuthenticationPrincipal JidogamUserDetails principal
+      @CurrentUserId UUID userId
   ) {
-    GuidebookResponse response = guidebookService.getById(id, principal.getId());
+    GuidebookResponse response = guidebookService.getById(id, userId);
     return ResponseEntity.ok(response);
   }
 
@@ -79,18 +78,18 @@ public class GuidebookController {
   public ResponseEntity<GuidebookResponse> update(
       @PathVariable UUID id,
       @Valid @RequestBody GuidebookUpdateRequest request,
-      @AuthenticationPrincipal JidogamUserDetails principal
+      @CurrentUserId UUID userId
   ) {
-    GuidebookResponse response = guidebookService.update(id, principal.getId(), request);
+    GuidebookResponse response = guidebookService.update(id, userId, request);
     return ResponseEntity.ok(response);
   }
 
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> delete(
       @PathVariable UUID id,
-      @AuthenticationPrincipal JidogamUserDetails principal
+      @CurrentUserId UUID userId
   ) {
-    guidebookService.delete(id, principal.getId());
+    guidebookService.delete(id, userId);
     return ResponseEntity.noContent().build();
   }
 
@@ -98,9 +97,9 @@ public class GuidebookController {
   public ResponseEntity<GuidebookResponse> addPlace(
       @PathVariable UUID id,
       @Valid @RequestBody GuidebookAddPlaceRequest request,
-      @AuthenticationPrincipal JidogamUserDetails principal
+      @CurrentUserId UUID userId
   ) {
-    GuidebookResponse response = guidebookService.addPlace(id, principal.getId(), request);
+    GuidebookResponse response = guidebookService.addPlace(id, userId, request);
     return ResponseEntity.ok(response);
   }
 
@@ -108,27 +107,27 @@ public class GuidebookController {
   public ResponseEntity<Void> removePlace(
       @PathVariable UUID id,
       @PathVariable UUID placeId,
-      @AuthenticationPrincipal JidogamUserDetails principal
+      @CurrentUserId UUID userId
   ) {
-    guidebookService.removePlace(id, placeId, principal.getId());
+    guidebookService.removePlace(id, placeId, userId);
     return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/{id}/participants")
   public ResponseEntity<Void> addParticipant(
       @PathVariable UUID id,
-      @AuthenticationPrincipal JidogamUserDetails principal
+      @CurrentUserId UUID userId
   ) {
-    guidebookService.addParticipant(id, principal.getId());
+    guidebookService.addParticipant(id, userId);
     return ResponseEntity.ok().build();
   }
 
   @DeleteMapping("/{id}/participants")
   public ResponseEntity<Void> cancelParticipation(
       @PathVariable UUID id,
-      @AuthenticationPrincipal JidogamUserDetails principal
+      @CurrentUserId UUID userId
   ) {
-    guidebookService.cancelParticipation(id, principal.getId());
+    guidebookService.cancelParticipation(id, userId);
     return ResponseEntity.noContent().build();
   }
 }
