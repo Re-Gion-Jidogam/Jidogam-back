@@ -164,7 +164,8 @@ CREATE TABLE password_reset_tokens
     token      TEXT                     NOT NULL,
     used       BOOLEAN                  NOT NULL,
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE
 );
 
 -- Foreign Key Constraints

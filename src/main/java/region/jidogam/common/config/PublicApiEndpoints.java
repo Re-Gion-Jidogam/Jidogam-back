@@ -9,6 +9,7 @@ public final class PublicApiEndpoints {
   public static final String AUTH_LOGIN = "/api/auth/login";
   public static final String AUTH_REFRESH = "/api/auth/refresh";
   public static final String PASSWORD_RESET = "/api/auth/password/reset-link";
+  public static final String PASSWORD_NEW = "/api/auth/password/new";
 
   // 사용자 등록 API
   public static final String USERS_CREATE = "/api/users";
@@ -35,11 +36,13 @@ public final class PublicApiEndpoints {
    */
   public static String[] getPublicPostEndpoints() {
     return new String[]{
-      AUTH_LOGIN,
-      AUTH_REFRESH,
-      USERS_CREATE,
-      EMAIL_AUTH,
-      EMAIL_AUTH_CHECK
+        AUTH_LOGIN,
+        AUTH_REFRESH,
+        USERS_CREATE,
+        EMAIL_AUTH,
+        EMAIL_AUTH_CHECK,
+        PASSWORD_RESET,
+        PASSWORD_NEW
     };
   }
 
