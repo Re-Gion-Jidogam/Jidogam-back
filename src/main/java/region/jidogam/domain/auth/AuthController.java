@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.util.CookieUtil;
 import region.jidogam.domain.auth.dto.LoginRequest;
+import region.jidogam.domain.auth.dto.NewPasswordChangeRequest;
 import region.jidogam.domain.auth.dto.PasswordResetRequest;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
@@ -73,5 +74,13 @@ public class AuthController {
 
     authService.sendEmailWithPasswordResetUrl(request.email());
     return ResponseEntity.ok().build();
+  }
+
+  @PostMapping("/password/new")
+  public ResponseEntity<String> changePassword(
+      @Valid @RequestBody NewPasswordChangeRequest request) {
+
+    authService.changePassword(request);
+    return ResponseEntity.ok("비밀번호가 재설정 되었습니다. 새로운 비밀번호로 다시 로그인해주세요.");
   }
 }

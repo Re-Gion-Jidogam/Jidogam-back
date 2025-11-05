@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.dto.PlaceStampRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
@@ -32,6 +33,7 @@ public class StampService {
   private final Clock clock;
   private final UserRepository userRepository;
   private final StampRepository stampRepository;
+  private final PlaceRepository placeRepository;
   private final PlaceService placeService;
 
   @Transactional
@@ -54,13 +56,14 @@ public class StampService {
 
     // 4. 도장
     Stamp stamp = Stamp.builder()
-      .place(place)
-      .user(user)
-      .build();
+        .place(place)
+        .user(user)
+        .build();
 
     stampRepository.save(stamp);
+    placeRepository.updateStampCount(place.getId(), 1);
     log.info("장소 도장 찍기 완료: placeName = {}, email = {}", request.place().placeName(),
-      user.getEmail());
+        user.getEmail());
   }
 
   @Transactional
@@ -73,7 +76,7 @@ public class StampService {
     if (deleted == 0) {
       throw StampNotFoundException.withPlaceIdAndUserId(userId, placeId);
     }
-
+    placeRepository.updateStampCount(placeId, -1);
     log.info("장소 도장 취소 완료: userId = {}, placeId = {}", userId, placeId);
   }
 
@@ -82,18 +85,18 @@ public class StampService {
   // 유저 확인
   private User getUserOrThrow(UUID userId) {
     return userRepository.findById(userId)
-      .orElseThrow(() -> UserNotFoundException.withId(userId));
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
   }
 
   // 도장 쿨타임 검사
   private void validateStampCoolTime(UUID userId) {
     LocalDateTime now = LocalDateTime.now(clock);
     stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)
-      .ifPresent(lastStamp -> {
-        if (lastStamp.getCreatedAt().isAfter(now.minus(cooldownTime))) {
-          throw StampCooldownException.withRestTime(cooldownTime.toMinutes());
-        }
-      });
+        .ifPresent(lastStamp -> {
+          if (lastStamp.getCreatedAt().isAfter(now.minus(cooldownTime))) {
+            throw StampCooldownException.withRestTime(cooldownTime.toMinutes());
+          }
+        });
   }
 
   // 도장 중복 검사
