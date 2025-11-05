@@ -461,8 +461,8 @@ class UserServiceTest {
   class UpdateUserTest {
 
     @Test
-    @DisplayName("성공, 도장 찍은 내역 없음")
-    void success() {
+    @DisplayName("성공 - 모든 필드 업데이트")
+    void updateAllFields() {
       //given
       UUID userId = UUID.randomUUID();
       String newNickname = "새닉네임";
@@ -484,6 +484,7 @@ class UserServiceTest {
           .build();
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.existsByNickname(newNickname)).thenReturn(false);
       when(passwordEncoder.encode(newPassword)).thenReturn("encodedNewPassword1234");
       when(userRepository.save(any(User.class))).thenReturn(user);
       when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
@@ -497,12 +498,129 @@ class UserServiceTest {
       assertEquals(newNickname, result.nickname());
       assertNull(result.lastStampedDate());
       verify(userRepository, times(1)).findById(userId);
-      verify(userRepository, times(1)).save(user);
+      verify(userRepository, times(1)).existsByNickname(newNickname);
       verify(passwordEncoder, times(1)).encode(newPassword);
+      verify(userRepository, times(1)).save(user);
     }
 
     @Test
-    @DisplayName("성공, 최근 도장 찍은 내역 있음")
+    @DisplayName("성공 - 닉네임만 업데이트")
+    void updateNicknameOnly() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String newNickname = "새닉네임";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          newNickname,
+          null,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .profileImageUrl("https://old-image.com/profile.jpg")
+          .exp(10L)
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.existsByNickname(newNickname)).thenReturn(false);
+      when(userRepository.save(any(User.class))).thenReturn(user);
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
+          Optional.empty());
+
+      //when
+      UserDto result = userService.update(userId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(newNickname, result.nickname());
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, times(1)).existsByNickname(newNickname);
+      verify(passwordEncoder, never()).encode(any());
+      verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    @DisplayName("성공 - 비밀번호만 업데이트")
+    void updatePasswordOnly() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String newPassword = "newPassword1234";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          null,
+          newPassword,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .profileImageUrl("https://old-image.com/profile.jpg")
+          .exp(10L)
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(passwordEncoder.encode(newPassword)).thenReturn("encodedNewPassword1234");
+      when(userRepository.save(any(User.class))).thenReturn(user);
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
+          Optional.empty());
+
+      //when
+      UserDto result = userService.update(userId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals("기존닉네임", result.nickname());
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, never()).existsByNickname(any());
+      verify(passwordEncoder, times(1)).encode(newPassword);
+      verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    @DisplayName("성공 - 프로필 이미지만 업데이트")
+    void updateProfileImageOnly() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String newProfileImageUrl = "https://new-image.com/profile.jpg";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          null,
+          null,
+          newProfileImageUrl
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .profileImageUrl("https://old-image.com/profile.jpg")
+          .exp(10L)
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.save(any(User.class))).thenReturn(user);
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
+          Optional.empty());
+
+      //when
+      UserDto result = userService.update(userId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals("기존닉네임", result.nickname());
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, never()).existsByNickname(any());
+      verify(passwordEncoder, never()).encode(any());
+      verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    @DisplayName("성공 - 최근 도장 찍은 내역 있음")
     void successWhenLastStampExist() {
       //given
       UUID userId = UUID.randomUUID();
@@ -528,6 +646,7 @@ class UserServiceTest {
       LocalDateTime stampCreatedAt = LocalDateTime.now();
 
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.existsByNickname(newNickname)).thenReturn(false);
       when(passwordEncoder.encode(newPassword)).thenReturn("encodedNewPassword1234");
       when(userRepository.save(any(User.class))).thenReturn(user);
       when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
@@ -542,12 +661,159 @@ class UserServiceTest {
       assertEquals(newNickname, result.nickname());
       assertEquals(stampCreatedAt, result.lastStampedDate());
       verify(userRepository, times(1)).findById(userId);
-      verify(userRepository, times(1)).save(user);
+      verify(userRepository, times(1)).existsByNickname(newNickname);
       verify(passwordEncoder, times(1)).encode(newPassword);
+      verify(userRepository, times(1)).save(user);
     }
 
     @Test
-    @DisplayName("존재하지 않는 사용자")
+    @DisplayName("실패 - 비밀번호가 빈 문자열")
+    void failsWhenPasswordIsBlank() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String blankPassword = "   ";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          null,
+          blankPassword,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      //when & then
+      assertThrows(region.jidogam.domain.user.exception.UserPasswordLengthException.class,
+          () -> userService.update(userId, request));
+      verify(userRepository, times(1)).findById(userId);
+      verify(passwordEncoder, never()).encode(any());
+      verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("실패 - 비밀번호 길이가 8 미만")
+    void failsWhenPasswordTooShort() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String shortPassword = "short";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          null,
+          shortPassword,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      //when & then
+      assertThrows(region.jidogam.domain.user.exception.UserPasswordLengthException.class,
+          () -> userService.update(userId, request));
+      verify(userRepository, times(1)).findById(userId);
+      verify(passwordEncoder, never()).encode(any());
+      verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("실패 - 닉네임 중복")
+    void failsWhenNicknameDuplicated() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String duplicatedNickname = "중복닉네임";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          duplicatedNickname,
+          null,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.existsByNickname(duplicatedNickname)).thenReturn(true);
+
+      //when & then
+      assertThrows(UserNicknameConflictException.class,
+          () -> userService.update(userId, request));
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, times(1)).existsByNickname(duplicatedNickname);
+      verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("실패 - 닉네임 길이 초과")
+    void failsWhenNicknameTooLong() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String tooLongNickname = "012345678901234567890"; // 21자
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          tooLongNickname,
+          null,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      //when & then
+      assertThrows(UserNicknameLengthException.class,
+          () -> userService.update(userId, request));
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, never()).existsByNickname(any());
+      verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("실패 - 닉네임 길이 미만")
+    void failsWhenNicknameTooShort() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String tooShortNickname = "a"; // 1자
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          tooShortNickname,
+          null,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      //when & then
+      assertThrows(UserNicknameLengthException.class,
+          () -> userService.update(userId, request));
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, never()).existsByNickname(any());
+      verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("실패 - 존재하지 않는 사용자")
     void failsWhenUserNotFound() {
       //given
       UUID userId = UUID.randomUUID();
