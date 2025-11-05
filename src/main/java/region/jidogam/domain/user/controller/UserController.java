@@ -85,22 +85,21 @@ public class UserController {
     return ResponseEntity.ok(userInfo);
   }
 
-  @GetMapping("/{userId}/guidebooks")
+  @GetMapping("/{authorId}/guidebooks")
   public ResponseEntity<CursorPageResponseDto<GuidebookResponse>> getGuidebooks(
-      @AuthenticationPrincipal JidogamUserDetails userDetails,
-      @PathVariable UUID userId,
+      @CurrentUserId UUID userId,
+      @PathVariable UUID authorId,
       @ParameterObject @ModelAttribute UserGuidebookSearchRequest request) {
-    CursorPageResponseDto<GuidebookResponse> userGuidebookList = userService.getUserGuidebookList(
-        userDetails == null ? null : userDetails.getId(), userId, request);
+    CursorPageResponseDto<GuidebookResponse> userGuidebookList = userService.getUserGuidebookList(userId, authorId, request);
 
     return ResponseEntity.ok(userGuidebookList);
   }
 
   @PatchMapping
   public ResponseEntity<UserDto> updateProfile(
-      @AuthenticationPrincipal JidogamUserDetails userDetails,
+      @CurrentUserId UUID userId,
       @Valid @RequestBody UserUpdateRequest request
   ){
-    return ResponseEntity.ok(userService.update(userDetails.getId(), request));
+    return ResponseEntity.ok(userService.update(userId, request));
   }
 }
