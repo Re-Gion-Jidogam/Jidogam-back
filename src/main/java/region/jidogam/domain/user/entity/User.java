@@ -46,15 +46,11 @@ public class User extends BaseUpdatableEntity {
   }
 
   public void changeNickname(String nickname) {
-    if(nickname != null) {
       this.nickname = nickname;
-    }
   }
 
   public void changePassword(String password) {
-    if(password != null) {
       this.password = password;
-    }
   }
 
   public void changeProfileImage(String profileImageUrl) {
