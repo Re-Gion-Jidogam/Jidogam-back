@@ -20,7 +20,7 @@ import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
-import region.jidogam.domain.user.UserMapper;
+import region.jidogam.domain.user.mapper.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.dto.UserGuidebookCursor;
 import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
