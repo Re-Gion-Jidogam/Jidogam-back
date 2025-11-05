@@ -27,6 +27,7 @@ import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
 import region.jidogam.domain.user.dto.UserUpdateRequest;
 import region.jidogam.domain.user.exception.UnverifiedEmailException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
+import region.jidogam.domain.user.exception.UserPasswordLengthException;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
@@ -101,6 +102,12 @@ public class UserService {
     }
     if (userRepository.existsByNickname(nickname)) {
       throw UserNicknameConflictException.withNickname(nickname);
+    }
+  }
+
+  private void validatePassword(String password) {
+    if (password.isBlank() || password.length() < 8){
+      throw UserPasswordLengthException.lengthInvalid();
     }
   }
 
@@ -186,11 +193,18 @@ public class UserService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
-    request.nickname().ifPresent(user::changeNickname);
-    request.password().ifPresent(password -> user.changePassword(passwordEncoder.encode(password)));
-    // TODO
-    // 이미지 업로드 기능 추가 시 수정
-    request.profileImageUrl().ifPresent(user::changeProfileImage);
+    // Patch 이므로 null이 아닐 때만 업데이트
+    if (request.nickname() != null) {
+      validateNickname(request.nickname()); // 공백으로 되어있거나 중복인 경우 예외 발생
+      user.changeNickname(request.nickname());
+    }
+    if (request.password() != null) {
+      validatePassword(request.password()); // 공백으로 되어있거나 중복인 경우 예외 발생
+      user.changePassword(passwordEncoder.encode(request.password()));
+    }
+    if (request.profileImageUrl() != null) {
+      user.changeProfileImage(request.profileImageUrl());
+    }
 
     userRepository.save(user);
 
