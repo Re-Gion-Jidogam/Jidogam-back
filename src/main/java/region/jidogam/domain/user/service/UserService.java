@@ -1,6 +1,5 @@
 package region.jidogam.domain.user.service;
 
-
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -36,6 +35,7 @@ import region.jidogam.domain.user.exception.UserEmailConflictException;
 import region.jidogam.domain.user.exception.UserNicknameConflictException;
 import region.jidogam.domain.user.exception.UserNicknameLengthException;
 import region.jidogam.domain.user.repository.UserRepository;
+import region.jidogam.domain.user.util.LevelCalculator;
 
 @Slf4j
 @Service
@@ -56,6 +56,7 @@ public class UserService {
   private final GuidebookMapper guidebookMapper;
 
   private final CursorCodecUtil cursorCodecUtil;
+  private final LevelCalculator levelCalculator;
 
   @Transactional
   public TokenPair create(UserCreateRequest request) {
@@ -120,7 +121,7 @@ public class UserService {
 
     Stamp lastStamp = stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(id).orElse(null);
 
-    int level = 0; // todo - 경험치 시스템 설계 후 수정 필요
+    int level = levelCalculator.calculateLevel(user.getExp());
 
     return userMapper.toResponse(user, level, lastStamp);
   }
@@ -147,6 +148,15 @@ public class UserService {
     long total = guidebookRepository.countGuidebookByAuthorId(authorId, isOwner, request.keyword());
 
     return buildResponse(guidebooks, limit, request, total);
+  }
+
+  public void updateUserExp(User user, long exp) {
+    long newExp = user.getExp() + exp;
+
+    if (newExp < 0) {
+      throw new IllegalArgumentException("EXP는 0 미만이 될 수 없습니다.");
+    }
+    user.updateExp(newExp);
   }
 
   // 추후 재사용을 위해 분리
