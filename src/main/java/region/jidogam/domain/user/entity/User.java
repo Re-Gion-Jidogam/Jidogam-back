@@ -56,4 +56,8 @@ public class User extends BaseUpdatableEntity {
   public void changeProfileImage(String profileImageUrl) {
     this.profileImageUrl = profileImageUrl;   // null 허용
   }
+
+  public void updateExp(long exp) {
+    this.exp = exp;
+  }
 }
