@@ -24,8 +24,10 @@ import region.jidogam.domain.user.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.dto.UserGuidebookCursor;
 import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
+import region.jidogam.domain.user.dto.UserUpdateRequest;
 import region.jidogam.domain.user.exception.UnverifiedEmailException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
+import region.jidogam.domain.user.exception.UserPasswordLengthException;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
@@ -100,6 +102,12 @@ public class UserService {
     }
     if (userRepository.existsByNickname(nickname)) {
       throw UserNicknameConflictException.withNickname(nickname);
+    }
+  }
+
+  private void validatePassword(String password) {
+    if (password.isBlank() || password.length() < 8){
+      throw UserPasswordLengthException.lengthInvalid();
     }
   }
 
@@ -178,5 +186,32 @@ public class UserService {
         .totalCount(total)
         .nextCursor(nextCursor)
         .build();
+  }
+
+  @Transactional
+  public UserDto update(UUID userId, UserUpdateRequest request) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    // Patch 이므로 null이 아닐 때만 업데이트
+    if (request.nickname() != null) {
+      validateNickname(request.nickname()); // 공백으로 되어있거나 중복인 경우 예외 발생
+      user.changeNickname(request.nickname());
+    }
+    if (request.password() != null) {
+      validatePassword(request.password()); // 공백으로 되어있거나 중복인 경우 예외 발생
+      user.changePassword(passwordEncoder.encode(request.password()));
+    }
+    if (request.profileImageUrl() != null) {
+      user.changeProfileImage(request.profileImageUrl());
+    }
+
+    userRepository.save(user);
+
+    // TODO
+    // 도장 수가 많아질 경우 성능 우려. user에 lastStampedAt을 추가하는 방향 고려
+    Stamp stamp = stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId).orElse(null);
+
+    return userMapper.toResponse(user, 0, stamp);
   }
 }
