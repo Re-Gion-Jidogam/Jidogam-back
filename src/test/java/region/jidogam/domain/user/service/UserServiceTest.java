@@ -39,6 +39,7 @@ import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.InvalidEmailFormatException;
 import region.jidogam.domain.user.exception.UserEmailConflictException;
+import region.jidogam.domain.user.exception.UserExpException;
 import region.jidogam.domain.user.exception.UserNicknameConflictException;
 import region.jidogam.domain.user.exception.UserNicknameLengthException;
 import region.jidogam.domain.user.repository.UserRepository;
@@ -454,6 +455,192 @@ class UserServiceTest {
 
       //then
 
+    }
+  }
+
+  @Nested
+  @DisplayName("사용자 경험치 증가")
+  class IncreaseUserExpTest {
+
+    @Test
+    @DisplayName("성공 - 정상적으로 경험치 증가")
+    void success() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(100L)
+          .build();
+
+      int expToAdd = 50;
+
+      //when
+      userService.increaseUserExp(user, expToAdd);
+
+      //then
+      assertEquals(150L, user.getExp());
+    }
+
+    @Test
+    @DisplayName("성공 - 경험치가 0일 때 증가")
+    void successWhenExpIsZero() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(0L)
+          .build();
+
+      int expToAdd = 100;
+
+      //when
+      userService.increaseUserExp(user, expToAdd);
+
+      //then
+      assertEquals(100L, user.getExp());
+    }
+
+    @Test
+    @DisplayName("성공 - 큰 경험치 값 증가")
+    void successWithLargeExp() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(1000000L)
+          .build();
+
+      int expToAdd = 1000000;
+
+      //when
+      userService.increaseUserExp(user, expToAdd);
+
+      //then
+      assertEquals(2000000L, user.getExp());
+    }
+
+    @Test
+    @DisplayName("실패 - 음수 경험치를 추가하려고 할 때")
+    void failsWhenExpIsNegative() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(100L)
+          .build();
+
+      int negativeExp = -50;
+
+      //when & then
+      assertThrows(UserExpException.class, () -> userService.increaseUserExp(user, negativeExp));
+      assertEquals(100L, user.getExp()); // 경험치는 변경되지 않아야 함
+    }
+  }
+
+  @Nested
+  @DisplayName("사용자 경험치 감소")
+  class DecreaseUserExpTest {
+
+    @Test
+    @DisplayName("성공 - 정상적으로 경험치 감소")
+    void success() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(100L)
+          .build();
+
+      int expToDecrease = 50;
+
+      //when
+      userService.decreaseUserExp(user, expToDecrease);
+
+      //then
+      assertEquals(50L, user.getExp());
+    }
+
+    @Test
+    @DisplayName("성공 - 경험치가 0이 되는 경우")
+    void successWhenExpBecomesZero() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(100L)
+          .build();
+
+      int expToDecrease = 100;
+
+      //when
+      userService.decreaseUserExp(user, expToDecrease);
+
+      //then
+      assertEquals(0L, user.getExp());
+    }
+
+    @Test
+    @DisplayName("성공 - 감소량이 현재 경험치보다 많을 때 0으로 설정")
+    void successWhenExpGoesNegative() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(50L)
+          .build();
+
+      int expToDecrease = 100;
+
+      //when
+      userService.decreaseUserExp(user, expToDecrease);
+
+      //then
+      assertEquals(0L, user.getExp()); // 음수가 되지 않고 0으로 설정되어야 함
+    }
+
+    @Test
+    @DisplayName("성공 - 경험치가 0일 때 감소")
+    void successWhenCurrentExpIsZero() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(0L)
+          .build();
+
+      int expToDecrease = 50;
+
+      //when
+      userService.decreaseUserExp(user, expToDecrease);
+
+      //then
+      assertEquals(0L, user.getExp());
+    }
+
+    @Test
+    @DisplayName("실패 - 음수 경험치를 감소하려고 할 때")
+    void failsWhenExpIsNegative() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(100L)
+          .build();
+
+      int negativeExp = -50;
+
+      //when & then
+      assertThrows(UserExpException.class, () -> userService.decreaseUserExp(user, negativeExp));
+      assertEquals(100L, user.getExp()); // 경험치는 변경되지 않아야 함
     }
   }
 }
