@@ -28,6 +28,7 @@ import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.exception.PlaceNotFoundException;
+import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.dto.PlaceStampRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
@@ -46,6 +47,9 @@ class StampServiceTest {
 
   @Mock
   private StampRepository stampRepository;
+
+  @Mock
+  private PlaceRepository placeRepository;
 
   @Mock
   private PlaceService placeService;
@@ -68,42 +72,44 @@ class StampServiceTest {
     // 테스트 쿨타임 5분
     ReflectionTestUtils.setField(stampService, "cooldownTime", Duration.ofMinutes(5));
 
-    userId = UUID.randomUUID();
-    placeId = UUID.randomUUID();
-
     user = User.builder()
-      .email("user@email.com")
-      .nickname("users")
-      .exp(0L)
-      .password("testPassword")
-      .profileImageUrl(null)
-      .build();
+        .email("user@email.com")
+        .nickname("users")
+        .exp(0L)
+        .password("testPassword")
+        .profileImageUrl(null)
+        .build();
 
     placeCreateRequest = new PlaceCreateRequest(
-      null,
-      "임시마트",
-      "전북 익산시 망산길 11-17",
-      null,
-      BigDecimal.valueOf(35.976749396987046),
-      BigDecimal.valueOf(126.99599512792346)
+        null,
+        "임시마트",
+        "전북 익산시 망산길 11-17",
+        null,
+        BigDecimal.valueOf(35.976749396987046),
+        BigDecimal.valueOf(126.99599512792346)
     );
 
     area = Area.builder()
-      .sigunguCode("1234")
-      .sido("전라북도특별자치도")
-      .sigungu("익산시")
-      .weight(1)
-      .build();
+        .sigunguCode("1234")
+        .sido("전라북도특별자치도")
+        .sigungu("익산시")
+        .weight(1)
+        .build();
 
     place = Place.builder()
-      .name(placeCreateRequest.placeName())
-      .address(placeCreateRequest.addressName())
-      .x(placeCreateRequest.x())
-      .y(placeCreateRequest.y())
-      .category(placeCreateRequest.category())
-      .area(area)
-      .points(10)
-      .build();
+        .name(placeCreateRequest.placeName())
+        .address(placeCreateRequest.addressName())
+        .x(placeCreateRequest.x())
+        .y(placeCreateRequest.y())
+        .category(placeCreateRequest.category())
+        .area(area)
+        .points(10)
+        .build();
+
+    userId = UUID.randomUUID();
+    placeId = UUID.randomUUID();
+    ReflectionTestUtils.setField(user, "id", userId);
+    ReflectionTestUtils.setField(place, "id", placeId);
   }
 
   @Test
@@ -112,13 +118,11 @@ class StampServiceTest {
     // given
     setClock();
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
-      .thenReturn(Optional.empty());
-
-    UUID placeId = UUID.randomUUID();
+    when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
+        .thenReturn(Optional.empty());
     when(placeService.getOrCreatePlace(placeId, placeCreateRequest)).thenReturn(place);
-    when(stampRepository.existsByUser_IdAndPlace_Id(user.getId(), place.getId()))
-      .thenReturn(false);
+    when(stampRepository.existsByUser_IdAndPlace_Id(userId, place.getId()))
+        .thenReturn(false);
 
     PlaceStampRequest request = new PlaceStampRequest(placeId, placeCreateRequest);
 
@@ -135,6 +139,8 @@ class StampServiceTest {
     Stamp savedStamp = stampCaptor.getValue();
     assertThat(savedStamp.getUser()).isEqualTo(user);
     assertThat(savedStamp.getPlace()).isEqualTo(place);
+
+    verify(placeRepository).updateStampCount(placeId, 1);
   }
 
   @Test
@@ -143,8 +149,8 @@ class StampServiceTest {
     // given
     setClock();
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
-      .thenReturn(Optional.empty());
+    when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
+        .thenReturn(Optional.empty());
     when(placeService.getOrCreatePlace(null, placeCreateRequest)).thenReturn(place);
 
     PlaceStampRequest request = new PlaceStampRequest(null, placeCreateRequest);
@@ -159,6 +165,8 @@ class StampServiceTest {
     Stamp savedStamp = stampCaptor.getValue();
     assertThat(savedStamp.getUser()).isEqualTo(user);
     assertThat(savedStamp.getPlace()).isEqualTo(place);
+
+    verify(placeRepository).updateStampCount(placeId, 1);
   }
 
   @Test
@@ -167,15 +175,15 @@ class StampServiceTest {
     // given
     setClock();
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
-      .thenReturn(Optional.empty());
+    when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
+        .thenReturn(Optional.empty());
     when(placeService.getOrCreatePlace(placeId, placeCreateRequest)).thenThrow(
-      PlaceNotFoundException.class);
+        PlaceNotFoundException.class);
     PlaceStampRequest request = new PlaceStampRequest(placeId, placeCreateRequest);
 
     // when & then
     assertThrows(PlaceNotFoundException.class,
-      () -> stampService.stampPlace(request, userId));
+        () -> stampService.stampPlace(request, userId));
   }
 
   @Test
@@ -184,17 +192,17 @@ class StampServiceTest {
     // given
     setClock();
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
-      .thenReturn(Optional.empty());
+    when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
+        .thenReturn(Optional.empty());
     when(placeService.getOrCreatePlace(placeId, placeCreateRequest)).thenReturn(place);
-    when(stampRepository.existsByUser_IdAndPlace_Id(user.getId(), place.getId()))
-      .thenReturn(true);
+    when(stampRepository.existsByUser_IdAndPlace_Id(userId, placeId))
+        .thenReturn(true);
 
     PlaceStampRequest request = new PlaceStampRequest(placeId, placeCreateRequest);
 
     // when & then
     assertThrows(StampDuplicateException.class,
-      () -> stampService.stampPlace(request, userId));
+        () -> stampService.stampPlace(request, userId));
   }
 
   @Nested
@@ -211,12 +219,12 @@ class StampServiceTest {
       // CoolTime 5분, 마지막 도장 3분 전
       LocalDateTime recent = LocalDateTime.of(2025, 8, 20, 11, 57);
       Stamp stamp = Stamp.builder()
-        .user(user)
-        .place(place)
-        .build();
+          .user(user)
+          .place(place)
+          .build();
       ReflectionTestUtils.setField(stamp, "createdAt", recent);
-      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
-        .thenReturn(Optional.of(stamp));
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
+          .thenReturn(Optional.of(stamp));
 
       PlaceStampRequest request = new PlaceStampRequest(null, placeCreateRequest);
 
@@ -234,12 +242,12 @@ class StampServiceTest {
       // CoolTime 5분, 마지막 도장 10분 전
       LocalDateTime recent = LocalDateTime.of(2025, 8, 20, 11, 50);
       Stamp stamp = Stamp.builder()
-        .user(user)
-        .place(place)
-        .build();
+          .user(user)
+          .place(place)
+          .build();
       ReflectionTestUtils.setField(stamp, "createdAt", recent);
-      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId()))
-        .thenReturn(Optional.of(stamp));
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
+          .thenReturn(Optional.of(stamp));
 
       when(placeService.getOrCreatePlace(null, placeCreateRequest)).thenReturn(place);
 
@@ -255,6 +263,8 @@ class StampServiceTest {
       Stamp savedStamp = stampCaptor.getValue();
       assertThat(savedStamp.getUser()).isEqualTo(user);
       assertThat(savedStamp.getPlace()).isEqualTo(place);
+
+      verify(placeRepository).updateStampCount(placeId, 1);
     }
   }
 
@@ -271,6 +281,7 @@ class StampServiceTest {
     // then
     verify(userRepository).findById(userId);
     verify(stampRepository).deleteByUser_IdAndPlace_Id(userId, placeId);
+    verify(placeRepository).updateStampCount(placeId, -1);
   }
 
   @Test

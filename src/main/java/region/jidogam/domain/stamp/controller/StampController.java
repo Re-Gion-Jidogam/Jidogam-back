@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import region.jidogam.common.annotation.CurrentUserId;
 import region.jidogam.domain.stamp.dto.PlaceStampRequest;
 import region.jidogam.domain.stamp.service.StampService;
 
@@ -23,8 +23,8 @@ public class StampController {
 
   @PostMapping
   public ResponseEntity<Void> stampPlace(
-    @Valid @RequestBody PlaceStampRequest request,
-    @RequestParam(name = "userId") UUID userId // 임시
+      @Valid @RequestBody PlaceStampRequest request,
+      @CurrentUserId UUID userId
   ) {
     stampService.stampPlace(request, userId);
     return ResponseEntity.ok().build();
@@ -32,8 +32,8 @@ public class StampController {
 
   @DeleteMapping("/{placeId}")
   public ResponseEntity<Void> stampPlace(
-    @PathVariable UUID placeId,
-    @RequestParam(name = "userId") UUID userId // 임시
+      @PathVariable UUID placeId,
+      @CurrentUserId UUID userId
   ) {
     stampService.cancelStamp(userId, placeId);
     return ResponseEntity.noContent().build();

@@ -1,6 +1,7 @@
 package region.jidogam.domain.guidebook.entity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -23,11 +24,11 @@ import region.jidogam.domain.user.entity.User;
 @Builder
 public class GuidebookParticipant extends BaseEntity {
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
   private User user;
 
-  @ManyToOne
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "guidebook_id", nullable = false)
   private Guidebook guidebook;
 

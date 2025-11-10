@@ -16,6 +16,7 @@ public interface GuidebookRepositoryCustom {
       String keyword,
       GuidebookSortBy sortBy,
       SortDirection direction,
+      Boolean isLocal,
       int limit
   );
 
@@ -26,7 +27,10 @@ public interface GuidebookRepositoryCustom {
       UserGuideBookSortBy sortBy,
       SortDirection direction,
       int limit,
-      boolean isOwner);
+      boolean isOwner
+  );
 
   long countGuidebookByAuthorId(UUID authorId, boolean isOwner, String keyword);
+
+  long countPublishedGuidebooksByKeyword(String keyword, Boolean isLocal);
 }

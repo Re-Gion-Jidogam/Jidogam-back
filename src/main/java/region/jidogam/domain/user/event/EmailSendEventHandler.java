@@ -11,7 +11,7 @@ import region.jidogam.domain.user.service.EmailService;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class EmailAuthCodeEventHandler {
+public class EmailSendEventHandler {
 
   private final EmailService emailService;
 
@@ -22,6 +22,17 @@ public class EmailAuthCodeEventHandler {
       emailService.sendAuthCodeEmail(
           event.email(),
           event.authCode(),
+          event.expiration()
+      );
+  }
+
+  @Async
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT) // 커밋 후 실행
+  public void handlePasswordResetEmailSend(PasswordResetEmailSendEvent event) {
+    log.info("비밀번호 재설정 이메일 전송 시작: {}", event.email());
+      emailService.sendPasswordResetEmail(
+          event.email(),
+          event.resetUrl(),
           event.expiration()
       );
   }

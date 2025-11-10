@@ -24,11 +24,11 @@ import region.jidogam.domain.auth.repository.EmailSendFailureLogRepository;
 @RequiredArgsConstructor
 public class EmailService {
 
+  private static final String EMAIL_TEMPLATE_NAME = "auth-code-email-template.html";
+  private static final String PASSWORD_RESET_TEMPLATE_NAME = "password-reset-email-template.html";
   private final JavaMailSender mailSender;
   private final EmailSendFailureLogRepository emailSendFailureLogRepository;
   private final ThreadLocal<Integer> retryCountHolder = ThreadLocal.withInitial(() -> 0);
-
-  private static final String EMAIL_TEMPLATE_NAME = "auth-code-email-template.html";
 
   // 이메일 발송
   @Retryable(
@@ -52,6 +52,31 @@ public class EmailService {
     } catch (MessagingException | IOException e) {
       log.error("이메일 발송 실패 ({}/3) - 수신자: {}", retryCountHolder.get(), email, e);
       throw new RuntimeException("이메일 발송에 실패했습니다.", e);
+    }
+  }
+
+  // 이메일 발송 - 비밀번호 재설정
+  @Retryable(
+      retryFor = {MailException.class, RuntimeException.class},
+      maxAttempts = 3,
+      backoff = @Backoff(delay = 2000, multiplier = 2)
+  )
+  public void sendPasswordResetEmail(String email, String resetUrl, Duration expiration) {
+    try {
+      int currentRetry = retryCountHolder.get();
+      retryCountHolder.set(currentRetry + 1);
+
+      log.info("비밀번호 재설정 이메일 전송 시도 ({}/3) - email: {}", retryCountHolder.get(), email);
+
+      MimeMessage message = createPasswordResetMessage(email, resetUrl, expiration);
+      mailSender.send(message);
+
+      log.info("비밀번호 재설정 이메일 전송 완료: {}", email);
+      retryCountHolder.remove();
+
+    } catch (MessagingException | IOException e) {
+      log.error("비밀번호 재설정 이메일 발송 실패 ({}/3) - 수신자: {}", retryCountHolder.get(), email, e);
+      throw new RuntimeException("비밀번호 재설정 이메일 발송에 실패했습니다.", e);
     }
   }
 
@@ -96,6 +121,32 @@ public class EmailService {
     helper.setText(htmlContent, true);
 
     return message;
+  }
+
+  // MIME 메시지 생성 - 비밀번호 재설정
+  private MimeMessage createPasswordResetMessage(String email, String resetUrl, Duration expiration)
+      throws MessagingException, IOException {
+
+    MimeMessage message = mailSender.createMimeMessage();
+    MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+    helper.setTo(email);
+    helper.setSubject("[지도감] 비밀번호 재설정");
+
+    String htmlContent = buildPasswordResetEmailContent(resetUrl, expiration);
+    helper.setText(htmlContent, true);
+
+    return message;
+  }
+
+  // 비밀번호 재설정 이메일 내용 구성
+  private String buildPasswordResetEmailContent(String resetUrl, Duration expiration)
+      throws IOException {
+    String htmlContent = loadEmailTemplate(PASSWORD_RESET_TEMPLATE_NAME);
+    htmlContent = htmlContent.replace("{{RESET_URL}}", resetUrl);
+    htmlContent = htmlContent.replace("{{EXPIRATION_MINUTES}}",
+        expiration.toMinutes() + "");
+    return htmlContent;
   }
 
   // 이메일 내용 구성

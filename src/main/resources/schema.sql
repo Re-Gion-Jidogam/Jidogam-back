@@ -93,17 +93,20 @@ CREATE TABLE areas
 -- Places table
 CREATE TABLE places
 (
-    id         UUID PRIMARY KEY,
-    area_id    UUID                     NOT NULL,
-    name       VARCHAR(255)             NOT NULL,
-    x          DECIMAL(18, 14)          NOT NULL,
-    y          DECIMAL(17, 14)          NOT NULL,
-    address    VARCHAR(255)             NOT NULL,
-    category   VARCHAR(50)              NULL,
-    points     INTEGER                  NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE
+    id              UUID PRIMARY KEY,
+    area_id         UUID                     NOT NULL,
+    name            VARCHAR(255)             NOT NULL,
+    x               DECIMAL(18, 14)          NOT NULL,
+    y               DECIMAL(17, 14)          NOT NULL,
+    address         VARCHAR(255)             NOT NULL,
+    category        VARCHAR(50)              NULL,
+    points          INTEGER                  NOT NULL,
+    guidebook_count INTEGER                  NOT NULL,
+    stamp_count     INTEGER                  NOT NULL,
+    created_at      TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at      TIMESTAMP WITH TIME ZONE
 );
+CREATE INDEX idx_place_coordinates ON places (y, x);
 
 -- Refresh token table
 CREATE TABLE refresh_tokens
@@ -130,12 +133,39 @@ CREATE TABLE email_auth_codes
 CREATE TABLE email_send_failure_logs
 (
     id               UUID PRIMARY KEY,
-    email            VARCHAR(255) NOT NULL,
+    email            VARCHAR(255)             NOT NULL,
     masked_auth_code VARCHAR(50),
     error_message    VARCHAR(1000),
-    retry_count      INT          NOT NULL DEFAULT 0,
+    retry_count      INT                      NOT NULL DEFAULT 0,
     failed_at        TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at       TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+-- Guidebook area ratios table
+CREATE TABLE guidebook_area_ratios
+(
+    id                UUID PRIMARY KEY,
+    guidebook_id      UUID                     NOT NULL UNIQUE,
+    first_area_id     UUID                     NOT NULL,
+    first_area_ratio  DOUBLE PRECISION         NOT NULL,
+    second_area_id    UUID                     NULL,
+    second_area_ratio DOUBLE PRECISION         NULL,
+    third_area_id     UUID                     NULL,
+    third_area_ratio  DOUBLE PRECISION         NULL,
+    is_primary_area   BOOLEAN                  NOT NULL DEFAULT FALSE,
+    created_at        TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+-- Password reset code table
+CREATE TABLE password_reset_tokens
+(
+    id         UUID PRIMARY KEY,
+    email      VARCHAR(50)              NOT NULL UNIQUE,
+    token      TEXT                     NOT NULL,
+    used       BOOLEAN                  NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE
 );
 
 -- Foreign Key Constraints
@@ -178,3 +208,19 @@ ALTER TABLE stamps
 ALTER TABLE refresh_tokens
     ADD CONSTRAINT fk_refresh_tokens_user_id
         FOREIGN KEY (user_id) REFERENCES users (id);
+
+ALTER TABLE guidebook_area_ratios
+    ADD CONSTRAINT fk_guidebook_area_ratios_guidebook
+        FOREIGN KEY (guidebook_id) REFERENCES guidebooks (id);
+
+ALTER TABLE guidebook_area_ratios
+    ADD CONSTRAINT fk_guidebook_area_ratios_first_area
+        FOREIGN KEY (first_area_id) REFERENCES areas (id);
+
+ALTER TABLE guidebook_area_ratios
+    ADD CONSTRAINT fk_guidebook_area_ratios_second_area
+        FOREIGN KEY (second_area_id) REFERENCES areas (id);
+
+ALTER TABLE guidebook_area_ratios
+    ADD CONSTRAINT fk_guidebook_area_ratios_third_area
+        FOREIGN KEY (third_area_id) REFERENCES areas (id);

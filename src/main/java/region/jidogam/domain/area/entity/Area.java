@@ -9,14 +9,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import region.jidogam.common.entity.BaseEntity;
 import region.jidogam.common.entity.BaseUpdatableEntity;
 
 @Entity
 @Table(
-  name = "areas", uniqueConstraints = {
+    name = "areas", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"sido", "sigungu"})
-  }
+}
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -35,4 +34,8 @@ public class Area extends BaseUpdatableEntity {
 
   @Column(nullable = false, unique = true, length = 10)
   private String sigunguCode;
+
+  public String areaName() {
+    return sido + " " + sigungu;
+  }
 }

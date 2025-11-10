@@ -41,6 +41,10 @@ public class User extends BaseUpdatableEntity {
   @Builder.Default
   private Role role = Role.USER;
 
+  public void changePassword(String password) {
+    this.password = password;
+  }
+
   public enum Role {
     USER, ADMIN
   }
