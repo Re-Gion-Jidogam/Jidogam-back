@@ -44,6 +44,9 @@ jidogam:
   stamp:
     cooldown:
       time: ${STAMP_COOLDOWN_TIME:5m}
+  guidebook:
+    completion-bonus-percentage: ${GUIDEBOOK_COMPLETION_BONUS_PERCENTAGE:20}
+
   email:
     auth:
       expiration: ${EMAIL_AUTH_CODE_EXPIRATION:5m}
