@@ -19,6 +19,7 @@ import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
+import region.jidogam.domain.user.exception.UserExpException;
 import region.jidogam.domain.user.mapper.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.dto.UserGuidebookCursor;
@@ -150,12 +151,24 @@ public class UserService {
     return buildResponse(guidebooks, limit, request, total);
   }
 
-  public void updateUserExp(User user, long exp) {
-    long newExp = user.getExp() + exp;
-
-    if (newExp < 0) {
-      throw new IllegalArgumentException("EXP는 0 미만이 될 수 없습니다.");
+  public void decreaseUserExp(User user, int exp) {
+    if (exp < 0) {
+      throw UserExpException.negativeValue();
     }
+
+    long newExp = user.getExp() - exp;
+    if (newExp < 0) {
+      user.updateExp(0);
+      return;
+    }
+    user.updateExp(newExp);
+  }
+
+  public void increaseUserExp(User user, int exp) {
+    if (exp < 0) {
+      throw UserExpException.negativeValue();
+    }
+    long newExp = user.getExp() + exp;
     user.updateExp(newExp);
   }
 
