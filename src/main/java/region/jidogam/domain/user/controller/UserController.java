@@ -20,6 +20,8 @@ import region.jidogam.common.annotation.CurrentUserId;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.common.util.CookieUtil;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.place.dto.PlaceResponse;
+import region.jidogam.domain.stamp.dto.StampSearchRequest;
 import region.jidogam.domain.user.dto.EmailAuthRequest;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.dto.UserDto;
@@ -29,7 +31,6 @@ import region.jidogam.domain.user.service.EmailAuthService;
 import region.jidogam.domain.user.service.UserService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
 import region.jidogam.infrastructure.jwt.dto.TokenResponse;
-import region.jidogam.infrastructure.security.JidogamUserDetails;
 
 @RestController
 @RequestMapping("/api/users")
@@ -99,5 +100,14 @@ public class UserController {
       @Valid @RequestBody UserUpdateRequest request
   ){
     return ResponseEntity.ok(userService.update(userId, request));
+  }
+
+  @GetMapping("/{userId}/places")
+  public ResponseEntity<CursorPageResponseDto<PlaceResponse>> getStamps(
+      @CurrentUserId UUID currentUserId,
+      @PathVariable UUID userId,
+      @Valid @ModelAttribute StampSearchRequest request) {
+
+    return ResponseEntity.ok(userService.getUserStamps(currentUserId, userId, request));
   }
 }
