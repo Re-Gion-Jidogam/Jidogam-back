@@ -7,9 +7,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,13 +18,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.annotation.CurrentUserId;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
-import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.user.dto.EmailAuthRequest;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
+import region.jidogam.domain.user.dto.UserUpdateRequest;
 import region.jidogam.domain.user.service.EmailAuthService;
 import region.jidogam.domain.user.service.UserService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
@@ -41,7 +41,7 @@ public class UserController {
   private final CookieUtil cookieUtil;
 
   @PostMapping
-  public ResponseEntity<?> register(@RequestBody @Valid UserCreateRequest request,
+  public ResponseEntity<TokenResponse> register(@RequestBody @Valid UserCreateRequest request,
       HttpServletResponse response) {
 
     TokenPair tokenPair = userService.create(request);
@@ -50,7 +50,7 @@ public class UserController {
     response.addHeader("Set-Cookie", refreshTokenCookie.toString());
 
     return ResponseEntity.status(HttpStatus.CREATED)
-        .body(ResponseDto.ok(new TokenResponse(tokenPair.accessToken())));
+        .body(new TokenResponse(tokenPair.accessToken()));
   }
 
   @GetMapping("/check-nickname")
@@ -83,14 +83,21 @@ public class UserController {
     return ResponseEntity.ok(userInfo);
   }
 
-  @GetMapping("/{userId}/guidebooks")
+  @GetMapping("/{authorId}/guidebooks")
   public ResponseEntity<CursorPageResponseDto<GuidebookResponse>> getGuidebooks(
-      @AuthenticationPrincipal JidogamUserDetails userDetails,
-      @PathVariable UUID userId,
+      @CurrentUserId UUID userId,
+      @PathVariable UUID authorId,
       @Valid @ModelAttribute UserGuidebookSearchRequest request) {
-    CursorPageResponseDto<GuidebookResponse> userGuidebookList = userService.getUserGuidebookList(
-        userDetails == null ? null : userDetails.getId(), userId, request);
+    CursorPageResponseDto<GuidebookResponse> userGuidebookList = userService.getUserGuidebookList(userId, authorId, request);
 
     return ResponseEntity.ok(userGuidebookList);
+  }
+
+  @PatchMapping
+  public ResponseEntity<UserDto> updateProfile(
+      @CurrentUserId UUID userId,
+      @Valid @RequestBody UserUpdateRequest request
+  ){
+    return ResponseEntity.ok(userService.update(userId, request));
   }
 }
