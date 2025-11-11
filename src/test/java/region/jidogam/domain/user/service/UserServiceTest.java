@@ -8,9 +8,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,11 +25,23 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import region.jidogam.common.dto.SortDirection;
+import region.jidogam.common.dto.response.CursorPageResponseDto;
+import region.jidogam.common.util.CursorCodecUtil;
+import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.auth.entity.EmailAuthCode;
 import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
 import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
+import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
+import region.jidogam.domain.guidebook.repository.GuidebookRepository;
+import region.jidogam.domain.place.dto.PlaceResponse;
+import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.mapper.PlaceMapper;
+import region.jidogam.domain.stamp.dto.StampSearchRequest;
+import region.jidogam.domain.stamp.dto.StampSortBy;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
+import region.jidogam.domain.user.exception.UnauthorizedUserException;
 import region.jidogam.domain.user.mapper.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.exception.UnverifiedEmailException;
@@ -66,8 +83,20 @@ class UserServiceTest {
   @Mock
   private EmailAuthCodeRepository emailAuthCodeRepository;
 
+  @Mock
+  private GuidebookRepository guidebookRepository;
+
+  @Mock
+  private CursorCodecUtil cursorCodecUtil;
+
   @Spy
   private UserMapper userMapper;
+
+  @Spy
+  private GuidebookMapper guidebookMapper;
+
+  @Spy
+  private PlaceMapper placeMapper;
 
   @Spy
   private LevelCalculator levelCalculator;
@@ -1017,6 +1046,322 @@ class UserServiceTest {
       //when & then
       assertThrows(UserExpException.class, () -> userService.decreaseUserExp(user, negativeExp));
       assertEquals(100L, user.getExp()); // 경험치는 변경되지 않아야 함
+    }
+  }
+
+  @Nested
+  @DisplayName("사용자 도장 목록 조회")
+  class GetUserStampsTest {
+
+    private UUID testUserId;
+    private User testUser;
+    private Area testArea;
+    private Place testPlace1;
+    private Place testPlace2;
+    private Place testPlace3;
+    private Stamp testStamp1;
+    private Stamp testStamp2;
+    private Stamp testStamp3;
+
+    @BeforeEach
+    void setUp() {
+      testUserId = UUID.randomUUID();
+
+      testUser = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .build();
+
+      testArea = Area.builder()
+          .sido("서울특별시")
+          .sigungu("강남구")
+          .sigunguCode("1168000000")
+          .weight(1)
+          .build();
+
+      testPlace1 = Place.builder()
+          .area(testArea)
+          .name("장소1")
+          .x(new BigDecimal("127.0"))
+          .y(new BigDecimal("37.0"))
+          .address("서울시 강남구")
+          .category("카페")
+          .build();
+
+      testPlace2 = Place.builder()
+          .area(testArea)
+          .name("장소2")
+          .x(new BigDecimal("127.1"))
+          .y(new BigDecimal("37.1"))
+          .address("서울시 서초구")
+          .category("식당")
+          .build();
+
+      testPlace3 = Place.builder()
+          .area(testArea)
+          .name("장소3")
+          .x(new BigDecimal("127.2"))
+          .y(new BigDecimal("37.2"))
+          .address("서울시 송파구")
+          .category("공원")
+          .build();
+
+      testStamp1 = Stamp.builder()
+          .user(testUser)
+          .place(testPlace1)
+          .build();
+
+      testStamp2 = Stamp.builder()
+          .user(testUser)
+          .place(testPlace2)
+          .build();
+
+      testStamp3 = Stamp.builder()
+          .user(testUser)
+          .place(testPlace3)
+          .build();
+    }
+
+    @Test
+    @DisplayName("성공 - 기본 조회 (파라미터 없음)")
+    void success() {
+      //given
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      List<Stamp> stamps = Arrays.asList(testStamp1, testStamp2);
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+      when(cursorCodecUtil.decodeStampCursor(null)).thenReturn(null);
+      when(stampRepository.searchStampsByUserId(
+          testUserId,
+          null,
+          null,
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          21
+      )).thenReturn(stamps);
+      when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(2L);
+
+      //when
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(2, result.size());
+      assertEquals(2L, result.totalCount());
+      assertFalse(result.hasNext());
+      assertNull(result.nextCursor());
+      assertEquals("createdAt", result.sortBy());
+      assertEquals(SortDirection.DESC, result.sortDirection());
+      verify(userRepository, times(1)).findById(testUserId);
+      verify(stampRepository, times(1)).searchStampsByUserId(
+          testUserId, null, null, StampSortBy.CREATED_AT, SortDirection.DESC, 21
+      );
+      verify(stampRepository, times(1)).countStampsByUserId(testUserId, null);
+    }
+
+    @Test
+    @DisplayName("성공 - 키워드 검색")
+    void successWithKeyword() {
+      //given
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          "카페"
+      );
+
+      List<Stamp> stamps = Arrays.asList(testStamp1);
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+      when(cursorCodecUtil.decodeStampCursor(null)).thenReturn(null);
+      when(stampRepository.searchStampsByUserId(
+          testUserId,
+          null,
+          "카페",
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          21
+      )).thenReturn(stamps);
+      when(stampRepository.countStampsByUserId(testUserId, "카페")).thenReturn(1L);
+
+      //when
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(1, result.size());
+      assertEquals(1L, result.totalCount());
+      assertFalse(result.hasNext());
+      verify(stampRepository, times(1)).searchStampsByUserId(
+          testUserId, null, "카페", StampSortBy.CREATED_AT, SortDirection.DESC, 21
+      );
+      verify(stampRepository, times(1)).countStampsByUserId(testUserId, "카페");
+    }
+
+    @Test
+    @DisplayName("성공 - hasNext가 true인 경우")
+    void successWithHasNext() {
+      //given
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          2,
+          null
+      );
+
+      // Arrays.asList는 불변 리스트이므로 ArrayList로 변경
+      List<Stamp> stamps = new ArrayList<>(Arrays.asList(testStamp1, testStamp2, testStamp3));
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+      when(cursorCodecUtil.decodeStampCursor(null)).thenReturn(null);
+      when(cursorCodecUtil.encodeNextCursor(any(PlaceResponse.class), any(StampSortBy.class)))
+          .thenReturn("encodedCursor");
+      when(stampRepository.searchStampsByUserId(
+          testUserId,
+          null,
+          null,
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          3
+      )).thenReturn(stamps);
+      when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(10L);
+
+      //when
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(2, result.size());
+      assertEquals(10L, result.totalCount());
+      assertTrue(result.hasNext());
+      assertNotNull(result.nextCursor());
+    }
+
+    @Test
+    @DisplayName("성공 - 빈 결과")
+    void successWithEmptyResult() {
+      //given
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+      when(cursorCodecUtil.decodeStampCursor(null)).thenReturn(null);
+      when(stampRepository.searchStampsByUserId(
+          testUserId,
+          null,
+          null,
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          21
+      )).thenReturn(Arrays.asList());
+      when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(0L);
+
+      //when
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(0, result.size());
+      assertEquals(0L, result.totalCount());
+      assertFalse(result.hasNext());
+      assertNull(result.nextCursor());
+    }
+
+    @Test
+    @DisplayName("성공 - 오름차순 정렬")
+    void successWithAscendingOrder() {
+      //given
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.ASC,
+          null,
+          20,
+          null
+      );
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+      when(cursorCodecUtil.decodeStampCursor(null)).thenReturn(null);
+      when(stampRepository.searchStampsByUserId(
+          testUserId,
+          null,
+          null,
+          StampSortBy.CREATED_AT,
+          SortDirection.ASC,
+          21
+      )).thenReturn(Arrays.asList());
+      when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(0L);
+
+      //when
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(SortDirection.ASC, result.sortDirection());
+      verify(stampRepository, times(1)).searchStampsByUserId(
+          testUserId, null, null, StampSortBy.CREATED_AT, SortDirection.ASC, 21
+      );
+    }
+
+    @Test
+    @DisplayName("실패 - 다른 사용자의 도장 목록 조회 시도")
+    void failsWhenUnauthorizedAccess() {
+      //given
+      UUID currentUserId = UUID.randomUUID();
+      UUID differentUserId = UUID.randomUUID();
+
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      //when & then
+      assertThrows(UnauthorizedUserException.class,
+          () -> userService.getUserStamps(currentUserId, differentUserId, request));
+      verify(userRepository, never()).findById(any(UUID.class));
+      verify(stampRepository, never()).searchStampsByUserId(
+          any(UUID.class), any(), any(), any(StampSortBy.class), any(SortDirection.class), any(Integer.class)
+      );
+    }
+
+    @Test
+    @DisplayName("실패 - 존재하지 않는 사용자")
+    void failsWhenUserNotFound() {
+      //given
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.empty());
+
+      //when & then
+      assertThrows(UserNotFoundException.class,
+          () -> userService.getUserStamps(testUserId, testUserId, request));
+      verify(userRepository, times(1)).findById(testUserId);
+      verify(stampRepository, never()).searchStampsByUserId(
+          any(UUID.class), any(), any(), any(StampSortBy.class), any(SortDirection.class), any(Integer.class)
+      );
     }
   }
 }
