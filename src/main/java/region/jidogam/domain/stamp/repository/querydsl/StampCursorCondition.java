@@ -16,23 +16,23 @@ public class StampCursorCondition {
   // 날짜 기반 커서 조건 생성 (createdAt)
   public static BooleanExpression buildDateCursor(
       LocalDateTime cursorDate,
-      UUID lastId,
+      UUID placeId,
       DateTimePath<LocalDateTime> dateField,
       SortDirection direction) {
 
-    if (cursorDate == null || lastId == null) {
+    if (cursorDate == null || placeId == null) {
       return null;
     }
 
     if (direction == SortDirection.ASC) {
       return dateField.gt(cursorDate)
           .or(dateField.eq(cursorDate)
-              .and(stamp.id.gt(lastId)));
+              .and(stamp.place.id.gt(placeId)));
     }
 
     return dateField.lt(cursorDate)
         .or(dateField.eq(cursorDate)
-            .and(stamp.id.lt(lastId)));
+            .and(stamp.place.id.lt(placeId)));
   }
 
   // 스탬프 커서 조건 (CREATED_AT)
@@ -48,7 +48,7 @@ public class StampCursorCondition {
     return switch (sortBy) {
       case CREATED_AT -> buildDateCursor(
           cursor.createdAt(),
-          cursor.lastId(),
+          cursor.placeId(),
           stamp.createdAt,
           direction
       );

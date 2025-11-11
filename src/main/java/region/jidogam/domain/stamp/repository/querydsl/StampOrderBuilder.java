@@ -34,10 +34,10 @@ public class StampOrderBuilder {
         : field.desc();
   }
 
-  // ID 보조 정렬
+  // Place ID 보조 정렬
   private static OrderSpecifier<?> buildIdOrder(SortDirection direction) {
     return direction == SortDirection.ASC
-        ? stamp.id.asc()
-        : stamp.id.desc();
+        ? stamp.place.id.asc()
+        : stamp.place.id.desc();
   }
 }

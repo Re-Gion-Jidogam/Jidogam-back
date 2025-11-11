@@ -6,7 +6,7 @@ import region.jidogam.common.dto.Cursor;
 
 public record StampCursor(
     LocalDateTime createdAt,
-    UUID lastId
+    UUID placeId
 ) {
 
   public static StampCursor from(Cursor cursor) {
