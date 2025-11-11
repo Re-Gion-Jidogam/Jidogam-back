@@ -38,10 +38,10 @@ CREATE TABLE guidebooks
 -- Guidebook participants table
 CREATE TABLE guidebook_participants
 (
-    id             UUID PRIMARY KEY,
-    user_id        UUID                     NOT NULL,
-    guidebook_id   UUID                     NOT NULL,
-    created_at     TIMESTAMP WITH TIME ZONE NOT NULL,
+    id               UUID PRIMARY KEY,
+    user_id          UUID                     NOT NULL,
+    guidebook_id     UUID                     NOT NULL,
+    created_at       TIMESTAMP WITH TIME ZONE NOT NULL,
     last_activity_at TIMESTAMP WITH TIME ZONE,
     UNIQUE (user_id, guidebook_id)
 );
