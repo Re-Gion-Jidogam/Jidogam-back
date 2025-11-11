@@ -13,7 +13,8 @@ public enum UserErrorCode implements ErrorCode {
   NICKNAME_LENGTH_INVALID(HttpStatus.BAD_REQUEST, "USER_O4", "닉네임은 2자 이상, 20자 이하여야 합니다."),
   EMAIL_FORMAT_INVALID(HttpStatus.BAD_REQUEST, "USER_05", "유효하지 않은 이메일 형식입니다."),
   EMAIL_NOT_VARIFIED(HttpStatus.FORBIDDEN, "USER_06", "인증된 이메일로만 회원가입할 수 있습니다."),
-  PASSWORD_LENGTH_INVALID(HttpStatus.BAD_REQUEST, "USER_O7", "비밀번호는 8자 이상이어야 합니다.");
+  PASSWORD_LENGTH_INVALID(HttpStatus.BAD_REQUEST, "USER_O7", "비밀번호는 8자 이상이어야 합니다."),
+  NO_PERMISSION(HttpStatus.FORBIDDEN, "USER_08", "접근 권한이 없습니다.");
 
   private HttpStatus status;
   private String code;
