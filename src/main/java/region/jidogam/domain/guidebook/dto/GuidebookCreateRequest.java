@@ -22,7 +22,7 @@ public record GuidebookCreateRequest(
     @Schema(description = "가이드북 배경 컬러")
     String color,
 
-    @Schema(description = "가이드북 썸네일 url")
+    @Schema(description = "가이드북 썸네일 key 값")
     String thumbnail
 ) {
 
