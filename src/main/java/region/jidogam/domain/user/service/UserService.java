@@ -1,6 +1,5 @@
 package region.jidogam.domain.user.service;
 
-
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -20,7 +19,8 @@ import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
-import region.jidogam.domain.user.UserMapper;
+import region.jidogam.domain.user.exception.UserExpException;
+import region.jidogam.domain.user.mapper.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.dto.UserGuidebookCursor;
 import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
@@ -38,6 +38,7 @@ import region.jidogam.domain.user.exception.UserEmailConflictException;
 import region.jidogam.domain.user.exception.UserNicknameConflictException;
 import region.jidogam.domain.user.exception.UserNicknameLengthException;
 import region.jidogam.domain.user.repository.UserRepository;
+import region.jidogam.domain.user.util.LevelCalculator;
 
 @Slf4j
 @Service
@@ -58,6 +59,7 @@ public class UserService {
   private final GuidebookMapper guidebookMapper;
 
   private final CursorCodecUtil cursorCodecUtil;
+  private final LevelCalculator levelCalculator;
 
   @Transactional
   public TokenPair create(UserCreateRequest request) {
@@ -128,7 +130,7 @@ public class UserService {
 
     Stamp lastStamp = stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(id).orElse(null);
 
-    int level = 0; // todo - 경험치 시스템 설계 후 수정 필요
+    int level = levelCalculator.calculateLevel(user.getExp());
 
     return userMapper.toResponse(user, level, lastStamp);
   }
@@ -155,6 +157,27 @@ public class UserService {
     long total = guidebookRepository.countGuidebookByAuthorId(authorId, isOwner, request.keyword());
 
     return buildResponse(guidebooks, limit, request, total);
+  }
+
+  public void decreaseUserExp(User user, int exp) {
+    if (exp < 0) {
+      throw UserExpException.negativeValue();
+    }
+
+    long newExp = user.getExp() - exp;
+    if (newExp < 0) {
+      user.updateExp(0);
+      return;
+    }
+    user.updateExp(newExp);
+  }
+
+  public void increaseUserExp(User user, int exp) {
+    if (exp < 0) {
+      throw UserExpException.negativeValue();
+    }
+    long newExp = user.getExp() + exp;
+    user.updateExp(newExp);
   }
 
   // 추후 재사용을 위해 분리
