@@ -6,8 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import region.jidogam.domain.stamp.entity.Stamp;
+import region.jidogam.domain.stamp.repository.querydsl.StampRepositoryCustom;
 
-public interface StampRepository extends JpaRepository<Stamp, UUID> {
+public interface StampRepository extends JpaRepository<Stamp, UUID>,
+    StampRepositoryCustom {
 
   Optional<Stamp> findFirstByUser_IdOrderByCreatedAtDesc(UUID uuid);
 

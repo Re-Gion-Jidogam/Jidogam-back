@@ -17,8 +17,13 @@ import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.common.util.CursorCodecUtil;
+import region.jidogam.domain.place.dto.PlaceResponse;
+import region.jidogam.domain.place.mapper.PlaceMapper;
+import region.jidogam.domain.stamp.dto.StampCursor;
+import region.jidogam.domain.stamp.dto.StampSearchRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
+import region.jidogam.domain.user.exception.UnauthorizedUserException;
 import region.jidogam.domain.user.exception.UserExpException;
 import region.jidogam.domain.user.mapper.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
@@ -57,6 +62,7 @@ public class UserService {
 
   private final UserMapper userMapper;
   private final GuidebookMapper guidebookMapper;
+  private final PlaceMapper placeMapper;
 
   private final CursorCodecUtil cursorCodecUtil;
   private final LevelCalculator levelCalculator;
@@ -108,7 +114,7 @@ public class UserService {
   }
 
   private void validatePassword(String password) {
-    if (password.isBlank() || password.length() < 8){
+    if (password.isBlank() || password.length() < 8) {
       throw UserPasswordLengthException.lengthInvalid();
     }
   }
@@ -236,5 +242,72 @@ public class UserService {
     Stamp stamp = stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId).orElse(null);
 
     return userMapper.toResponse(user, 0, stamp);
+  }
+
+  @Transactional(readOnly = true)
+  public CursorPageResponseDto<PlaceResponse> getUserStamps(UUID currentUserId, UUID userId,
+      StampSearchRequest request) {
+
+    // 동일 유저인지 확인
+    if(!currentUserId.equals(userId)) {
+      throw UnauthorizedUserException.noPermission();
+    }
+
+    // 유저 조회
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    // 커서 디코딩
+    StampCursor cursor = cursorCodecUtil.decodeStampCursor(request.cursor());
+
+    int limit = request.limit();
+
+    // 스탬프 조회 (limit + 1 개 조회하여 hasNext 판단)
+    List<Stamp> stamps = stampRepository.searchStampsByUserId(
+        userId,
+        cursor,
+        request.keyword(),
+        request.sortBy(),
+        request.sortDirection(),
+        limit + 1
+    );
+
+    // 총 개수 조회
+    long total = stampRepository.countStampsByUserId(userId, request.keyword());
+
+    // hasNext 계산
+    boolean hasNext = stamps.size() > limit;
+    if (hasNext) {
+      stamps.remove(limit);
+    }
+
+    // Stamp -> PlaceResponse 변환
+    List<PlaceResponse> responses = stamps.stream()
+        .map(stamp -> placeMapper.toResponse(
+            stamp.getPlace(),
+            null,  // 사용자 위치 정보 없음
+            null,  // 사용자 위치 정보 없음
+            stamp.getCreatedAt()  // 도장 찍은 날짜
+        ))
+        .toList();
+
+    // 다음 커서 생성
+    String nextCursor = null;
+    if (hasNext) {
+      nextCursor = cursorCodecUtil.encodeNextCursor(
+          responses.get(responses.size() - 1),
+          request.sortBy()
+      );
+    }
+
+    return CursorPageResponseDto.<PlaceResponse>builder()
+        .data(responses)
+        .hasNext(hasNext)
+        .size(responses.size())
+        .sortBy(request.sortBy().getValue())
+        .sortDirection(request.sortDirection())
+        .totalCount(total)
+        .nextCursor(nextCursor)
+        .build();
   }
 }
