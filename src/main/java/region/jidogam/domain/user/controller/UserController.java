@@ -102,7 +102,7 @@ public class UserController {
     return ResponseEntity.ok(userService.update(userId, request));
   }
 
-  @GetMapping("/{userId}/places")
+  @GetMapping("/{userId}/stamps")
   public ResponseEntity<CursorPageResponseDto<PlaceResponse>> getStamps(
       @CurrentUserId UUID currentUserId,
       @PathVariable UUID userId,
