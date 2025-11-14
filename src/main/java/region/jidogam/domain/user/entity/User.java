@@ -57,20 +57,7 @@ public class User extends BaseUpdatableEntity {
     this.profileImageUrl = profileImageUrl;   // null 허용
   }
 
-  public void addExp(long exp) {
-    if (exp < 0) {
-      throw new IllegalArgumentException("추가할 EXP는 0 이상이어야 합니다.");
-    }
-    this.exp += exp;
-  }
-
-  public void subtractExp(long exp) {
-    if (exp < 0) {
-      throw new IllegalArgumentException("차감할 EXP는 0 이상이어야 합니다.");
-    }
-    if (this.exp < exp) {
-      throw new IllegalArgumentException("현재 EXP보다 많은 EXP를 차감할 수 없습니다.");
-    }
-    this.exp -= exp;
+  public void updateExp(long exp) {
+    this.exp = exp;
   }
 }

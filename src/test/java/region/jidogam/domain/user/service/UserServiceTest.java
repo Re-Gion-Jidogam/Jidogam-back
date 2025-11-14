@@ -8,10 +8,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import org.h2.command.dml.MergeUsing.When;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,25 +25,38 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import region.jidogam.common.dto.SortDirection;
+import region.jidogam.common.dto.response.CursorPageResponseDto;
+import region.jidogam.common.util.CursorCodecUtil;
+import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.auth.entity.EmailAuthCode;
 import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
 import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
-import region.jidogam.domain.guidebook.service.GuidebookService;
+import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
+import region.jidogam.domain.guidebook.repository.GuidebookRepository;
+import region.jidogam.domain.place.dto.PlaceResponse;
+import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.mapper.PlaceMapper;
+import region.jidogam.domain.stamp.dto.StampSearchRequest;
+import region.jidogam.domain.stamp.dto.StampSortBy;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
-import region.jidogam.domain.stamp.service.StampService;
-import region.jidogam.domain.user.UserMapper;
+import region.jidogam.domain.user.exception.UnauthorizedUserException;
+import region.jidogam.domain.user.mapper.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.exception.UnverifiedEmailException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
+import region.jidogam.domain.user.util.LevelCalculator;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshToken;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
 import region.jidogam.domain.user.dto.UserCreateRequest;
+import region.jidogam.domain.user.dto.UserUpdateRequest;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.InvalidEmailFormatException;
 import region.jidogam.domain.user.exception.UserEmailConflictException;
+import region.jidogam.domain.user.exception.UserExpException;
 import region.jidogam.domain.user.exception.UserNicknameConflictException;
 import region.jidogam.domain.user.exception.UserNicknameLengthException;
 import region.jidogam.domain.user.repository.UserRepository;
@@ -66,8 +83,23 @@ class UserServiceTest {
   @Mock
   private EmailAuthCodeRepository emailAuthCodeRepository;
 
+  @Mock
+  private GuidebookRepository guidebookRepository;
+
+  @Mock
+  private CursorCodecUtil cursorCodecUtil;
+
   @Spy
   private UserMapper userMapper;
+
+  @Spy
+  private GuidebookMapper guidebookMapper;
+
+  @Spy
+  private PlaceMapper placeMapper;
+
+  @Spy
+  private LevelCalculator levelCalculator;
 
   @InjectMocks
   private UserService userService;
@@ -452,6 +484,884 @@ class UserServiceTest {
 
       //then
 
+    }
+  }
+
+  @Nested
+  @DisplayName("사용자 정보 수정")
+  class UpdateUserTest {
+
+    @Test
+    @DisplayName("성공 - 모든 필드 업데이트")
+    void updateAllFields() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String newNickname = "새닉네임";
+      String newPassword = "newPassword1234";
+      String newProfileImageUrl = "https://new-image.com/profile.jpg";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          newNickname,
+          newPassword,
+          newProfileImageUrl
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .profileImageUrl("https://old-image.com/profile.jpg")
+          .exp(10L)
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.existsByNickname(newNickname)).thenReturn(false);
+      when(passwordEncoder.encode(newPassword)).thenReturn("encodedNewPassword1234");
+      when(userRepository.save(any(User.class))).thenReturn(user);
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
+          Optional.empty());
+
+      //when
+      UserDto result = userService.update(userId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(newNickname, result.nickname());
+      assertNull(result.lastStampedDate());
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, times(1)).existsByNickname(newNickname);
+      verify(passwordEncoder, times(1)).encode(newPassword);
+      verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    @DisplayName("성공 - 닉네임만 업데이트")
+    void updateNicknameOnly() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String newNickname = "새닉네임";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          newNickname,
+          null,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .profileImageUrl("https://old-image.com/profile.jpg")
+          .exp(10L)
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.existsByNickname(newNickname)).thenReturn(false);
+      when(userRepository.save(any(User.class))).thenReturn(user);
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
+          Optional.empty());
+
+      //when
+      UserDto result = userService.update(userId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(newNickname, result.nickname());
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, times(1)).existsByNickname(newNickname);
+      verify(passwordEncoder, never()).encode(any());
+      verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    @DisplayName("성공 - 비밀번호만 업데이트")
+    void updatePasswordOnly() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String newPassword = "newPassword1234";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          null,
+          newPassword,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .profileImageUrl("https://old-image.com/profile.jpg")
+          .exp(10L)
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(passwordEncoder.encode(newPassword)).thenReturn("encodedNewPassword1234");
+      when(userRepository.save(any(User.class))).thenReturn(user);
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
+          Optional.empty());
+
+      //when
+      UserDto result = userService.update(userId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals("기존닉네임", result.nickname());
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, never()).existsByNickname(any());
+      verify(passwordEncoder, times(1)).encode(newPassword);
+      verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    @DisplayName("성공 - 프로필 이미지만 업데이트")
+    void updateProfileImageOnly() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String newProfileImageUrl = "https://new-image.com/profile.jpg";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          null,
+          null,
+          newProfileImageUrl
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .profileImageUrl("https://old-image.com/profile.jpg")
+          .exp(10L)
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.save(any(User.class))).thenReturn(user);
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
+          Optional.empty());
+
+      //when
+      UserDto result = userService.update(userId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals("기존닉네임", result.nickname());
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, never()).existsByNickname(any());
+      verify(passwordEncoder, never()).encode(any());
+      verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    @DisplayName("성공 - 최근 도장 찍은 내역 있음")
+    void successWhenLastStampExist() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String newNickname = "새닉네임";
+      String newPassword = "newPassword1234";
+      String newProfileImageUrl = "https://new-image.com/profile.jpg";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          newNickname,
+          newPassword,
+          newProfileImageUrl
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .profileImageUrl("https://old-image.com/profile.jpg")
+          .exp(10L)
+          .build();
+
+      Stamp mockStamp = mock(Stamp.class);
+      LocalDateTime stampCreatedAt = LocalDateTime.now();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.existsByNickname(newNickname)).thenReturn(false);
+      when(passwordEncoder.encode(newPassword)).thenReturn("encodedNewPassword1234");
+      when(userRepository.save(any(User.class))).thenReturn(user);
+      when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId)).thenReturn(
+          Optional.of(mockStamp));
+      when(mockStamp.getCreatedAt()).thenReturn(stampCreatedAt);
+
+      //when
+      UserDto result = userService.update(userId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(newNickname, result.nickname());
+      assertEquals(stampCreatedAt, result.lastStampedDate());
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, times(1)).existsByNickname(newNickname);
+      verify(passwordEncoder, times(1)).encode(newPassword);
+      verify(userRepository, times(1)).save(user);
+    }
+
+    @Test
+    @DisplayName("실패 - 비밀번호가 빈 문자열")
+    void failsWhenPasswordIsBlank() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String blankPassword = "   ";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          null,
+          blankPassword,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      //when & then
+      assertThrows(region.jidogam.domain.user.exception.UserPasswordLengthException.class,
+          () -> userService.update(userId, request));
+      verify(userRepository, times(1)).findById(userId);
+      verify(passwordEncoder, never()).encode(any());
+      verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("실패 - 비밀번호 길이가 8 미만")
+    void failsWhenPasswordTooShort() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String shortPassword = "short";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          null,
+          shortPassword,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      //when & then
+      assertThrows(region.jidogam.domain.user.exception.UserPasswordLengthException.class,
+          () -> userService.update(userId, request));
+      verify(userRepository, times(1)).findById(userId);
+      verify(passwordEncoder, never()).encode(any());
+      verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("실패 - 닉네임 중복")
+    void failsWhenNicknameDuplicated() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String duplicatedNickname = "중복닉네임";
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          duplicatedNickname,
+          null,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.existsByNickname(duplicatedNickname)).thenReturn(true);
+
+      //when & then
+      assertThrows(UserNicknameConflictException.class,
+          () -> userService.update(userId, request));
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, times(1)).existsByNickname(duplicatedNickname);
+      verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("실패 - 닉네임 길이 초과")
+    void failsWhenNicknameTooLong() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String tooLongNickname = "012345678901234567890"; // 21자
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          tooLongNickname,
+          null,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      //when & then
+      assertThrows(UserNicknameLengthException.class,
+          () -> userService.update(userId, request));
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, never()).existsByNickname(any());
+      verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("실패 - 닉네임 길이 미만")
+    void failsWhenNicknameTooShort() {
+      //given
+      UUID userId = UUID.randomUUID();
+      String tooShortNickname = "a"; // 1자
+
+      UserUpdateRequest request = new UserUpdateRequest(
+          tooShortNickname,
+          null,
+          null
+      );
+
+      User user = User.builder()
+          .nickname("기존닉네임")
+          .email("test@email.com")
+          .password("oldPassword")
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      //when & then
+      assertThrows(UserNicknameLengthException.class,
+          () -> userService.update(userId, request));
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, never()).existsByNickname(any());
+      verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("실패 - 존재하지 않는 사용자")
+    void failsWhenUserNotFound() {
+      //given
+      UUID userId = UUID.randomUUID();
+      UserUpdateRequest request = new UserUpdateRequest(
+          "새닉네임",
+          "newPassword1234",
+          "https://new-image.com/profile.jpg"
+      );
+
+      when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+      //when & then
+      assertThrows(UserNotFoundException.class, () -> userService.update(userId, request));
+      verify(userRepository, times(1)).findById(userId);
+      verify(userRepository, never()).save(any(User.class));
+    }
+  }
+
+  @Nested
+  @DisplayName("사용자 경험치 증가")
+  class IncreaseUserExpTest {
+
+    @Test
+    @DisplayName("성공 - 정상적으로 경험치 증가")
+    void success() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(100L)
+          .build();
+
+      int expToAdd = 50;
+
+      //when
+      userService.increaseUserExp(user, expToAdd);
+
+      //then
+      assertEquals(150L, user.getExp());
+    }
+
+    @Test
+    @DisplayName("성공 - 경험치가 0일 때 증가")
+    void successWhenExpIsZero() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(0L)
+          .build();
+
+      int expToAdd = 100;
+
+      //when
+      userService.increaseUserExp(user, expToAdd);
+
+      //then
+      assertEquals(100L, user.getExp());
+    }
+
+    @Test
+    @DisplayName("성공 - 큰 경험치 값 증가")
+    void successWithLargeExp() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(1000000L)
+          .build();
+
+      int expToAdd = 1000000;
+
+      //when
+      userService.increaseUserExp(user, expToAdd);
+
+      //then
+      assertEquals(2000000L, user.getExp());
+    }
+
+    @Test
+    @DisplayName("실패 - 음수 경험치를 추가하려고 할 때")
+    void failsWhenExpIsNegative() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(100L)
+          .build();
+
+      int negativeExp = -50;
+
+      //when & then
+      assertThrows(UserExpException.class, () -> userService.increaseUserExp(user, negativeExp));
+      assertEquals(100L, user.getExp()); // 경험치는 변경되지 않아야 함
+    }
+  }
+
+  @Nested
+  @DisplayName("사용자 경험치 감소")
+  class DecreaseUserExpTest {
+
+    @Test
+    @DisplayName("성공 - 정상적으로 경험치 감소")
+    void success() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(100L)
+          .build();
+
+      int expToDecrease = 50;
+
+      //when
+      userService.decreaseUserExp(user, expToDecrease);
+
+      //then
+      assertEquals(50L, user.getExp());
+    }
+
+    @Test
+    @DisplayName("성공 - 경험치가 0이 되는 경우")
+    void successWhenExpBecomesZero() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(100L)
+          .build();
+
+      int expToDecrease = 100;
+
+      //when
+      userService.decreaseUserExp(user, expToDecrease);
+
+      //then
+      assertEquals(0L, user.getExp());
+    }
+
+    @Test
+    @DisplayName("성공 - 감소량이 현재 경험치보다 많을 때 0으로 설정")
+    void successWhenExpGoesNegative() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(50L)
+          .build();
+
+      int expToDecrease = 100;
+
+      //when
+      userService.decreaseUserExp(user, expToDecrease);
+
+      //then
+      assertEquals(0L, user.getExp()); // 음수가 되지 않고 0으로 설정되어야 함
+    }
+
+    @Test
+    @DisplayName("성공 - 경험치가 0일 때 감소")
+    void successWhenCurrentExpIsZero() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(0L)
+          .build();
+
+      int expToDecrease = 50;
+
+      //when
+      userService.decreaseUserExp(user, expToDecrease);
+
+      //then
+      assertEquals(0L, user.getExp());
+    }
+
+    @Test
+    @DisplayName("실패 - 음수 경험치를 감소하려고 할 때")
+    void failsWhenExpIsNegative() {
+      //given
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .exp(100L)
+          .build();
+
+      int negativeExp = -50;
+
+      //when & then
+      assertThrows(UserExpException.class, () -> userService.decreaseUserExp(user, negativeExp));
+      assertEquals(100L, user.getExp()); // 경험치는 변경되지 않아야 함
+    }
+  }
+
+  @Nested
+  @DisplayName("사용자 도장 목록 조회")
+  class GetUserStampsTest {
+
+    private UUID testUserId;
+    private User testUser;
+    private Area testArea;
+    private Place testPlace1;
+    private Place testPlace2;
+    private Place testPlace3;
+    private Stamp testStamp1;
+    private Stamp testStamp2;
+    private Stamp testStamp3;
+
+    @BeforeEach
+    void setUp() {
+      testUserId = UUID.randomUUID();
+
+      testUser = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .build();
+
+      testArea = Area.builder()
+          .sido("서울특별시")
+          .sigungu("강남구")
+          .sigunguCode("1168000000")
+          .weight(1)
+          .build();
+
+      testPlace1 = Place.builder()
+          .area(testArea)
+          .name("장소1")
+          .x(new BigDecimal("127.0"))
+          .y(new BigDecimal("37.0"))
+          .address("서울시 강남구")
+          .category("카페")
+          .build();
+
+      testPlace2 = Place.builder()
+          .area(testArea)
+          .name("장소2")
+          .x(new BigDecimal("127.1"))
+          .y(new BigDecimal("37.1"))
+          .address("서울시 서초구")
+          .category("식당")
+          .build();
+
+      testPlace3 = Place.builder()
+          .area(testArea)
+          .name("장소3")
+          .x(new BigDecimal("127.2"))
+          .y(new BigDecimal("37.2"))
+          .address("서울시 송파구")
+          .category("공원")
+          .build();
+
+      testStamp1 = Stamp.builder()
+          .user(testUser)
+          .place(testPlace1)
+          .build();
+
+      testStamp2 = Stamp.builder()
+          .user(testUser)
+          .place(testPlace2)
+          .build();
+
+      testStamp3 = Stamp.builder()
+          .user(testUser)
+          .place(testPlace3)
+          .build();
+    }
+
+    @Test
+    @DisplayName("성공 - 기본 조회 (파라미터 없음)")
+    void success() {
+      //given
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      List<Stamp> stamps = Arrays.asList(testStamp1, testStamp2);
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+      when(cursorCodecUtil.decodeStampCursor(null)).thenReturn(null);
+      when(stampRepository.searchStampsByUserId(
+          testUserId,
+          null,
+          null,
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          21
+      )).thenReturn(stamps);
+      when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(2L);
+
+      //when
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(2, result.size());
+      assertEquals(2L, result.totalCount());
+      assertFalse(result.hasNext());
+      assertNull(result.nextCursor());
+      assertEquals("createdAt", result.sortBy());
+      assertEquals(SortDirection.DESC, result.sortDirection());
+      verify(userRepository, times(1)).findById(testUserId);
+      verify(stampRepository, times(1)).searchStampsByUserId(
+          testUserId, null, null, StampSortBy.CREATED_AT, SortDirection.DESC, 21
+      );
+      verify(stampRepository, times(1)).countStampsByUserId(testUserId, null);
+    }
+
+    @Test
+    @DisplayName("성공 - 키워드 검색")
+    void successWithKeyword() {
+      //given
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          "카페"
+      );
+
+      List<Stamp> stamps = Arrays.asList(testStamp1);
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+      when(cursorCodecUtil.decodeStampCursor(null)).thenReturn(null);
+      when(stampRepository.searchStampsByUserId(
+          testUserId,
+          null,
+          "카페",
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          21
+      )).thenReturn(stamps);
+      when(stampRepository.countStampsByUserId(testUserId, "카페")).thenReturn(1L);
+
+      //when
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(1, result.size());
+      assertEquals(1L, result.totalCount());
+      assertFalse(result.hasNext());
+      verify(stampRepository, times(1)).searchStampsByUserId(
+          testUserId, null, "카페", StampSortBy.CREATED_AT, SortDirection.DESC, 21
+      );
+      verify(stampRepository, times(1)).countStampsByUserId(testUserId, "카페");
+    }
+
+    @Test
+    @DisplayName("성공 - hasNext가 true인 경우")
+    void successWithHasNext() {
+      //given
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          2,
+          null
+      );
+
+      // Arrays.asList는 불변 리스트이므로 ArrayList로 변경
+      List<Stamp> stamps = new ArrayList<>(Arrays.asList(testStamp1, testStamp2, testStamp3));
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+      when(cursorCodecUtil.decodeStampCursor(null)).thenReturn(null);
+      when(cursorCodecUtil.encodeNextCursor(any(PlaceResponse.class), any(StampSortBy.class)))
+          .thenReturn("encodedCursor");
+      when(stampRepository.searchStampsByUserId(
+          testUserId,
+          null,
+          null,
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          3
+      )).thenReturn(stamps);
+      when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(10L);
+
+      //when
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(2, result.size());
+      assertEquals(10L, result.totalCount());
+      assertTrue(result.hasNext());
+      assertNotNull(result.nextCursor());
+    }
+
+    @Test
+    @DisplayName("성공 - 빈 결과")
+    void successWithEmptyResult() {
+      //given
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+      when(cursorCodecUtil.decodeStampCursor(null)).thenReturn(null);
+      when(stampRepository.searchStampsByUserId(
+          testUserId,
+          null,
+          null,
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          21
+      )).thenReturn(Arrays.asList());
+      when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(0L);
+
+      //when
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(0, result.size());
+      assertEquals(0L, result.totalCount());
+      assertFalse(result.hasNext());
+      assertNull(result.nextCursor());
+    }
+
+    @Test
+    @DisplayName("성공 - 오름차순 정렬")
+    void successWithAscendingOrder() {
+      //given
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.ASC,
+          null,
+          20,
+          null
+      );
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
+      when(cursorCodecUtil.decodeStampCursor(null)).thenReturn(null);
+      when(stampRepository.searchStampsByUserId(
+          testUserId,
+          null,
+          null,
+          StampSortBy.CREATED_AT,
+          SortDirection.ASC,
+          21
+      )).thenReturn(Arrays.asList());
+      when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(0L);
+
+      //when
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+
+      //then
+      assertNotNull(result);
+      assertEquals(SortDirection.ASC, result.sortDirection());
+      verify(stampRepository, times(1)).searchStampsByUserId(
+          testUserId, null, null, StampSortBy.CREATED_AT, SortDirection.ASC, 21
+      );
+    }
+
+    @Test
+    @DisplayName("실패 - 다른 사용자의 도장 목록 조회 시도")
+    void failsWhenUnauthorizedAccess() {
+      //given
+      UUID currentUserId = UUID.randomUUID();
+      UUID differentUserId = UUID.randomUUID();
+
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      //when & then
+      assertThrows(UnauthorizedUserException.class,
+          () -> userService.getUserStamps(currentUserId, differentUserId, request));
+      verify(userRepository, never()).findById(any(UUID.class));
+      verify(stampRepository, never()).searchStampsByUserId(
+          any(UUID.class), any(), any(), any(StampSortBy.class), any(SortDirection.class), any(Integer.class)
+      );
+    }
+
+    @Test
+    @DisplayName("실패 - 존재하지 않는 사용자")
+    void failsWhenUserNotFound() {
+      //given
+      StampSearchRequest request = new StampSearchRequest(
+          StampSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.empty());
+
+      //when & then
+      assertThrows(UserNotFoundException.class,
+          () -> userService.getUserStamps(testUserId, testUserId, request));
+      verify(userRepository, times(1)).findById(testUserId);
+      verify(stampRepository, never()).searchStampsByUserId(
+          any(UUID.class), any(), any(), any(StampSortBy.class), any(SortDirection.class), any(Integer.class)
+      );
     }
   }
 }

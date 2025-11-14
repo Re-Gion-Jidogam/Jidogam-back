@@ -1,6 +1,5 @@
 package region.jidogam.domain.user.service;
 
-
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -19,14 +18,22 @@ import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipantRepository;
+import region.jidogam.domain.place.dto.PlaceResponse;
+import region.jidogam.domain.place.mapper.PlaceMapper;
+import region.jidogam.domain.stamp.dto.StampCursor;
+import region.jidogam.domain.stamp.dto.StampSearchRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
-import region.jidogam.domain.user.UserMapper;
+import region.jidogam.domain.user.exception.UnauthorizedUserException;
+import region.jidogam.domain.user.exception.UserExpException;
+import region.jidogam.domain.user.mapper.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.dto.UserGuidebookCursor;
 import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
+import region.jidogam.domain.user.dto.UserUpdateRequest;
 import region.jidogam.domain.user.exception.UnverifiedEmailException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
+import region.jidogam.domain.user.exception.UserPasswordLengthException;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
@@ -37,6 +44,7 @@ import region.jidogam.domain.user.exception.UserEmailConflictException;
 import region.jidogam.domain.user.exception.UserNicknameConflictException;
 import region.jidogam.domain.user.exception.UserNicknameLengthException;
 import region.jidogam.domain.user.repository.UserRepository;
+import region.jidogam.domain.user.util.LevelCalculator;
 
 @Slf4j
 @Service
@@ -56,8 +64,10 @@ public class UserService {
 
   private final UserMapper userMapper;
   private final GuidebookMapper guidebookMapper;
+  private final PlaceMapper placeMapper;
 
   private final CursorCodecUtil cursorCodecUtil;
+  private final LevelCalculator levelCalculator;
 
   @Transactional
   public TokenPair create(UserCreateRequest request) {
@@ -105,6 +115,12 @@ public class UserService {
     }
   }
 
+  private void validatePassword(String password) {
+    if (password.isBlank() || password.length() < 8) {
+      throw UserPasswordLengthException.lengthInvalid();
+    }
+  }
+
   @Transactional(readOnly = true)
   public void validateEmail(String email) {
     if (email == null || email.isBlank() || !email.matches(EMAIL_REGEX)) {
@@ -122,7 +138,7 @@ public class UserService {
 
     Stamp lastStamp = stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(id).orElse(null);
 
-    int level = 0; // todo - 경험치 시스템 설계 후 수정 필요
+    int level = levelCalculator.calculateLevel(user.getExp());
 
     return userMapper.toResponse(user, level, lastStamp);
   }
@@ -151,6 +167,27 @@ public class UserService {
     return buildResponse(guidebooks, limit, request, total);
   }
 
+  public void decreaseUserExp(User user, int exp) {
+    if (exp < 0) {
+      throw UserExpException.negativeValue();
+    }
+
+    long newExp = user.getExp() - exp;
+    if (newExp < 0) {
+      user.updateExp(0);
+      return;
+    }
+    user.updateExp(newExp);
+  }
+
+  public void increaseUserExp(User user, int exp) {
+    if (exp < 0) {
+      throw UserExpException.negativeValue();
+    }
+    long newExp = user.getExp() + exp;
+    user.updateExp(newExp);
+  }
+
   // 추후 재사용을 위해 분리
   private CursorPageResponseDto<GuidebookResponse> buildResponse(List<Guidebook> guidebooks,
       int limit, UserGuidebookSearchRequest request, long total) {
@@ -172,6 +209,100 @@ public class UserService {
     }
 
     return CursorPageResponseDto.<GuidebookResponse>builder()
+        .data(responses)
+        .hasNext(hasNext)
+        .size(responses.size())
+        .sortBy(request.sortBy().getValue())
+        .sortDirection(request.sortDirection())
+        .totalCount(total)
+        .nextCursor(nextCursor)
+        .build();
+  }
+
+  @Transactional
+  public UserDto update(UUID userId, UserUpdateRequest request) {
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    // Patch 이므로 null이 아닐 때만 업데이트
+    if (request.nickname() != null) {
+      validateNickname(request.nickname()); // 공백으로 되어있거나 중복인 경우 예외 발생
+      user.changeNickname(request.nickname());
+    }
+    if (request.password() != null) {
+      validatePassword(request.password()); // 공백으로 되어있거나 중복인 경우 예외 발생
+      user.changePassword(passwordEncoder.encode(request.password()));
+    }
+    if (request.profileImageUrl() != null) {
+      user.changeProfileImage(request.profileImageUrl());
+    }
+
+    userRepository.save(user);
+
+    // TODO
+    // 도장 수가 많아질 경우 성능 우려. user에 lastStampedAt을 추가하는 방향 고려
+    Stamp stamp = stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId).orElse(null);
+
+    return userMapper.toResponse(user, 0, stamp);
+  }
+
+  @Transactional(readOnly = true)
+  public CursorPageResponseDto<PlaceResponse> getUserStamps(UUID currentUserId, UUID userId,
+      StampSearchRequest request) {
+
+    // 동일 유저인지 확인
+    if(!currentUserId.equals(userId)) {
+      throw UnauthorizedUserException.noPermission();
+    }
+
+    // 유저 조회
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    // 커서 디코딩
+    StampCursor cursor = cursorCodecUtil.decodeStampCursor(request.cursor());
+
+    int limit = request.limit();
+
+    // 스탬프 조회 (limit + 1 개 조회하여 hasNext 판단)
+    List<Stamp> stamps = stampRepository.searchStampsByUserId(
+        userId,
+        cursor,
+        request.keyword(),
+        request.sortBy(),
+        request.sortDirection(),
+        limit + 1
+    );
+
+    // 총 개수 조회
+    long total = stampRepository.countStampsByUserId(userId, request.keyword());
+
+    // hasNext 계산
+    boolean hasNext = stamps.size() > limit;
+    if (hasNext) {
+      stamps.remove(limit);
+    }
+
+    // Stamp -> PlaceResponse 변환
+    List<PlaceResponse> responses = stamps.stream()
+        .map(stamp -> placeMapper.toResponse(
+            stamp.getPlace(),
+            null,  // 사용자 위치 정보 없음
+            null,  // 사용자 위치 정보 없음
+            stamp.getCreatedAt()  // 도장 찍은 날짜
+        ))
+        .toList();
+
+    // 다음 커서 생성
+    String nextCursor = null;
+    if (hasNext) {
+      nextCursor = cursorCodecUtil.encodeNextCursor(
+          responses.get(responses.size() - 1),
+          request.sortBy()
+      );
+    }
+
+    return CursorPageResponseDto.<PlaceResponse>builder()
         .data(responses)
         .hasNext(hasNext)
         .size(responses.size())
