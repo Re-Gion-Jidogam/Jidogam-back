@@ -328,7 +328,7 @@ public class UserService {
     // 참여 중인 가이드북 조회 (limit + 1 개 조회하여 hasNext 판단)
     List<GuidebookParticipation> participants =
         guidebookParticipantRepository.searchParticipatingGuidebooks(
-            currentUserId,
+            userId,
             cursor,
             request.keyword(),
             request.sortDirection(),
