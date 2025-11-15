@@ -5,12 +5,12 @@ import com.querydsl.core.types.dsl.DateTimePath;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import region.jidogam.common.dto.SortDirection;
-import region.jidogam.domain.guidebook.entity.QGuidebookParticipant;
+import region.jidogam.domain.guidebook.entity.QGuidebookParticipation;
 import region.jidogam.domain.user.dto.GuidebookParticipationCursor;
 
 public class GuidebookParticipationCursorCondition {
 
-  private static final QGuidebookParticipant guidebookParticipant = QGuidebookParticipant.guidebookParticipant;
+  private static final QGuidebookParticipation guidebookParticipation = QGuidebookParticipation.guidebookParticipation;
 
   /**
    * 날짜 기반 커서 조건 생성 (lastActivityAt 등)
@@ -28,18 +28,18 @@ public class GuidebookParticipationCursorCondition {
     if (direction == SortDirection.ASC) {
       return dateField.gt(cursorDate)
           .or(dateField.eq(cursorDate)
-              .and(guidebookParticipant.id.gt(lastId)));
+              .and(guidebookParticipation.id.gt(lastId)));
     }
 
     return dateField.lt(cursorDate)
         .or(dateField.eq(cursorDate)
-            .and(guidebookParticipant.id.lt(lastId)));
+            .and(guidebookParticipation.id.lt(lastId)));
   }
 
   /**
    * 참여 가이드북 커서 조건 (LAST_ACTIVITY_AT)
    */
-  public static BooleanExpression buildParticipantGuidebookCursor(
+  public static BooleanExpression buildGuidebookParticipationCursor(
       GuidebookParticipationCursor cursor,
       SortDirection direction) {
 
@@ -50,7 +50,7 @@ public class GuidebookParticipationCursorCondition {
     return buildDateCursor(
         cursor.lastActivityAt(),
         cursor.lastId(),
-        guidebookParticipant.lastActivityAt,
+        guidebookParticipation.lastActivityAt,
         direction
     );
   }

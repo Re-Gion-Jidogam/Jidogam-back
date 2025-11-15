@@ -3,17 +3,17 @@ package region.jidogam.domain.guidebook.repository.querydsl;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.ComparableExpressionBase;
 import region.jidogam.common.dto.SortDirection;
-import region.jidogam.domain.guidebook.entity.QGuidebookParticipant;
+import region.jidogam.domain.guidebook.entity.QGuidebookParticipation;
 
 public class GuidebookParticipationOrderBuilder {
 
-  private static final QGuidebookParticipant guidebookParticipant = QGuidebookParticipant.guidebookParticipant;
+  private static final QGuidebookParticipation guidebookParticipation = QGuidebookParticipation.guidebookParticipation;
 
   /**
    * 참여 가이드북 정렬 (LAST_ACTIVITY_AT)
    */
   public static OrderSpecifier<?>[] forParticipantGuidebook(SortDirection direction) {
-    OrderSpecifier<?> primaryOrder = buildOrder(guidebookParticipant.lastActivityAt, direction);
+    OrderSpecifier<?> primaryOrder = buildOrder(guidebookParticipation.lastActivityAt, direction);
     OrderSpecifier<?> secondaryOrder = buildIdOrder(direction);
 
     return new OrderSpecifier<?>[]{primaryOrder, secondaryOrder};
@@ -36,7 +36,7 @@ public class GuidebookParticipationOrderBuilder {
    */
   private static OrderSpecifier<?> buildIdOrder(SortDirection direction) {
     return direction == SortDirection.ASC
-        ? guidebookParticipant.id.asc()
-        : guidebookParticipant.id.desc();
+        ? guidebookParticipation.id.asc()
+        : guidebookParticipation.id.desc();
   }
 }

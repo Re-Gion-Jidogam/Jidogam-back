@@ -1,7 +1,7 @@
 package region.jidogam.domain.guidebook.repository.querydsl;
 
 import static region.jidogam.domain.guidebook.entity.QGuidebook.guidebook;
-import static region.jidogam.domain.guidebook.entity.QGuidebookParticipant.guidebookParticipant;
+import static region.jidogam.domain.guidebook.entity.QGuidebookParticipation.guidebookParticipation;
 import static region.jidogam.domain.user.entity.QUser.user;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -32,14 +32,14 @@ public class GuidebookParticipationRepositoryCustomImpl implements
   ) {
 
     return queryFactory
-        .selectFrom(guidebookParticipant)
-        .leftJoin(guidebookParticipant.guidebook, guidebook).fetchJoin()
+        .selectFrom(guidebookParticipation)
+        .leftJoin(guidebookParticipation.guidebook, guidebook).fetchJoin()
         .leftJoin(guidebook.author, user).fetchJoin()
         .where(
-            guidebookParticipant.user.id.eq(userId), // 참여자 ID
+            guidebookParticipation.user.id.eq(userId), // 참여자 ID
             GuidebookParticipationCondition.titleContains(keyword), // 키워드 제목 검색
             GuidebookParticipationCondition.isCompletedFilter(filter), // 완료 여부 필터
-            GuidebookParticipationCursorCondition.buildParticipantGuidebookCursor(cursor,
+            GuidebookParticipationCursorCondition.buildGuidebookParticipationCursor(cursor,
             sortDirection)) // 커서 조건
         .orderBy(GuidebookParticipationOrderBuilder.forParticipantGuidebook(sortDirection))
         .limit(limit)
@@ -50,10 +50,10 @@ public class GuidebookParticipationRepositoryCustomImpl implements
   public long countParticipatingGuidebooks(UUID userId, String keyword, ParticipationFilter filter) {
 
     Long count = queryFactory
-        .select(guidebookParticipant.count())
-        .from(guidebookParticipant)
-        .leftJoin(guidebookParticipant.guidebook, guidebook)
-        .where(guidebookParticipant.user.id.eq(userId), // 참여자 ID
+        .select(guidebookParticipation.count())
+        .from(guidebookParticipation)
+        .leftJoin(guidebookParticipation.guidebook, guidebook)
+        .where(guidebookParticipation.user.id.eq(userId), // 참여자 ID
             GuidebookParticipationCondition.titleContains(keyword), // 키워드
             GuidebookParticipationCondition.isCompletedFilter(filter)) // 완료 여부
         .fetchOne();

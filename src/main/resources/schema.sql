@@ -36,7 +36,7 @@ CREATE TABLE guidebooks
 
 
 -- Guidebook participants table
-CREATE TABLE guidebook_participants
+CREATE TABLE guidebook_participations
 (
     id               UUID PRIMARY KEY,
     user_id          UUID                     NOT NULL,

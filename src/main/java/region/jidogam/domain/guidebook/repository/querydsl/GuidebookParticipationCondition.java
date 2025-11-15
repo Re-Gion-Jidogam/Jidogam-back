@@ -1,7 +1,7 @@
 package region.jidogam.domain.guidebook.repository.querydsl;
 
 import static region.jidogam.domain.guidebook.entity.QGuidebook.guidebook;
-import static region.jidogam.domain.guidebook.entity.QGuidebookParticipant.guidebookParticipant;
+import static region.jidogam.domain.guidebook.entity.QGuidebookParticipation.guidebookParticipation;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
 import region.jidogam.domain.guidebook.dto.ParticipationFilter;
@@ -27,8 +27,8 @@ public class GuidebookParticipationCondition {
     }
 
     return switch (filter) {
-      case COMPLETED -> guidebookParticipant.isCompleted.isTrue();
-      case PROGRESS -> guidebookParticipant.isCompleted.isFalse();
+      case COMPLETED -> guidebookParticipation.isCompleted.isTrue();
+      case PROGRESS -> guidebookParticipation.isCompleted.isFalse();
     };
   }
 }
