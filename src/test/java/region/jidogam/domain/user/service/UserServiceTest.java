@@ -1150,7 +1150,7 @@ class UserServiceTest {
       when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(2L);
 
       //when
-      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, request);
 
       //then
       assertNotNull(result);
@@ -1194,7 +1194,7 @@ class UserServiceTest {
       when(stampRepository.countStampsByUserId(testUserId, "카페")).thenReturn(1L);
 
       //when
-      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, request);
 
       //then
       assertNotNull(result);
@@ -1237,7 +1237,7 @@ class UserServiceTest {
       when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(10L);
 
       //when
-      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, request);
 
       //then
       assertNotNull(result);
@@ -1272,7 +1272,7 @@ class UserServiceTest {
       when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(0L);
 
       //when
-      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, request);
 
       //then
       assertNotNull(result);
@@ -1307,37 +1307,13 @@ class UserServiceTest {
       when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(0L);
 
       //when
-      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, request);
 
       //then
       assertNotNull(result);
       assertEquals(SortDirection.ASC, result.sortDirection());
       verify(stampRepository, times(1)).searchStampsByUserId(
           testUserId, null, null, StampSortBy.CREATED_AT, SortDirection.ASC, 21
-      );
-    }
-
-    @Test
-    @DisplayName("실패 - 다른 사용자의 도장 목록 조회 시도")
-    void failsWhenUnauthorizedAccess() {
-      //given
-      UUID currentUserId = UUID.randomUUID();
-      UUID differentUserId = UUID.randomUUID();
-
-      StampSearchRequest request = new StampSearchRequest(
-          StampSortBy.CREATED_AT,
-          SortDirection.DESC,
-          null,
-          20,
-          null
-      );
-
-      //when & then
-      assertThrows(UnauthorizedUserException.class,
-          () -> userService.getUserStamps(currentUserId, differentUserId, request));
-      verify(userRepository, never()).findById(any(UUID.class));
-      verify(stampRepository, never()).searchStampsByUserId(
-          any(UUID.class), any(), any(), any(StampSortBy.class), any(SortDirection.class), any(Integer.class)
       );
     }
 
@@ -1357,7 +1333,7 @@ class UserServiceTest {
 
       //when & then
       assertThrows(UserNotFoundException.class,
-          () -> userService.getUserStamps(testUserId, testUserId, request));
+          () -> userService.getUserStamps(testUserId, request));
       verify(userRepository, times(1)).findById(testUserId);
       verify(stampRepository, never()).searchStampsByUserId(
           any(UUID.class), any(), any(), any(StampSortBy.class), any(SortDirection.class), any(Integer.class)
