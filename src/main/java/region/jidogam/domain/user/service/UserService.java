@@ -14,6 +14,7 @@ import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
 import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.entity.Guidebook;
+import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.common.util.CursorCodecUtil;
@@ -24,7 +25,9 @@ import region.jidogam.domain.stamp.dto.StampCursor;
 import region.jidogam.domain.stamp.dto.StampSearchRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
-import region.jidogam.domain.user.exception.UnauthorizedUserException;
+import region.jidogam.domain.user.controller.GuidebookParticipationResponse;
+import region.jidogam.domain.user.dto.GuidebookParticipationCursor;
+import region.jidogam.domain.user.dto.GuidebookParticipationSearchRequest;
 import region.jidogam.domain.user.exception.UserExpException;
 import region.jidogam.domain.user.mapper.UserMapper;
 import region.jidogam.domain.user.dto.UserDto;
@@ -247,13 +250,8 @@ public class UserService {
   }
 
   @Transactional(readOnly = true)
-  public CursorPageResponseDto<PlaceResponse> getUserStamps(UUID currentUserId, UUID userId,
+  public CursorPageResponseDto<PlaceResponse> getUserStamps(UUID userId,
       StampSearchRequest request) {
-
-    // 동일 유저인지 확인
-    if(!currentUserId.equals(userId)) {
-      throw UnauthorizedUserException.noPermission();
-    }
 
     // 유저 조회
     User user = userRepository.findById(userId)
@@ -303,6 +301,73 @@ public class UserService {
     }
 
     return CursorPageResponseDto.<PlaceResponse>builder()
+        .data(responses)
+        .hasNext(hasNext)
+        .size(responses.size())
+        .sortBy(request.sortBy().getValue())
+        .sortDirection(request.sortDirection())
+        .totalCount(total)
+        .nextCursor(nextCursor)
+        .build();
+  }
+
+  @Transactional(readOnly = true)
+  public CursorPageResponseDto<GuidebookParticipationResponse> getUserParticipation(
+      UUID currentUserId, UUID userId, GuidebookParticipationSearchRequest request) {
+
+    // 유저 조회
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    // 커서 디코딩
+    GuidebookParticipationCursor cursor =
+        cursorCodecUtil.decodeParticipantGuidebookCursor(request.cursor());
+
+    int limit = request.limit();
+
+    // 참여 중인 가이드북 조회 (limit + 1 개 조회하여 hasNext 판단)
+    List<GuidebookParticipation> participants =
+        guidebookParticipantRepository.searchParticipatingGuidebooks(
+            currentUserId,
+            cursor,
+            request.keyword(),
+            request.sortDirection(),
+            request.filter(),
+            limit + 1
+        );
+
+    // 총 개수 조회
+    long total = guidebookParticipantRepository.countParticipatingGuidebooks(
+        userId,
+        request.keyword(),
+        request.filter()
+    );
+
+    // hasNext 계산
+    boolean hasNext = participants.size() > limit;
+    if (hasNext) {
+      participants.remove(limit);
+    }
+
+    // GuidebookParticipant -> GuidebookParticipantResponse 변환
+    List<GuidebookParticipationResponse> responses = participants.stream()
+        .map(participant -> GuidebookParticipationResponse.builder()
+            .guidebookResponse(guidebookMapper.toResponse(participant.getGuidebook()))
+            .lastActivityAt(participant.getLastActivityAt())
+            .isCompleted(participant.getIsCompleted())
+            .build())
+        .toList();
+
+    // 다음 커서 생성
+    String nextCursor = null;
+    if (hasNext) {
+      nextCursor = cursorCodecUtil.encodeNextCursor(
+          responses.get(responses.size() - 1),
+          request.sortBy()
+      );
+    }
+
+    return CursorPageResponseDto.<GuidebookParticipationResponse>builder()
         .data(responses)
         .hasNext(hasNext)
         .size(responses.size())
