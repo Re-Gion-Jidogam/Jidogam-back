@@ -32,7 +32,7 @@ import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.entity.Guidebook;
-import region.jidogam.domain.guidebook.entity.GuidebookParticipant;
+import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
 import region.jidogam.domain.guidebook.entity.GuidebookPlace;
 import region.jidogam.domain.guidebook.exception.AuthorMismatchException;
 import region.jidogam.domain.guidebook.exception.GuidebookAlreadyParticipatedException;
@@ -44,7 +44,7 @@ import region.jidogam.domain.guidebook.exception.GuidebookPublishedException;
 import region.jidogam.domain.guidebook.exception.GuidebookUnpublishViolationException;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookAreaRatioRepository;
-import region.jidogam.domain.guidebook.repository.GuidebookParticipantRepository;
+import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
@@ -68,7 +68,7 @@ class GuidebookServiceTest {
   private GuidebookPlaceRepository guidebookPlaceRepository;
 
   @Mock
-  private GuidebookParticipantRepository guidebookParticipantRepository;
+  private GuidebookParticipationRepository guidebookParticipantRepository;
 
   @Mock
   private GuidebookAreaRatioRepository guidebookAreaRatioRepository;
@@ -525,7 +525,7 @@ class GuidebookServiceTest {
       when(guidebookParticipantRepository.existsByGuidebookAndUser(guidebook, user))
           .thenReturn(false);
 
-      GuidebookParticipant guidebookParticipant = GuidebookParticipant.builder()
+      GuidebookParticipation guidebookParticipation = GuidebookParticipation.builder()
           .guidebook(guidebook)
           .user(user)
           .build();
@@ -534,7 +534,7 @@ class GuidebookServiceTest {
       guidebookService.addParticipant(guidebookId, userId);
 
       // then
-      verify(guidebookParticipantRepository).save(any(GuidebookParticipant.class));
+      verify(guidebookParticipantRepository).save(any(GuidebookParticipation.class));
       verify(guidebookRepository).updateParticipantCount(guidebookId, 1);
     }
 

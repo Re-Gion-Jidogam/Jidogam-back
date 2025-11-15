@@ -17,14 +17,14 @@ import region.jidogam.common.entity.BaseEntity;
 import region.jidogam.domain.user.entity.User;
 
 @Entity
-@Table(name = "guidebook_participants", uniqueConstraints = {
+@Table(name = "guidebook_participations", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"user_id", "guidebook_id"})
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
-public class GuidebookParticipant extends BaseEntity {
+public class GuidebookParticipation extends BaseEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
