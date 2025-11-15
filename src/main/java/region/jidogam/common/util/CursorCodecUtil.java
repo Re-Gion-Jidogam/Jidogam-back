@@ -17,7 +17,7 @@ import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.place.dto.PlaceSortBy;
 import region.jidogam.domain.stamp.dto.StampCursor;
 import region.jidogam.domain.stamp.dto.StampSortBy;
-import region.jidogam.domain.user.controller.GuidebookParticipationResponse;
+import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
 import region.jidogam.domain.user.dto.GuidebookParticipationCursor;
 import region.jidogam.domain.user.dto.GuidebookParticipationSortBy;
 import region.jidogam.domain.user.dto.UserGuideBookSortBy;

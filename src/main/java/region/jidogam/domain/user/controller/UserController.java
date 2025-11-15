@@ -23,6 +23,7 @@ import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.stamp.dto.StampSearchRequest;
 import region.jidogam.domain.user.dto.EmailAuthRequest;
+import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
 import region.jidogam.domain.user.dto.GuidebookParticipationSearchRequest;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.dto.UserDto;

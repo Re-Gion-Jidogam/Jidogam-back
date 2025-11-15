@@ -25,7 +25,7 @@ import region.jidogam.domain.stamp.dto.StampCursor;
 import region.jidogam.domain.stamp.dto.StampSearchRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
-import region.jidogam.domain.user.controller.GuidebookParticipationResponse;
+import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
 import region.jidogam.domain.user.dto.GuidebookParticipationCursor;
 import region.jidogam.domain.user.dto.GuidebookParticipationSearchRequest;
 import region.jidogam.domain.user.exception.UserExpException;
