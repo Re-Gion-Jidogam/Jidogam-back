@@ -37,4 +37,20 @@ public class GuidebookParticipant extends BaseEntity {
   @Column
   private LocalDateTime lastActivityAt;
 
+  @Column(nullable = false)
+  @Builder.Default
+  private Boolean isCompleted = false;
+
+  public void updateLastActivityAt(LocalDateTime lastActivityAt) {
+    this.lastActivityAt = lastActivityAt;
+  }
+
+  public void markAsCompleted() {
+    this.isCompleted = true;
+  }
+
+  public void markAsInProgress() {
+    this.isCompleted = false;
+  }
+
 }
