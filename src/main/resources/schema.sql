@@ -43,6 +43,7 @@ CREATE TABLE guidebook_participations
     guidebook_id     UUID                     NOT NULL,
     created_at       TIMESTAMP WITH TIME ZONE NOT NULL,
     last_activity_at TIMESTAMP WITH TIME ZONE,
+    is_completed     BOOLEAN                  NOT NULL DEFAULT FALSE,
     UNIQUE (user_id, guidebook_id)
 );
 
