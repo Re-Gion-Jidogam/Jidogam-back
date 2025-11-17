@@ -39,6 +39,7 @@ dependencies {
   implementation 'org.postgresql:postgresql'
   runtimeOnly 'com.h2database:h2'
   runtimeOnly 'org.postgresql:postgresql'
+  implementation 'io.hypersistence:hypersistence-utils-hibernate-60:3.2.0'
 
   // Test
   testImplementation 'org.springframework.boot:spring-boot-starter-test'
