@@ -29,3 +29,15 @@ jobs:
         env:
           SPRING_PROFILES_ACTIVE: test
         run: ./gradlew test
+        
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action/linux@v2
+        with:
+          files: '**/build/test-results/test/TEST-*.xml'
+
+      - name: add comments to a pull request
+        uses: mikepenz/action-junit-report@v5
+        if: always()
+        with:
+          report_paths: '**/build/test-results/test/TEST-*.xml'
