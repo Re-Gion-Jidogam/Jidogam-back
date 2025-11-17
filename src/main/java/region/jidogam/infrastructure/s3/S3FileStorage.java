@@ -85,9 +85,7 @@ public class S3FileStorage implements FileStorage {
             .build());
 
         log.info("S3 image deleted successfully: {} (attempt: {})", key, attempt);
-
-        throw new RuntimeException("임시 예외 입니다.");
-//        return;
+        return;
 
       } catch (Exception e) {
         retryCount++;
