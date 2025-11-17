@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 import region.jidogam.common.util.CursorCodecUtil;
@@ -81,6 +82,8 @@ class GuidebookServiceTest {
   private PlaceService placeService;
   @Mock
   private CursorCodecUtil cursorCodecUtil;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
   @Spy
   private FileStorage fileStorage;
 
@@ -101,7 +104,8 @@ class GuidebookServiceTest {
         placeRepository,
         placeService,
         guidebookMapper,
-        cursorCodecUtil
+        cursorCodecUtil,
+        eventPublisher
     );
   }
 
