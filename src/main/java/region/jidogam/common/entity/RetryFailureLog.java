@@ -32,7 +32,7 @@ public class RetryFailureLog extends BaseUpdatableEntity {
   private String targetIdentifier;
 
   @JdbcTypeCode(SqlTypes.JSON)
-  //@Column(columnDefinition = "jsonb")
+  @Column(columnDefinition = "jsonb")
   private Map<String, Object> context;
 
   @Column(length = 1000)
