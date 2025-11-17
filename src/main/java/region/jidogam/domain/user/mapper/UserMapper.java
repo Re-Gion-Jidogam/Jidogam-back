@@ -1,4 +1,4 @@
-package region.jidogam.domain.user;
+package region.jidogam.domain.user.mapper;
 
 import org.springframework.stereotype.Component;
 import region.jidogam.domain.stamp.entity.Stamp;

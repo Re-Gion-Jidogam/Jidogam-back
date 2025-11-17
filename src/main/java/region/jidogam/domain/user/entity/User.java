@@ -41,12 +41,23 @@ public class User extends BaseUpdatableEntity {
   @Builder.Default
   private Role role = Role.USER;
 
-  public void changePassword(String password) {
-    this.password = password;
-  }
-
   public enum Role {
     USER, ADMIN
   }
 
+  public void changeNickname(String nickname) {
+      this.nickname = nickname;
+  }
+
+  public void changePassword(String password) {
+      this.password = password;
+  }
+
+  public void changeProfileImage(String profileImageUrl) {
+    this.profileImageUrl = profileImageUrl;   // null 허용
+  }
+
+  public void updateExp(long exp) {
+    this.exp = exp;
+  }
 }

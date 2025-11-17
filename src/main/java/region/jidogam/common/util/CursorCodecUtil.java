@@ -15,6 +15,8 @@ import region.jidogam.domain.guidebook.dto.GuidebookSortBy;
 import region.jidogam.domain.place.dto.PlaceCursor;
 import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.place.dto.PlaceSortBy;
+import region.jidogam.domain.stamp.dto.StampCursor;
+import region.jidogam.domain.stamp.dto.StampSortBy;
 import region.jidogam.domain.user.dto.UserGuideBookSortBy;
 import region.jidogam.domain.user.dto.UserGuidebookCursor;
 
@@ -38,6 +40,11 @@ public class CursorCodecUtil {
   public PlaceCursor decodeplaceCursor(String encodedCursor, PlaceSortBy sortBy) {
     Cursor cursor = decodeCursor(encodedCursor);
     return PlaceCursor.from(cursor, sortBy);
+  }
+
+  public StampCursor decodeStampCursor(String encodedCursor) {
+    Cursor cursor = decodeCursor(encodedCursor);
+    return StampCursor.from(cursor);
   }
 
   /**
@@ -114,6 +121,23 @@ public class CursorCodecUtil {
     switch (sortBy) {
       case STAMP_COUNT -> lastValue = Integer.toString(lastItem.stampCount());
       case DISTANCE -> lastValue = Double.toString(lastItem.stampCount());
+      default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
+    }
+    return encodeNextCursor(new Cursor(lastValue, lastId.toString()));
+  }
+
+  /**
+   * 스탬프 커서 페이지네이션의 마지막 데이터를 인코딩하여 반환하는 메서드
+   *
+   * @param lastItem PlaceResponse 타입의 아이템
+   * @param sortBy   정렬 기준
+   */
+  public String encodeNextCursor(PlaceResponse lastItem, StampSortBy sortBy) {
+    UUID lastId = lastItem.pid();
+
+    String lastValue;
+    switch (sortBy) {
+      case CREATED_AT -> lastValue = lastItem.visitedDate().toString();
       default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
     }
     return encodeNextCursor(new Cursor(lastValue, lastId.toString()));
