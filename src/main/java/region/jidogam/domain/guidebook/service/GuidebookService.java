@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookAreaRatio;
 import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
 import region.jidogam.domain.guidebook.entity.GuidebookPlace;
+import region.jidogam.domain.guidebook.event.ImageDeleteEvent;
 import region.jidogam.domain.guidebook.exception.AuthorMismatchException;
 import region.jidogam.domain.guidebook.exception.GuidebookAlreadyParticipatedException;
 import region.jidogam.domain.guidebook.exception.GuidebookBackgroundRequiredException;
@@ -68,6 +70,7 @@ public class GuidebookService {
   private final PlaceService placeService;
   private final GuidebookMapper guidebookMapper;
   private final CursorCodecUtil cursorCodecUtil;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional(readOnly = true)
   public List<GuidebookResponse> popularList(int limit) {
@@ -207,11 +210,17 @@ public class GuidebookService {
         guidebook.unpublish();
       }
     });
+    Optional.ofNullable(request.thumbnail()).ifPresent(newImage -> {
+      String oldImageKey = guidebook.getThumbnailUrl();
+      guidebook.updateThumbnailUrl(newImage);
+      eventPublisher.publishEvent(
+          new ImageDeleteEvent(oldImageKey, Guidebook.class.getTypeName(), guidebook.getId())
+      );
+    });
     Optional.ofNullable(request.title()).ifPresent(guidebook::updateTitle);
     Optional.ofNullable(request.description()).ifPresent(guidebook::updateDescription);
     Optional.ofNullable(request.color()).ifPresent(guidebook::updateColor);
     Optional.ofNullable(request.emoji()).ifPresent(guidebook::updateEmoji);
-    Optional.ofNullable(request.thumbnail()).ifPresent(guidebook::updateThumbnailUrl);
 
     int visitedPlaceCount = getVisitedPlaceCount(guidebook.getId(), userId);
 
@@ -245,7 +254,11 @@ public class GuidebookService {
     }
 
     if (request.mapImageUrl() != null) {
+      String oldImageKey = guidebook.getMapImageUrl();
       guidebook.updateMapImageUrl(request.mapImageUrl());
+      eventPublisher.publishEvent(
+          new ImageDeleteEvent(oldImageKey, Guidebook.class.getTypeName(), guidebook.getId())
+      );
     }
 
     // 장소 추가

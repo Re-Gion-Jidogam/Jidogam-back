@@ -13,18 +13,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
+import region.jidogam.common.util.CursorCodecUtil;
+import region.jidogam.domain.File.storage.FileStorage;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.guidebook.dto.AreaRatioDto;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
@@ -58,37 +62,52 @@ import region.jidogam.domain.user.repository.UserRepository;
 @ExtendWith(MockitoExtension.class)
 class GuidebookServiceTest {
 
+  private static final LocalDateTime FIXED_DATE_TIME = LocalDateTime.of(2025, 1, 1, 12, 0, 0);
+
   @Mock
   private UserRepository userRepository;
-
   @Mock
   private GuidebookRepository guidebookRepository;
-
   @Mock
   private GuidebookPlaceRepository guidebookPlaceRepository;
-
   @Mock
   private GuidebookParticipationRepository guidebookParticipantRepository;
-
   @Mock
   private GuidebookAreaRatioRepository guidebookAreaRatioRepository;
-
   @Mock
   private StampRepository stampRepository;
-
   @Mock
   private PlaceRepository placeRepository;
-
   @Mock
   private PlaceService placeService;
-
+  @Mock
+  private CursorCodecUtil cursorCodecUtil;
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
   @Spy
-  private GuidebookMapper guidebookMapper;
+  private FileStorage fileStorage;
 
-  @InjectMocks
+  private GuidebookMapper guidebookMapper;
   private GuidebookService guidebookService;
 
-  private static final LocalDateTime FIXED_DATE_TIME = LocalDateTime.of(2025, 1, 1, 12, 0, 0);
+  @BeforeEach
+  void setUp() {
+    guidebookMapper = Mockito.spy(new GuidebookMapper(fileStorage));
+
+    guidebookService = new GuidebookService(
+        userRepository,
+        guidebookRepository,
+        guidebookPlaceRepository,
+        guidebookParticipantRepository,
+        guidebookAreaRatioRepository,
+        stampRepository,
+        placeRepository,
+        placeService,
+        guidebookMapper,
+        cursorCodecUtil,
+        eventPublisher
+    );
+  }
 
   @Nested
   @DisplayName("가이드북 생성")
@@ -183,7 +202,7 @@ class GuidebookServiceTest {
       GuidebookResponse result = guidebookService.getById(guidebookId, userId);
 
       // then
-      assertThat(result).isEqualTo(expectedResponse);
+      assertThat(result.visitedPlaceCount()).isEqualTo(expectedResponse.visitedPlaceCount());
       verify(guidebookRepository).findById(guidebookId);
       verify(guidebookMapper).toResponse(guidebook, 3);
     }

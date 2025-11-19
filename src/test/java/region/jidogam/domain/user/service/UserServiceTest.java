@@ -1,6 +1,11 @@
 package region.jidogam.domain.user.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -32,6 +37,7 @@ import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.auth.entity.EmailAuthCode;
 import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
 import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
+import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.dto.ParticipationFilter;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
@@ -49,25 +55,24 @@ import region.jidogam.domain.user.dto.GuidebookParticipationCursor;
 import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
 import region.jidogam.domain.user.dto.GuidebookParticipationSearchRequest;
 import region.jidogam.domain.user.dto.GuidebookParticipationSortBy;
-import region.jidogam.domain.user.exception.UnauthorizedUserException;
 import region.jidogam.domain.user.mapper.UserMapper;
+import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.dto.UserDto;
+import region.jidogam.domain.user.dto.UserUpdateRequest;
+import region.jidogam.domain.user.entity.User;
+import region.jidogam.domain.user.exception.InvalidEmailFormatException;
 import region.jidogam.domain.user.exception.UnverifiedEmailException;
+import region.jidogam.domain.user.exception.UserEmailConflictException;
+import region.jidogam.domain.user.exception.UserExpException;
+import region.jidogam.domain.user.exception.UserNicknameConflictException;
+import region.jidogam.domain.user.exception.UserNicknameLengthException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
+import region.jidogam.domain.user.repository.UserRepository;
 import region.jidogam.domain.user.util.LevelCalculator;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshToken;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
-import region.jidogam.domain.user.dto.UserCreateRequest;
-import region.jidogam.domain.user.dto.UserUpdateRequest;
-import region.jidogam.domain.user.entity.User;
-import region.jidogam.domain.user.exception.InvalidEmailFormatException;
-import region.jidogam.domain.user.exception.UserEmailConflictException;
-import region.jidogam.domain.user.exception.UserExpException;
-import region.jidogam.domain.user.exception.UserNicknameConflictException;
-import region.jidogam.domain.user.exception.UserNicknameLengthException;
-import region.jidogam.domain.user.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("사용자 서비스 단위테스트")
@@ -103,7 +108,7 @@ class UserServiceTest {
   @Spy
   private UserMapper userMapper;
 
-  @Spy
+  @Mock
   private GuidebookMapper guidebookMapper;
 
   @Spy
@@ -479,6 +484,7 @@ class UserServiceTest {
       assertThrows(UserNotFoundException.class, () -> userService.getUserInfo(userId));
     }
   }
+
   @Nested
   @DisplayName("사용자")
   class GetUsersGuideBookTest {
@@ -488,8 +494,6 @@ class UserServiceTest {
     void success() {
       //given
       UUID userId = UUID.randomUUID();
-
-
 
       //when
 
@@ -1332,6 +1336,9 @@ class UserServiceTest {
     @DisplayName("실패 - 존재하지 않는 사용자")
     void failsWhenUserNotFound() {
       //given
+      UUID currentUserId = UUID.randomUUID();
+      UUID differentUserId = UUID.randomUUID();
+
       StampSearchRequest request = new StampSearchRequest(
           StampSortBy.CREATED_AT,
           SortDirection.DESC,
@@ -1347,7 +1354,8 @@ class UserServiceTest {
           () -> userService.getUserStamps(testUserId, request));
       verify(userRepository, times(1)).findById(testUserId);
       verify(stampRepository, never()).searchStampsByUserId(
-          any(UUID.class), any(), any(), any(StampSortBy.class), any(SortDirection.class), any(Integer.class)
+          any(UUID.class), any(), any(), any(StampSortBy.class), any(SortDirection.class),
+          any(Integer.class)
       );
     }
   }
@@ -1842,8 +1850,17 @@ class UserServiceTest {
 
       List<GuidebookParticipation> participations = Arrays.asList(testParticipation1);
 
+      GuidebookResponse mockGuidebookResponse = GuidebookResponse.builder()
+          .gid(testGuidebook1.getId())
+          .title(testGuidebook1.getTitle())
+          .description(testGuidebook1.getDescription())
+          .emoji(testGuidebook1.getEmoji())
+          .color(testGuidebook1.getColor())
+          .build();
+
       when(userRepository.findById(testUserId)).thenReturn(Optional.of(testUser));
       when(cursorCodecUtil.decodeParticipantGuidebookCursor(null)).thenReturn(null);
+      when(guidebookMapper.toResponse(testGuidebook1)).thenReturn(mockGuidebookResponse);
       when(guidebookParticipantRepository.searchParticipatingGuidebooks(
           testUserId,
           null,
@@ -1857,6 +1874,7 @@ class UserServiceTest {
           null,
           null
       )).thenReturn(1L);
+
 
       //when
       CursorPageResponseDto<GuidebookParticipationResponse> result =
