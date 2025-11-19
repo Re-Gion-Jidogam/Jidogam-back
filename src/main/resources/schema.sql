@@ -169,6 +169,23 @@ CREATE TABLE password_reset_tokens
     updated_at TIMESTAMP WITH TIME ZONE
 );
 
+-- Retry failure log
+CREATE TABLE retry_failure_log
+(
+    id                 UUID PRIMARY KEY,
+    failure_type       VARCHAR(50)              NOT NULL,
+    target_identifier  VARCHAR(500)             NOT NULL,
+    context            JSONB,
+    error_message      VARCHAR(1000),
+    retry_count        INTEGER                  NOT NULL,
+    max_retry_attempts INTEGER                  NOT NULL,
+    failed_at          TIMESTAMP WITH TIME ZONE NOT NULL,
+    last_retry_at      TIMESTAMP WITH TIME ZONE,
+    resolved_at        TIMESTAMP WITH TIME ZONE,
+    created_at         TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at         TIMESTAMP WITH TIME ZONE
+);
+
 -- Foreign Key Constraints
 ALTER TABLE places
     ADD CONSTRAINT fk_places_area_id

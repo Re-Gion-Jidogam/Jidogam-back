@@ -1,6 +1,11 @@
 package region.jidogam.domain.user.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -32,7 +37,6 @@ import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.auth.entity.EmailAuthCode;
 import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
 import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
-import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.place.entity.Place;
@@ -41,25 +45,25 @@ import region.jidogam.domain.stamp.dto.StampSearchRequest;
 import region.jidogam.domain.stamp.dto.StampSortBy;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
-import region.jidogam.domain.user.exception.UnauthorizedUserException;
-import region.jidogam.domain.user.mapper.UserMapper;
+import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.dto.UserDto;
+import region.jidogam.domain.user.dto.UserUpdateRequest;
+import region.jidogam.domain.user.entity.User;
+import region.jidogam.domain.user.exception.InvalidEmailFormatException;
+import region.jidogam.domain.user.exception.UnauthorizedUserException;
 import region.jidogam.domain.user.exception.UnverifiedEmailException;
+import region.jidogam.domain.user.exception.UserEmailConflictException;
+import region.jidogam.domain.user.exception.UserExpException;
+import region.jidogam.domain.user.exception.UserNicknameConflictException;
+import region.jidogam.domain.user.exception.UserNicknameLengthException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
+import region.jidogam.domain.user.mapper.UserMapper;
+import region.jidogam.domain.user.repository.UserRepository;
 import region.jidogam.domain.user.util.LevelCalculator;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshToken;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
-import region.jidogam.domain.user.dto.UserCreateRequest;
-import region.jidogam.domain.user.dto.UserUpdateRequest;
-import region.jidogam.domain.user.entity.User;
-import region.jidogam.domain.user.exception.InvalidEmailFormatException;
-import region.jidogam.domain.user.exception.UserEmailConflictException;
-import region.jidogam.domain.user.exception.UserExpException;
-import region.jidogam.domain.user.exception.UserNicknameConflictException;
-import region.jidogam.domain.user.exception.UserNicknameLengthException;
-import region.jidogam.domain.user.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("사용자 서비스 단위테스트")
@@ -91,9 +95,6 @@ class UserServiceTest {
 
   @Spy
   private UserMapper userMapper;
-
-  @Spy
-  private GuidebookMapper guidebookMapper;
 
   @Spy
   private PlaceMapper placeMapper;
@@ -468,6 +469,7 @@ class UserServiceTest {
       assertThrows(UserNotFoundException.class, () -> userService.getUserInfo(userId));
     }
   }
+
   @Nested
   @DisplayName("사용자")
   class GetUsersGuideBookTest {
@@ -477,8 +479,6 @@ class UserServiceTest {
     void success() {
       //given
       UUID userId = UUID.randomUUID();
-
-
 
       //when
 
@@ -1150,7 +1150,8 @@ class UserServiceTest {
       when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(2L);
 
       //when
-      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId,
+          testUserId, request);
 
       //then
       assertNotNull(result);
@@ -1194,7 +1195,8 @@ class UserServiceTest {
       when(stampRepository.countStampsByUserId(testUserId, "카페")).thenReturn(1L);
 
       //when
-      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId,
+          testUserId, request);
 
       //then
       assertNotNull(result);
@@ -1237,7 +1239,8 @@ class UserServiceTest {
       when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(10L);
 
       //when
-      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId,
+          testUserId, request);
 
       //then
       assertNotNull(result);
@@ -1272,7 +1275,8 @@ class UserServiceTest {
       when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(0L);
 
       //when
-      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId,
+          testUserId, request);
 
       //then
       assertNotNull(result);
@@ -1307,7 +1311,8 @@ class UserServiceTest {
       when(stampRepository.countStampsByUserId(testUserId, null)).thenReturn(0L);
 
       //when
-      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId, testUserId, request);
+      CursorPageResponseDto<PlaceResponse> result = userService.getUserStamps(testUserId,
+          testUserId, request);
 
       //then
       assertNotNull(result);
@@ -1337,7 +1342,8 @@ class UserServiceTest {
           () -> userService.getUserStamps(currentUserId, differentUserId, request));
       verify(userRepository, never()).findById(any(UUID.class));
       verify(stampRepository, never()).searchStampsByUserId(
-          any(UUID.class), any(), any(), any(StampSortBy.class), any(SortDirection.class), any(Integer.class)
+          any(UUID.class), any(), any(), any(StampSortBy.class), any(SortDirection.class),
+          any(Integer.class)
       );
     }
 
@@ -1360,7 +1366,8 @@ class UserServiceTest {
           () -> userService.getUserStamps(testUserId, testUserId, request));
       verify(userRepository, times(1)).findById(testUserId);
       verify(stampRepository, never()).searchStampsByUserId(
-          any(UUID.class), any(), any(), any(StampSortBy.class), any(SortDirection.class), any(Integer.class)
+          any(UUID.class), any(), any(), any(StampSortBy.class), any(SortDirection.class),
+          any(Integer.class)
       );
     }
   }

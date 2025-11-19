@@ -28,3 +28,11 @@ logging:
     org.springframework: INFO
     org.hibernate.sql: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: INFO
+
+cloud:
+  aws:
+    s3:
+      bucket: dummy-name
+    credentials:
+      access-key: dummy-key-id
+      secret-key: dummy-access-key

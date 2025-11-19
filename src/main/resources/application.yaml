@@ -74,3 +74,14 @@ api:
   area:
     service-id: ${AREA_SERVICE_ID:dev-service-id}
     secret-key: ${AREA_SECRET_KEY:dev-secret-key}
+
+cloud:
+  aws:
+    s3:
+      bucket: ${S3_ACCESS_BUCKET_NAME}
+      upload-expiration: 5m
+    stack.auto: false
+    region.static: ap-northeast-2
+    credentials:
+      access-key: ${S3_ACCESS_KEY_ID}
+      secret-key: ${S3_SECRET_ACCESS_KEY}
