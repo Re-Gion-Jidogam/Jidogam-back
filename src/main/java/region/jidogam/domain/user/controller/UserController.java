@@ -23,6 +23,8 @@ import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.stamp.dto.StampSearchRequest;
 import region.jidogam.domain.user.dto.EmailAuthRequest;
+import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
+import region.jidogam.domain.user.dto.GuidebookParticipationSearchRequest;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
@@ -102,12 +104,20 @@ public class UserController {
     return ResponseEntity.ok(userService.update(userId, request));
   }
 
-  @GetMapping("/{userId}/stamps")
+  @GetMapping("/stamps")
   public ResponseEntity<CursorPageResponseDto<PlaceResponse>> getStamps(
       @CurrentUserId UUID currentUserId,
-      @PathVariable UUID userId,
       @Valid @ModelAttribute StampSearchRequest request) {
 
-    return ResponseEntity.ok(userService.getUserStamps(currentUserId, userId, request));
+    return ResponseEntity.ok(userService.getUserStamps(currentUserId, request));
+  }
+
+  @GetMapping("/{userId}/participations")
+  public ResponseEntity<CursorPageResponseDto<GuidebookParticipationResponse>> getParticipation(
+      @CurrentUserId UUID currentUserId,
+      @PathVariable UUID userId,
+      @Valid @ModelAttribute GuidebookParticipationSearchRequest request) {
+
+    return ResponseEntity.ok(userService.getUserParticipation(currentUserId, userId, request));
   }
 }

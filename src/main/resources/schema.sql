@@ -36,13 +36,14 @@ CREATE TABLE guidebooks
 
 
 -- Guidebook participants table
-CREATE TABLE guidebook_participants
+CREATE TABLE guidebook_participations
 (
     id               UUID PRIMARY KEY,
     user_id          UUID                     NOT NULL,
     guidebook_id     UUID                     NOT NULL,
     created_at       TIMESTAMP WITH TIME ZONE NOT NULL,
     last_activity_at TIMESTAMP WITH TIME ZONE,
+    is_completed     BOOLEAN                  NOT NULL DEFAULT FALSE,
     UNIQUE (user_id, guidebook_id)
 );
 
@@ -191,11 +192,11 @@ ALTER TABLE places
     ADD CONSTRAINT fk_places_area_id
         FOREIGN KEY (area_id) REFERENCES areas (id);
 
-ALTER TABLE guidebook_participants
+ALTER TABLE guidebook_participations
     ADD CONSTRAINT fk_guidebook_participants_guidebook_id
         FOREIGN KEY (guidebook_id) REFERENCES guidebooks (id);
 
-ALTER TABLE guidebook_participants
+ALTER TABLE guidebook_participations
     ADD CONSTRAINT fk_guidebook_participants_user_id
         FOREIGN KEY (user_id) REFERENCES users (id);
 

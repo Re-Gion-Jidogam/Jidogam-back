@@ -17,6 +17,9 @@ import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.place.dto.PlaceSortBy;
 import region.jidogam.domain.stamp.dto.StampCursor;
 import region.jidogam.domain.stamp.dto.StampSortBy;
+import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
+import region.jidogam.domain.user.dto.GuidebookParticipationCursor;
+import region.jidogam.domain.user.dto.GuidebookParticipationSortBy;
 import region.jidogam.domain.user.dto.UserGuideBookSortBy;
 import region.jidogam.domain.user.dto.UserGuidebookCursor;
 
@@ -45,6 +48,11 @@ public class CursorCodecUtil {
   public StampCursor decodeStampCursor(String encodedCursor) {
     Cursor cursor = decodeCursor(encodedCursor);
     return StampCursor.from(cursor);
+  }
+
+  public GuidebookParticipationCursor decodeParticipantGuidebookCursor(String encodedCursor) {
+    Cursor cursor = decodeCursor(encodedCursor);
+    return GuidebookParticipationCursor.from(cursor);
   }
 
   /**
@@ -138,6 +146,24 @@ public class CursorCodecUtil {
     String lastValue;
     switch (sortBy) {
       case CREATED_AT -> lastValue = lastItem.visitedDate().toString();
+      default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
+    }
+    return encodeNextCursor(new Cursor(lastValue, lastId.toString()));
+  }
+
+  /**
+   * 참여 중인 가이드북 커서 페이지네이션의 마지막 데이터를 인코딩하여 반환하는 메서드
+   *
+   * @param lastItem GuidebookParticipationResponse 타입의 아이템
+   * @param sortBy   정렬 기준
+   */
+  public String encodeNextCursor(GuidebookParticipationResponse lastItem,
+      GuidebookParticipationSortBy sortBy) {
+    UUID lastId = lastItem.guidebookResponse().gid();
+
+    String lastValue;
+    switch (sortBy) {
+      case LAST_ACTIVITY_AT -> lastValue = lastItem.lastActivityAt().toString();
       default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
     }
     return encodeNextCursor(new Cursor(lastValue, lastId.toString()));

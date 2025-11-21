@@ -25,7 +25,7 @@ import region.jidogam.domain.guidebook.dto.GuidebookSortBy;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookAreaRatio;
-import region.jidogam.domain.guidebook.entity.GuidebookParticipant;
+import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
 import region.jidogam.domain.guidebook.entity.GuidebookPlace;
 import region.jidogam.domain.guidebook.event.ImageDeleteEvent;
 import region.jidogam.domain.guidebook.exception.AuthorMismatchException;
@@ -38,7 +38,7 @@ import region.jidogam.domain.guidebook.exception.GuidebookPublishedException;
 import region.jidogam.domain.guidebook.exception.GuidebookUnpublishViolationException;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookAreaRatioRepository;
-import region.jidogam.domain.guidebook.repository.GuidebookParticipantRepository;
+import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.place.entity.Place;
@@ -63,7 +63,7 @@ public class GuidebookService {
   private final UserRepository userRepository;
   private final GuidebookRepository guidebookRepository;
   private final GuidebookPlaceRepository guidebookPlaceRepository;
-  private final GuidebookParticipantRepository guidebookParticipantRepository;
+  private final GuidebookParticipationRepository guidebookParticipantRepository;
   private final GuidebookAreaRatioRepository guidebookAreaRatioRepository;
   private final StampRepository stampRepository;
   private final PlaceRepository placeRepository;
@@ -305,12 +305,12 @@ public class GuidebookService {
       throw GuidebookAlreadyParticipatedException.withId(guidebook.getId());
     }
 
-    GuidebookParticipant guidebookParticipant = GuidebookParticipant.builder()
+    GuidebookParticipation guidebookParticipation = GuidebookParticipation.builder()
         .guidebook(guidebook)
         .user(user)
         .build();
 
-    guidebookParticipantRepository.save(guidebookParticipant);
+    guidebookParticipantRepository.save(guidebookParticipation);
     guidebookRepository.updateParticipantCount(id, 1);
   }
 
