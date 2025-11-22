@@ -55,6 +55,8 @@ import region.jidogam.domain.user.dto.GuidebookParticipationCursor;
 import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
 import region.jidogam.domain.user.dto.GuidebookParticipationSearchRequest;
 import region.jidogam.domain.user.dto.GuidebookParticipationSortBy;
+import region.jidogam.domain.user.dto.UserGuideBookSortBy;
+import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
 import region.jidogam.domain.user.mapper.UserMapper;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.dto.UserDto;
@@ -488,7 +490,7 @@ class UserServiceTest {
   }
 
   @Nested
-  @DisplayName("사용자")
+  @DisplayName("사용자 가이드북 목록 조회")
   class GetUsersGuideBookTest {
 
     @Test
@@ -501,6 +503,66 @@ class UserServiceTest {
 
       //then
 
+    }
+
+    @Test
+    @DisplayName("실패 - 탈퇴한 사용자의 가이드북 조회")
+    void failsWhenAuthorIsDeleted() {
+      //given
+      UUID userId = UUID.randomUUID();
+      UUID authorId = UUID.randomUUID();
+      User deletedAuthor = User.builder()
+          .nickname("탈퇴한유저")
+          .email("deleted@test.com")
+          .password("password")
+          .build();
+      deletedAuthor.softDelete();
+
+      UserGuidebookSearchRequest request = new UserGuidebookSearchRequest(
+          null,
+          UserGuideBookSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      when(userRepository.findById(authorId)).thenReturn(Optional.of(deletedAuthor));
+
+      //when & then
+      assertThrows(UserNotFoundException.class,
+          () -> userService.getUserGuidebookList(userId, authorId, request));
+      verify(userRepository, times(1)).findById(authorId);
+      verify(guidebookRepository, never()).searchGuidebookByAuthorId(
+          any(UUID.class), any(), any(), any(), any(), any(Integer.class), any(Boolean.class)
+      );
+    }
+
+    @Test
+    @DisplayName("실패 - 존재하지 않는 사용자의 가이드북 조회")
+    void failsWhenAuthorNotFound() {
+      //given
+      UUID userId = UUID.randomUUID();
+      UUID authorId = UUID.randomUUID();
+
+      UserGuidebookSearchRequest request = new UserGuidebookSearchRequest(
+          null,
+          UserGuideBookSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      when(userRepository.findById(authorId)).thenReturn(Optional.empty());
+
+      //when & then
+      assertThrows(UserNotFoundException.class,
+          () -> userService.getUserGuidebookList(userId, authorId, request));
+      verify(userRepository, times(1)).findById(authorId);
+      verify(guidebookRepository, never()).searchGuidebookByAuthorId(
+          any(UUID.class), any(), any(), any(), any(), any(Integer.class), any(Boolean.class)
+      );
     }
   }
 
@@ -1827,6 +1889,37 @@ class UserServiceTest {
       );
 
       when(userRepository.findById(testUserId)).thenReturn(Optional.empty());
+
+      //when & then
+      assertThrows(UserNotFoundException.class,
+          () -> userService.getUserParticipation(currentUserId, testUserId, request));
+      verify(userRepository, times(1)).findById(testUserId);
+      verify(guidebookParticipantRepository, never()).searchParticipatingGuidebooks(
+          any(UUID.class), any(), any(), any(SortDirection.class), any(), any(Integer.class)
+      );
+    }
+
+    @Test
+    @DisplayName("실패 - 탈퇴한 사용자의 참여 가이드북 조회")
+    void failsWhenUserIsDeleted() {
+      //given
+      User deletedUser = User.builder()
+          .nickname("탈퇴한유저")
+          .email("deleted@test.com")
+          .password("password")
+          .build();
+      deletedUser.softDelete();
+
+      GuidebookParticipationSearchRequest request = new GuidebookParticipationSearchRequest(
+          null,
+          GuidebookParticipationSortBy.LAST_ACTIVITY_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.of(deletedUser));
 
       //when & then
       assertThrows(UserNotFoundException.class,
