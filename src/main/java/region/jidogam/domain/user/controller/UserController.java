@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -119,5 +120,11 @@ public class UserController {
       @Valid @ModelAttribute GuidebookParticipationSearchRequest request) {
 
     return ResponseEntity.ok(userService.getUserParticipation(currentUserId, userId, request));
+  }
+
+  @DeleteMapping
+  public ResponseEntity<Void> delete(@CurrentUserId UUID userId) {
+    userService.delete(userId);
+    return ResponseEntity.noContent().build();
   }
 }

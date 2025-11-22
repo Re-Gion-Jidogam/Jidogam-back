@@ -1,5 +1,7 @@
 package region.jidogam.domain.user.service;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -43,9 +45,11 @@ import region.jidogam.infrastructure.jwt.dto.TokenPair;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.InvalidEmailFormatException;
+import region.jidogam.domain.user.exception.UserAlreadyDeletedException;
 import region.jidogam.domain.user.exception.UserEmailConflictException;
 import region.jidogam.domain.user.exception.UserNicknameConflictException;
 import region.jidogam.domain.user.exception.UserNicknameLengthException;
+import region.jidogam.domain.user.exception.UserRestorePeriodExpiredException;
 import region.jidogam.domain.user.repository.UserRepository;
 import region.jidogam.domain.user.util.LevelCalculator;
 
@@ -376,5 +380,53 @@ public class UserService {
         .totalCount(total)
         .nextCursor(nextCursor)
         .build();
+  }
+
+  private static final Duration RESTORE_PERIOD = Duration.ofDays(30);
+
+  @Transactional
+  public void delete(UUID userId) {
+    log.info("사용자 탈퇴 시작: userId = {}", userId);
+
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    if (user.isDeleted()) {
+      throw UserAlreadyDeletedException.withId(userId);
+    }
+
+    user.softDelete();
+    refreshTokenService.delete(user);
+
+    log.info("사용자 탈퇴 완료: userId = {}", userId);
+  }
+
+  @Transactional
+  public void restore(String email, String password) {
+    log.info("사용자 복구 시작: email = {}", email);
+
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> UserNotFoundException.withEmail(email));
+
+    if (!user.isDeleted()) {
+      log.warn("탈퇴하지 않은 사용자 복구 시도: email = {}", email);
+      return;
+    }
+
+    if (!passwordEncoder.matches(password, user.getPassword())) {
+      log.warn("비밀번호 불일치: email = {}", email);
+      throw UserNotFoundException.withEmail(email);
+    }
+
+    // 배치 오류로 삭제되지 않았을 경우 방어
+    // todo - 탈퇴한 사용자 삭제 처리(이메일도 null로 바꾸는) 배치 구현
+    LocalDateTime deletedAt = user.getDeletedAt();
+    if (deletedAt.plus(RESTORE_PERIOD).isBefore(LocalDateTime.now())) {
+      throw UserRestorePeriodExpiredException.withEmail(email);
+    }
+
+    user.restore();
+
+    log.info("사용자 복구 완료: email = {}", email);
   }
 }
