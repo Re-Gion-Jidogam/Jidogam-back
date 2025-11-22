@@ -20,6 +20,7 @@ import region.jidogam.domain.auth.exception.InvalidPasswordResetTokenException;
 import region.jidogam.domain.auth.repository.PasswordResetTokenRepository;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.event.PasswordResetEmailSendEvent;
+import region.jidogam.domain.user.exception.UserDeletedException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.domain.user.repository.UserRepository;
 import region.jidogam.infrastructure.jwt.JwtProvider;
@@ -55,6 +56,11 @@ public class AuthService {
     if (!passwordEncoder.matches(request.password(), user.getPassword())) {
       log.warn("비밀번호 불일치: email = {}", request.email());
       throw new AuthException("이메일 또는 비밀번호가 올바르지 않습니다");
+    }
+
+    if (user.isDeleted()) {
+      log.warn("탈퇴한 사용자 로그인 시도: email = {}", request.email());
+      throw UserDeletedException.withEmail(request.email());
     }
 
     refreshTokenService.delete(user);
