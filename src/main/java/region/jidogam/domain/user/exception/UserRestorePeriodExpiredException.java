@@ -7,7 +7,9 @@ public class UserRestorePeriodExpiredException extends UserException {
   }
 
   public static UserRestorePeriodExpiredException withEmail(String email) {
+    String maskedEmail = email.substring(0, Math.min(2, email.indexOf('@')))
+        + "****" + email.substring(email.indexOf('@'));
     return new UserRestorePeriodExpiredException(
-        "email = '" + email + "'인 사용자의 복구 가능 기간이 만료되었습니다.");
+        "email = '" + maskedEmail + "'인 사용자의 복구 가능 기간이 만료되었습니다.");
   }
 }

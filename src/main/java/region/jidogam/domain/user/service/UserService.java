@@ -392,7 +392,7 @@ public class UserService {
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
     if (user.isDeleted()) {
-      throw UserAlreadyDeletedException.withId(userId);
+      throw UserAlreadyDeletedException.withEmail(user.getEmail());
     }
 
     user.softDelete();

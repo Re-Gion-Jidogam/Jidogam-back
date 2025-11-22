@@ -7,6 +7,8 @@ public class UserDeletedException extends UserException {
   }
 
   public static UserDeletedException withEmail(String email) {
-    return new UserDeletedException("email = '" + email + "'인 사용자는 탈퇴한 상태입니다.");
+    String maskedEmail = email.substring(0, Math.min(2, email.indexOf('@')))
+        + "****" + email.substring(email.indexOf('@'));
+    return new UserDeletedException("email = '" + maskedEmail + "'인 사용자는 탈퇴한 상태입니다.");
   }
 }
