@@ -9,7 +9,8 @@ CREATE TABLE users
     role              VARCHAR(30)              NOT NULL,
     profile_image_url VARCHAR(512)             NULL,
     created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at        TIMESTAMP WITH TIME ZONE
+    updated_at        TIMESTAMP WITH TIME ZONE,
+    deleted_at        TIMESTAMP WITH TIME ZONE
 );
 
 -- Guidebooks table
