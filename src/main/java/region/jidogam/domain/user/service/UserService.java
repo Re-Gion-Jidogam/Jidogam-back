@@ -154,6 +154,13 @@ public class UserService {
   public CursorPageResponseDto<GuidebookResponse> getUserGuidebookList(UUID userId, UUID authorId,
       UserGuidebookSearchRequest request) {
 
+    User author = userRepository.findById(authorId)
+        .orElseThrow(() -> UserNotFoundException.withId(authorId));
+
+    if (author.isDeleted()) {
+      throw UserNotFoundException.withId(authorId);
+    }
+
     UserGuidebookCursor cursor = cursorCodecUtil.decodeUserGuidebookCursor(request.cursor());
 
     int limit = request.limit();
@@ -322,6 +329,10 @@ public class UserService {
     // 유저 조회
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
+
+    if (user.isDeleted()) {
+      throw UserNotFoundException.withId(userId);
+    }
 
     // 커서 디코딩
     GuidebookParticipationCursor cursor =
