@@ -43,6 +43,9 @@ public class GuidebookMapper {
   }
 
   private AuthorDto toAuthorDto(User user) {
+    if (user.isDeleted()) {
+      return null;
+    }
     return new GuidebookResponse.AuthorDto(
         user.getId(),
         user.getNickname(),
