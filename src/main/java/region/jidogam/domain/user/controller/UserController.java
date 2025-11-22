@@ -29,6 +29,7 @@ import region.jidogam.domain.user.dto.GuidebookParticipationSearchRequest;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
+import region.jidogam.domain.user.dto.UserRestoreRequest;
 import region.jidogam.domain.user.dto.UserUpdateRequest;
 import region.jidogam.domain.user.service.EmailAuthService;
 import region.jidogam.domain.user.service.UserService;
@@ -126,5 +127,11 @@ public class UserController {
   public ResponseEntity<Void> delete(@CurrentUserId UUID userId) {
     userService.delete(userId);
     return ResponseEntity.noContent().build();
+  }
+
+  @PostMapping("/restore")
+  public ResponseEntity<Void> restore(@Valid @RequestBody UserRestoreRequest request) {
+    userService.restore(request.email(), request.password());
+    return ResponseEntity.ok().build();
   }
 }
