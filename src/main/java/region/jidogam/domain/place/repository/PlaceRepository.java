@@ -31,7 +31,7 @@ public interface PlaceRepository extends JpaRepository<Place, UUID> {
       SELECT * FROM (
         SELECT p.*,
           (6371 * acos(
-            cos(radians(:userLat)) * cos(radians(p.y)) 
+            cos(radians(:userLat)) * cos(radians(p.y))
             * cos(radians(p.x) - radians(:userLon)) 
             + sin(radians(:userLat)) * sin(radians(p.y))
           )) AS distance
@@ -52,6 +52,53 @@ public interface PlaceRepository extends JpaRepository<Place, UUID> {
       @Param("maxDistance") Double maxDistance,
       Pageable pageable
   );
+
+  @Query(value = """
+      WITH filtered_places AS (
+        SELECT p.*
+        FROM guidebook_places gp
+        JOIN places p ON gp.place_id = p.id
+        LEFT JOIN stamps s ON s.place_id = p.id AND s.user_id = :userId
+        WHERE gp.guidebook_id = :guidebookId
+          AND (
+            :filter = 'none'
+            OR (:filter = 'visited' AND s.id IS NOT NULL)
+            OR (:filter = 'notVisited' AND s.id IS NULL)
+          )
+      ),
+      with_distance AS (
+        SELECT *,
+          ROUND(
+            CAST(
+              (6371 * acos(
+                cos(radians(:userLat)) * cos(radians(y))
+                * cos(radians(x) - radians(:userLon))
+                + sin(radians(:userLat)) * sin(radians(y))
+              )) AS numeric
+            ),
+            3
+          ) AS distance
+        FROM filtered_places
+      )
+      SELECT *
+      FROM with_distance
+      WHERE (:lastDistance IS NULL AND :lastPlaceId IS NULL)
+        OR (distance > :lastDistance)
+        OR (distance = :lastDistance AND id > :lastPlaceId)
+      ORDER BY distance, id
+      LIMIT :size
+      """, nativeQuery = true)
+  List<Place> findPlacesByGuidebookOrderByDistance(
+      @Param("userLat") Double userLat,
+      @Param("userLon") Double userLon,
+      @Param("userId") UUID userId,
+      @Param("guidebookId") UUID guidebookId,
+      @Param("filter") String filter,
+      @Param("lastDistance") Double lastDistance,
+      @Param("lastPlaceId") UUID lastPlaceId,
+      @Param("size") int size
+  );
+  // gp의 guidebookId 인덱스 추가하기
 
   @Modifying
   @Query("""
@@ -74,7 +121,7 @@ public interface PlaceRepository extends JpaRepository<Place, UUID> {
   @Query("""
       SELECT new region.jidogam.domain.place.dto.PlaceVisitInfo(s.place.id, s.createdAt)
       FROM Stamp s
-      WHERE s.user.id = :userId 
+      WHERE s.user.id = :userId
         AND s.place.id IN :placeIds
       """)
   List<PlaceVisitInfo> findVisitedDatesByUserAndPlaces(

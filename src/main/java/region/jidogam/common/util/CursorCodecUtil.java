@@ -120,7 +120,7 @@ public class CursorCodecUtil {
     String lastValue;
     switch (sortBy) {
       case STAMP_COUNT -> lastValue = Integer.toString(lastItem.stampCount());
-      case DISTANCE -> lastValue = Double.toString(lastItem.stampCount());
+      case DISTANCE -> lastValue = Double.toString(lastItem.distanceInKm());
       default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
     }
     return encodeNextCursor(new Cursor(lastValue, lastId.toString()));

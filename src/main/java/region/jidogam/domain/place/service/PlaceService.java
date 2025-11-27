@@ -12,13 +12,19 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.common.dto.CoordinateRange;
+import region.jidogam.common.dto.SortDirection;
+import region.jidogam.common.dto.response.CursorPageResponseDto;
+import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.common.util.DistanceCalculatorUtil;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.service.AreaService;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
+import region.jidogam.domain.place.dto.PlaceCursor;
+import region.jidogam.domain.place.dto.PlaceFilter;
 import region.jidogam.domain.place.dto.PlaceNearByRequest;
 import region.jidogam.domain.place.dto.PlacePopularRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
+import region.jidogam.domain.place.dto.PlaceSortBy;
 import region.jidogam.domain.place.dto.PlaceVisitInfo;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.exception.PlaceNotFoundException;
@@ -35,6 +41,7 @@ public class PlaceService {
   private final PlaceRepository placeRepository;
   private final AreaService areaService;
   private final PlaceMapper placeMapper;
+  private final CursorCodecUtil cursorCodecUtil;
 
   @Transactional(readOnly = true)
   public List<PlaceResponse> popularList(PlacePopularRequest request) {
@@ -81,7 +88,62 @@ public class PlaceService {
         .toList();
   }
 
-  // 내부 서비스용
+  /**
+   * 가이드북에 포함된 장소 목록을 거리 순으로 조회합니다. (내부 서비스용)
+   */
+  @Transactional(readOnly = true)
+  public CursorPageResponseDto<PlaceResponse> guidebookPlaceList(
+      UUID guidebookId, UUID userId, double userLat, double userLon, PlaceFilter filter,
+      String cursor, int size
+  ) {
+
+    PlaceCursor placeCursor = cursorCodecUtil.decodeplaceCursor(cursor, PlaceSortBy.DISTANCE);
+    log.info("cursor 거리: {}", placeCursor != null ? placeCursor.distance() : null);
+
+    List<Place> byGuidebookOrderByDistance = placeRepository.findPlacesByGuidebookOrderByDistance(
+        userLat,
+        userLon,
+        userId,
+        guidebookId,
+        filter.getValue(),
+        placeCursor != null ? placeCursor.distance() : null,
+        placeCursor != null ? placeCursor.lastId() : null,
+        size + 1
+    );
+
+    boolean hasNext = byGuidebookOrderByDistance.size() > size;
+    if (hasNext) {
+      byGuidebookOrderByDistance.remove(size);
+    }
+
+    Map<UUID, LocalDateTime> visitedDateMap = getVisitedDateMap(userId, byGuidebookOrderByDistance);
+
+    List<PlaceResponse> responses = byGuidebookOrderByDistance.stream()
+        .map(place -> placeMapper.toResponse(
+            place,
+            userLat,
+            userLon,
+            visitedDateMap.get(place.getId())))
+        .toList();
+
+    String nextCursor = null;
+    if (hasNext) {
+      nextCursor = cursorCodecUtil.encodeNextCursor(
+          responses.get(responses.size() - 1),
+          PlaceSortBy.DISTANCE
+      );
+    }
+
+    return CursorPageResponseDto.<PlaceResponse>builder()
+        .data(responses)
+        .size(responses.size())
+        .hasNext(hasNext)
+        .nextCursor(nextCursor)
+        .sortBy(PlaceSortBy.DISTANCE.getValue())
+        .sortDirection(SortDirection.DESC)
+        .build();
+  }
+
   @Transactional
   public Place getOrCreatePlace(UUID id, PlaceCreateRequest request) {
 
@@ -140,5 +202,4 @@ public class PlaceService {
             PlaceVisitInfo::visitedDate
         ));
   }
-
 }

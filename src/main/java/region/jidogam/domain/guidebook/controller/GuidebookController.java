@@ -21,9 +21,12 @@ import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
+import region.jidogam.domain.guidebook.dto.GuidebookPlaceConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
+import region.jidogam.domain.guidebook.service.GuidebookPlaceService;
 import region.jidogam.domain.guidebook.service.GuidebookService;
+import region.jidogam.domain.place.dto.PlaceResponse;
 
 @RestController
 @RequestMapping("/api/guidebooks")
@@ -31,6 +34,7 @@ import region.jidogam.domain.guidebook.service.GuidebookService;
 public class GuidebookController {
 
   private final GuidebookService guidebookService;
+  private final GuidebookPlaceService guidebookPlaceService;
 
   @GetMapping
   public ResponseEntity<CursorPageResponseDto<GuidebookResponse>> list(
@@ -91,6 +95,17 @@ public class GuidebookController {
   ) {
     guidebookService.delete(id, userId);
     return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/{id}/places")
+  public ResponseEntity<CursorPageResponseDto<PlaceResponse>> getPlaces(
+      @PathVariable UUID id,
+      @Valid @ModelAttribute GuidebookPlaceConditionRequest request,
+      @CurrentUserId UUID userId
+  ) {
+    CursorPageResponseDto<PlaceResponse> response = guidebookPlaceService.searchByGuidebookId(
+        id, userId, request);
+    return ResponseEntity.ok(response);
   }
 
   @PostMapping("/{id}/places")
