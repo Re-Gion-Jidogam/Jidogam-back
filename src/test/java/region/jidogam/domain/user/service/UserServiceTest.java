@@ -55,6 +55,8 @@ import region.jidogam.domain.user.dto.GuidebookParticipationCursor;
 import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
 import region.jidogam.domain.user.dto.GuidebookParticipationSearchRequest;
 import region.jidogam.domain.user.dto.GuidebookParticipationSortBy;
+import region.jidogam.domain.user.dto.UserGuideBookSortBy;
+import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
 import region.jidogam.domain.user.mapper.UserMapper;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.dto.UserDto;
@@ -62,11 +64,13 @@ import region.jidogam.domain.user.dto.UserUpdateRequest;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.InvalidEmailFormatException;
 import region.jidogam.domain.user.exception.UnverifiedEmailException;
+import region.jidogam.domain.user.exception.UserAlreadyDeletedException;
 import region.jidogam.domain.user.exception.UserEmailConflictException;
 import region.jidogam.domain.user.exception.UserExpException;
 import region.jidogam.domain.user.exception.UserNicknameConflictException;
 import region.jidogam.domain.user.exception.UserNicknameLengthException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
+import region.jidogam.domain.user.exception.UserRestorePeriodExpiredException;
 import region.jidogam.domain.user.repository.UserRepository;
 import region.jidogam.domain.user.util.LevelCalculator;
 import region.jidogam.infrastructure.jwt.JwtProvider;
@@ -486,7 +490,7 @@ class UserServiceTest {
   }
 
   @Nested
-  @DisplayName("사용자")
+  @DisplayName("사용자 가이드북 목록 조회")
   class GetUsersGuideBookTest {
 
     @Test
@@ -499,6 +503,66 @@ class UserServiceTest {
 
       //then
 
+    }
+
+    @Test
+    @DisplayName("실패 - 탈퇴한 사용자의 가이드북 조회")
+    void failsWhenAuthorIsDeleted() {
+      //given
+      UUID userId = UUID.randomUUID();
+      UUID authorId = UUID.randomUUID();
+      User deletedAuthor = User.builder()
+          .nickname("탈퇴한유저")
+          .email("deleted@test.com")
+          .password("password")
+          .build();
+      deletedAuthor.softDelete();
+
+      UserGuidebookSearchRequest request = new UserGuidebookSearchRequest(
+          null,
+          UserGuideBookSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      when(userRepository.findById(authorId)).thenReturn(Optional.of(deletedAuthor));
+
+      //when & then
+      assertThrows(UserNotFoundException.class,
+          () -> userService.getUserGuidebookList(userId, authorId, request));
+      verify(userRepository, times(1)).findById(authorId);
+      verify(guidebookRepository, never()).searchGuidebookByAuthorId(
+          any(UUID.class), any(), any(), any(), any(), any(Integer.class), any(Boolean.class)
+      );
+    }
+
+    @Test
+    @DisplayName("실패 - 존재하지 않는 사용자의 가이드북 조회")
+    void failsWhenAuthorNotFound() {
+      //given
+      UUID userId = UUID.randomUUID();
+      UUID authorId = UUID.randomUUID();
+
+      UserGuidebookSearchRequest request = new UserGuidebookSearchRequest(
+          null,
+          UserGuideBookSortBy.CREATED_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      when(userRepository.findById(authorId)).thenReturn(Optional.empty());
+
+      //when & then
+      assertThrows(UserNotFoundException.class,
+          () -> userService.getUserGuidebookList(userId, authorId, request));
+      verify(userRepository, times(1)).findById(authorId);
+      verify(guidebookRepository, never()).searchGuidebookByAuthorId(
+          any(UUID.class), any(), any(), any(), any(), any(Integer.class), any(Boolean.class)
+      );
     }
   }
 
@@ -1836,6 +1900,37 @@ class UserServiceTest {
     }
 
     @Test
+    @DisplayName("실패 - 탈퇴한 사용자의 참여 가이드북 조회")
+    void failsWhenUserIsDeleted() {
+      //given
+      User deletedUser = User.builder()
+          .nickname("탈퇴한유저")
+          .email("deleted@test.com")
+          .password("password")
+          .build();
+      deletedUser.softDelete();
+
+      GuidebookParticipationSearchRequest request = new GuidebookParticipationSearchRequest(
+          null,
+          GuidebookParticipationSortBy.LAST_ACTIVITY_AT,
+          SortDirection.DESC,
+          null,
+          20,
+          null
+      );
+
+      when(userRepository.findById(testUserId)).thenReturn(Optional.of(deletedUser));
+
+      //when & then
+      assertThrows(UserNotFoundException.class,
+          () -> userService.getUserParticipation(currentUserId, testUserId, request));
+      verify(userRepository, times(1)).findById(testUserId);
+      verify(guidebookParticipantRepository, never()).searchParticipatingGuidebooks(
+          any(UUID.class), any(), any(), any(SortDirection.class), any(), any(Integer.class)
+      );
+    }
+
+    @Test
     @DisplayName("성공 - 응답 데이터에 가이드북 정보와 참여 정보가 포함됨")
     void successWithResponseData() {
       //given
@@ -1889,6 +1984,202 @@ class UserServiceTest {
       assertNotNull(response.lastActivityAt());
       assertNotNull(response.isCompleted());
       assertEquals(false, response.isCompleted());
+    }
+  }
+
+  @Nested
+  @DisplayName("사용자 탈퇴")
+  class DeleteUserTest {
+
+    @Test
+    @DisplayName("성공 - 정상적으로 사용자 탈퇴")
+    void success() {
+      //given
+      UUID userId = UUID.randomUUID();
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .build();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      //when
+      userService.delete(userId);
+
+      //then
+      assertTrue(user.isDeleted());
+      verify(userRepository, times(1)).findById(userId);
+      verify(refreshTokenService, times(1)).delete(user);
+    }
+
+    @Test
+    @DisplayName("실패 - 존재하지 않는 사용자")
+    void failsWhenUserNotFound() {
+      //given
+      UUID userId = UUID.randomUUID();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+      //when & then
+      assertThrows(UserNotFoundException.class, () -> userService.delete(userId));
+      verify(userRepository, times(1)).findById(userId);
+      verify(refreshTokenService, never()).delete(any(User.class));
+    }
+
+    @Test
+    @DisplayName("실패 - 이미 탈퇴한 사용자")
+    void failsWhenUserAlreadyDeleted() {
+      //given
+      UUID userId = UUID.randomUUID();
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email("test@test.com")
+          .password("password")
+          .build();
+      user.softDelete();
+
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      //when & then
+      assertThrows(UserAlreadyDeletedException.class, () -> userService.delete(userId));
+      verify(userRepository, times(1)).findById(userId);
+      verify(refreshTokenService, never()).delete(any(User.class));
+    }
+  }
+
+  @Nested
+  @DisplayName("사용자 복구")
+  class RestoreUserTest {
+
+    @Test
+    @DisplayName("성공 - 정상적으로 사용자 복구")
+    void success() {
+      //given
+      String email = "test@test.com";
+      String password = "password";
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email(email)
+          .password("encodedPassword")
+          .build();
+      user.softDelete();
+
+      when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+      when(passwordEncoder.matches(password, "encodedPassword")).thenReturn(true);
+
+      //when
+      userService.restore(email, password);
+
+      //then
+      assertFalse(user.isDeleted());
+      assertNull(user.getDeletedAt());
+      verify(userRepository, times(1)).findByEmail(email);
+      verify(passwordEncoder, times(1)).matches(password, "encodedPassword");
+    }
+
+    @Test
+    @DisplayName("실패 - 존재하지 않는 사용자")
+    void failsWhenUserNotFound() {
+      //given
+      String email = "test@test.com";
+      String password = "password";
+
+      when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+
+      //when & then
+      assertThrows(UserNotFoundException.class, () -> userService.restore(email, password));
+      verify(userRepository, times(1)).findByEmail(email);
+      verify(passwordEncoder, never()).matches(any(), any());
+    }
+
+    @Test
+    @DisplayName("실패 - 비밀번호 불일치")
+    void failsWhenPasswordMismatch() {
+      //given
+      String email = "test@test.com";
+      String password = "wrongPassword";
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email(email)
+          .password("encodedPassword")
+          .build();
+      user.softDelete();
+
+      when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+      when(passwordEncoder.matches(password, "encodedPassword")).thenReturn(false);
+
+      //when & then
+      assertThrows(UserNotFoundException.class, () -> userService.restore(email, password));
+      assertTrue(user.isDeleted()); // 복구되지 않아야 함
+      verify(userRepository, times(1)).findByEmail(email);
+      verify(passwordEncoder, times(1)).matches(password, "encodedPassword");
+    }
+
+    @Test
+    @DisplayName("실패 - 복구 기간 만료 (30일 초과)")
+    void failsWhenRestorePeriodExpired() {
+      //given
+      String email = "test@test.com";
+      String password = "password";
+      User user = mock(User.class);
+
+      when(user.isDeleted()).thenReturn(true);
+      when(user.getPassword()).thenReturn("encodedPassword");
+      when(user.getDeletedAt()).thenReturn(LocalDateTime.now().minusDays(31));
+      when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+      when(passwordEncoder.matches(password, "encodedPassword")).thenReturn(true);
+
+      //when & then
+      assertThrows(UserRestorePeriodExpiredException.class, () -> userService.restore(email, password));
+      verify(userRepository, times(1)).findByEmail(email);
+      verify(passwordEncoder, times(1)).matches(password, "encodedPassword");
+      verify(user, never()).restore();
+    }
+
+    @Test
+    @DisplayName("성공 - 탈퇴하지 않은 사용자 복구 시도 (아무 작업 안함)")
+    void successWhenUserNotDeleted() {
+      //given
+      String email = "test@test.com";
+      String password = "password";
+      User user = User.builder()
+          .nickname("테스트유저")
+          .email(email)
+          .password("encodedPassword")
+          .build();
+      // softDelete 호출하지 않음 - 탈퇴하지 않은 상태
+
+      when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+
+      //when
+      userService.restore(email, password);
+
+      //then
+      assertFalse(user.isDeleted());
+      verify(userRepository, times(1)).findByEmail(email);
+      verify(passwordEncoder, never()).matches(any(), any()); // 비밀번호 검증하지 않음
+    }
+
+    @Test
+    @DisplayName("성공 - 복구 기간 경계값 (30일 이내)")
+    void successWhenWithinRestorePeriod() {
+      //given
+      String email = "test@test.com";
+      String password = "password";
+      User user = mock(User.class);
+
+      when(user.isDeleted()).thenReturn(true);
+      when(user.getPassword()).thenReturn("encodedPassword");
+      when(user.getDeletedAt()).thenReturn(LocalDateTime.now().minusDays(29));
+      when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+      when(passwordEncoder.matches(password, "encodedPassword")).thenReturn(true);
+
+      //when
+      userService.restore(email, password);
+
+      //then
+      verify(user, times(1)).restore();
     }
   }
 }
