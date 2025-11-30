@@ -36,7 +36,8 @@ import region.jidogam.domain.place.repository.PlaceRepository;
 @RequiredArgsConstructor
 public class PlaceService {
 
-  private final double DEFAULT_SEARCH_RADIUS_KM = 1.0;
+  private static final double DEFAULT_SEARCH_RADIUS_KM = 1.0;
+  private static final double LOCATION_TOLERANCE_DEGREES = 0.0001;
 
   private final PlaceRepository placeRepository;
   private final AreaService areaService;
@@ -90,6 +91,8 @@ public class PlaceService {
 
   /**
    * 가이드북에 포함된 장소 목록을 거리 순으로 조회합니다. (내부 서비스용)
+   * <p>
+   * 약 10m 정도의 오차는 허용하며 그 이상의 위치가 달라지는 경우 첫페이지를 응답합니다.
    */
   @Transactional(readOnly = true)
   public CursorPageResponseDto<PlaceResponse> guidebookPlaceList(
@@ -98,7 +101,13 @@ public class PlaceService {
   ) {
 
     PlaceCursor placeCursor = cursorCodecUtil.decodeplaceCursor(cursor, PlaceSortBy.DISTANCE);
-    log.info("cursor 거리: {}", placeCursor != null ? placeCursor.distance() : null);
+
+    if (placeCursor != null) {
+      if (Math.abs(placeCursor.userLat() - userLat) > LOCATION_TOLERANCE_DEGREES ||
+          Math.abs(placeCursor.userLon() - userLon) > LOCATION_TOLERANCE_DEGREES) {
+        placeCursor = null;
+      }
+    }
 
     List<Place> byGuidebookOrderByDistance = placeRepository.findPlacesByGuidebookOrderByDistance(
         userLat,
@@ -130,7 +139,9 @@ public class PlaceService {
     if (hasNext) {
       nextCursor = cursorCodecUtil.encodeNextCursor(
           responses.get(responses.size() - 1),
-          PlaceSortBy.DISTANCE
+          PlaceSortBy.DISTANCE,
+          userLat,
+          userLon
       );
     }
 

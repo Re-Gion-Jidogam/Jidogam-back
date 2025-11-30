@@ -33,7 +33,7 @@ public class DistanceCalculatorUtil {
     double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     double distance = EARTH_RADIUS_KM * c;
 
-    return Math.round(distance * 1000.0) / 1000.0; // 소수점 2자리
+    return Math.round(distance * 1000.0) / 1000.0;
   }
 
   /**

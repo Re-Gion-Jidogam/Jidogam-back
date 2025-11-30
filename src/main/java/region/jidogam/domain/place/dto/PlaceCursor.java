@@ -8,6 +8,8 @@ import region.jidogam.common.dto.Cursor;
 public record PlaceCursor(
     Integer stampCount,
     Double distance,
+    Double userLat,
+    Double userLon,
     UUID lastId
 ) {
 
@@ -18,15 +20,22 @@ public record PlaceCursor(
 
     UUID lastId = UUID.fromString(cursor.lastId());
 
-    return switch (sortBy) {
-      case DISTANCE -> PlaceCursor.builder()
-          .distance(Double.parseDouble(cursor.lastValue()))
-          .lastId(lastId)
-          .build();
-      case STAMP_COUNT -> PlaceCursor.builder()
+    PlaceCursor placeCursor = null;
+    switch (sortBy) {
+      case DISTANCE -> {
+        String[] parts = cursor.lastValue().split(",");
+        placeCursor = PlaceCursor.builder()
+            .distance(Double.parseDouble(parts[0]))
+            .userLat(Double.parseDouble(parts[1]))
+            .userLon(Double.parseDouble(parts[2]))
+            .lastId(lastId)
+            .build();
+      }
+      case STAMP_COUNT -> placeCursor = PlaceCursor.builder()
           .stampCount(Integer.parseInt(cursor.lastValue()))
           .lastId(lastId)
           .build();
-    };
+    }
+    return placeCursor;
   }
 }

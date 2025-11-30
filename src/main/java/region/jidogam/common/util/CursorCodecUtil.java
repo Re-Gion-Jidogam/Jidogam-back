@@ -114,13 +114,14 @@ public class CursorCodecUtil {
    * @param lastItem PlaceResponse 타입의 아이템
    * @param sortBy   정렬 기준
    */
-  public String encodeNextCursor(PlaceResponse lastItem, PlaceSortBy sortBy) {
+  public String encodeNextCursor(PlaceResponse lastItem, PlaceSortBy sortBy, Double userLat,
+      Double userLon) {
     UUID lastId = lastItem.pid();
 
     String lastValue;
     switch (sortBy) {
       case STAMP_COUNT -> lastValue = Integer.toString(lastItem.stampCount());
-      case DISTANCE -> lastValue = Double.toString(lastItem.distanceInKm());
+      case DISTANCE -> lastValue = lastItem.distanceInKm() + "," + userLat + "," + userLon;
       default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
     }
     return encodeNextCursor(new Cursor(lastValue, lastId.toString()));
