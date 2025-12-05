@@ -25,7 +25,19 @@ public class GuidebookPlaceService {
   ) {
     Guidebook guidebook = getOrThrow(id);
 
-    CursorPageResponseDto<PlaceResponse> byGuidebookOrderByDistance = placeService.guidebookPlaceList(
+    if (request.userLat() != null && request.userLon() != null) {
+      return placeService.guidebookPlaceListByDistance(
+          guidebook.getId(),
+          userId,
+          request.userLat(),
+          request.userLon(),
+          request.filter(),
+          request.cursor(),
+          request.size()
+      ).withTotalCount(guidebook.getTotalPlaceCount());
+    }
+
+    return placeService.guidebookPlaceListByStamp(
         guidebook.getId(),
         userId,
         request.userLat(),
@@ -33,9 +45,7 @@ public class GuidebookPlaceService {
         request.filter(),
         request.cursor(),
         request.size()
-    );
-
-    return byGuidebookOrderByDistance.withTotalCount(guidebook.getTotalPlaceCount());
+    ).withTotalCount(guidebook.getTotalPlaceCount());
   }
 
   private Guidebook getOrThrow(UUID id) {

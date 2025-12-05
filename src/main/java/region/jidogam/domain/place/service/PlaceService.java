@@ -95,8 +95,8 @@ public class PlaceService {
    * 약 10m 정도의 오차는 허용하며 그 이상의 위치가 달라지는 경우 첫페이지를 응답합니다.
    */
   @Transactional(readOnly = true)
-  public CursorPageResponseDto<PlaceResponse> guidebookPlaceList(
-      UUID guidebookId, UUID userId, double userLat, double userLon, PlaceFilter filter,
+  public CursorPageResponseDto<PlaceResponse> guidebookPlaceListByDistance(
+      UUID guidebookId, UUID userId, Double userLat, Double userLon, PlaceFilter filter,
       String cursor, int size
   ) {
 
@@ -112,7 +112,7 @@ public class PlaceService {
     List<Place> byGuidebookOrderByDistance = placeRepository.findPlacesByGuidebookOrderByDistance(
         userLat,
         userLon,
-        userId,
+        userId, // 이거 확인하기
         guidebookId,
         filter.getValue(),
         placeCursor != null ? placeCursor.distance() : null,
@@ -155,6 +155,62 @@ public class PlaceService {
         .build();
   }
 
+  /**
+   * 가이드북 stamp 기준으로 조회
+   */
+  @Transactional(readOnly = true)
+  public CursorPageResponseDto<PlaceResponse> guidebookPlaceListByStamp(
+      UUID guidebookId, UUID userId, Double userLat, Double userLon, PlaceFilter filter,
+      String cursor, int size
+  ) {
+
+    PlaceCursor placeCursor = cursorCodecUtil.decodeplaceCursor(cursor, PlaceSortBy.STAMP_COUNT);
+
+    List<Place> byGuidebookOrderByStamp = placeRepository.searchPlaceByGuidebook(
+        guidebookId,
+        userId,
+        filter,
+        placeCursor,
+        PlaceSortBy.STAMP_COUNT,
+        SortDirection.DESC,
+        size + 1
+    );
+
+    boolean hasNext = byGuidebookOrderByStamp.size() > size;
+    if (hasNext) {
+      byGuidebookOrderByStamp.remove(size);
+    }
+
+    Map<UUID, LocalDateTime> visitedDateMap = getVisitedDateMap(userId, byGuidebookOrderByStamp);
+
+    List<PlaceResponse> responses = byGuidebookOrderByStamp.stream()
+        .map(place -> placeMapper.toResponse(
+            place,
+            userLat,
+            userLon,
+            visitedDateMap.get(place.getId())))
+        .toList();
+
+    String nextCursor = null;
+    if (hasNext) {
+      nextCursor = cursorCodecUtil.encodeNextCursor(
+          responses.get(responses.size() - 1),
+          PlaceSortBy.STAMP_COUNT,
+          null,
+          null
+      );
+    }
+
+    return CursorPageResponseDto.<PlaceResponse>builder()
+        .data(responses)
+        .size(responses.size())
+        .hasNext(hasNext)
+        .nextCursor(nextCursor)
+        .sortBy(PlaceSortBy.STAMP_COUNT.getValue())
+        .sortDirection(SortDirection.DESC)
+        .build();
+  }
+
   @Transactional
   public Place getOrCreatePlace(UUID id, PlaceCreateRequest request) {
 
@@ -172,13 +228,10 @@ public class PlaceService {
   public Place createPlace(PlaceCreateRequest request) {
     log.info("장소 생성 시작: placeName = {}", request.placeName());
 
-    // 1. area 정보 조회
     Area area = areaService.getAreaByAddress(request.addressName());
 
-    // 2. 장소 포인트 설정
     int points = calculatePoint(area.getWeight());
 
-    // 3. 장소 생성
     Place place = Place.builder()
         .name(request.placeName())
         .address(request.addressName())

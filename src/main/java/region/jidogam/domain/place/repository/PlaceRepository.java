@@ -9,8 +9,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import region.jidogam.domain.place.dto.PlaceVisitInfo;
 import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.repository.querydsl.PlaceRepositoryCustom;
 
-public interface PlaceRepository extends JpaRepository<Place, UUID> {
+public interface PlaceRepository extends JpaRepository<Place, UUID>, PlaceRepositoryCustom {
 
   List<Place> findAllByOrderByStampCountDesc(Pageable pageable);
 
@@ -128,4 +129,5 @@ public interface PlaceRepository extends JpaRepository<Place, UUID> {
       @Param("userId") UUID userId,
       @Param("placeIds") List<UUID> placeIds
   );
+
 }

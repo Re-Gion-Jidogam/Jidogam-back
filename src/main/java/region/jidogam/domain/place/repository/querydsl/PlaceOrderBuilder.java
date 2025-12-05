@@ -5,8 +5,26 @@ import static region.jidogam.domain.place.entity.QPlace.place;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.ComparableExpressionBase;
 import region.jidogam.common.dto.SortDirection;
+import region.jidogam.domain.place.dto.PlaceSortBy;
 
 public class PlaceOrderBuilder {
+
+  /**
+   * 장소 정렬 (STAMP_COUNT 정렬 지원)
+   */
+  public static OrderSpecifier<?>[] forPlace(
+      PlaceSortBy sortBy,
+      SortDirection direction) {
+
+    OrderSpecifier<?> primaryOrder = switch (sortBy) {
+      case STAMP_COUNT -> buildOrder(place.stampCount, direction);
+      default -> throw new IllegalArgumentException("Unsupported sort type: " + sortBy);
+    };
+
+    OrderSpecifier<?> secondaryOrder = buildIdOrder(direction);
+
+    return new OrderSpecifier<?>[]{primaryOrder, secondaryOrder};
+  }
 
   /**
    * 필드에 대한 정렬 생성
