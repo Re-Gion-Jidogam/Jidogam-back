@@ -33,4 +33,16 @@ public interface GuidebookRepositoryCustom {
   long countGuidebookByAuthorId(UUID authorId, boolean isOwner, String keyword);
 
   long countPublishedGuidebooksByKeyword(String keyword, Boolean isLocal);
+
+  List<Guidebook> searchGuidebooksByPlaceId(
+      UUID placeId,
+      GuidebookCursor cursor,
+      String keyword,
+      GuidebookSortBy sortBy,
+      SortDirection direction,
+      Boolean isLocal,
+      int limit
+  );
+
+  long countGuidebooksByPlaceId(UUID placeId, String keyword, Boolean isLocal);
 }
