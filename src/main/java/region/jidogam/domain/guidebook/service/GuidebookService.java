@@ -161,6 +161,69 @@ public class GuidebookService {
         .build();
   }
 
+  @Transactional(readOnly = true)
+  public CursorPageResponseDto<GuidebookResponse> listByPlaceId(
+      UUID placeId,
+      GuidebookConditionRequest request,
+      UUID userId
+  ) {
+    // 1. 커서 디코딩
+    GuidebookCursor cursor = cursorCodecUtil.decodeGuidebookCursor(request.cursor(),
+        request.sortBy());
+
+    // 커서 유효성 검증
+    validateCursor(cursor, request.filter(), request.sortBy());
+
+    int limit = request.limit();
+    Boolean isLocal = request.filter() == GuidebookFilter.LOCAL ? true : null;
+
+    // 2. Repository 호출
+    List<Guidebook> guidebooks = guidebookRepository.searchGuidebooksByPlaceId(
+        placeId,
+        cursor,
+        request.keyword(),
+        request.sortBy(),
+        request.sortDirection(),
+        isLocal,
+        limit + 1
+    );
+
+    // 3. 검색 결과: totalCount
+    long totalCount = guidebookRepository.countGuidebooksByPlaceId(
+        placeId, request.keyword(), isLocal);
+
+    // 4. 응답 생성
+    boolean hasNext = guidebooks.size() > limit;
+    if (hasNext) {
+      guidebooks.remove(limit);
+    }
+
+    List<GuidebookResponse> responses = guidebooks.stream()
+        .map(g -> {
+          int visitedPlaceCount = getVisitedPlaceCount(g.getId(), userId);
+          return guidebookMapper.toResponse(g, visitedPlaceCount);
+        })
+        .collect(Collectors.toList());
+
+    String nextCursor = null;
+    if (hasNext) {
+      nextCursor = cursorCodecUtil.encodeNextCursor(
+          responses.get(responses.size() - 1),
+          request.sortBy()
+      );
+    }
+
+    return CursorPageResponseDto.<GuidebookResponse>builder()
+        .data(responses)
+        .size(responses.size())
+        .hasNext(hasNext)
+        .nextCursor(nextCursor)
+        .sortBy(request.sortBy().getValue())
+        .sortDirection(request.sortDirection())
+        .totalCount(totalCount)
+        .build();
+  }
+
   @Transactional
   public void create(GuidebookCreateRequest request, UUID userId) {
 
