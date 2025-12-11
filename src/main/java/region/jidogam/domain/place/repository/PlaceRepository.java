@@ -89,7 +89,7 @@ public interface PlaceRepository extends JpaRepository<Place, UUID>, PlaceReposi
       ORDER BY distance, id
       LIMIT :size
       """, nativeQuery = true)
-  List<Place> findPlacesByGuidebookOrderByDistance(
+  List<Place> findPlacesByGuidebookOrderByDistanceWithUser(
       @Param("userLat") Double userLat,
       @Param("userLon") Double userLon,
       @Param("userId") UUID userId,
@@ -100,6 +100,40 @@ public interface PlaceRepository extends JpaRepository<Place, UUID>, PlaceReposi
       @Param("size") int size
   );
   // gp의 guidebookId 인덱스 추가하기
+
+  @Query(value = """
+      WITH with_distance AS (
+        SELECT p.*,
+          ROUND(
+            CAST(
+              (6371 * acos(
+                cos(radians(:userLat)) * cos(radians(p.y))
+                * cos(radians(p.x) - radians(:userLon))
+                + sin(radians(:userLat)) * sin(radians(p.y))
+              )) AS numeric
+            ),
+            3
+          ) AS distance
+        FROM guidebook_places gp
+        JOIN places p ON gp.place_id = p.id
+        WHERE gp.guidebook_id = :guidebookId
+      )
+      SELECT *
+      FROM with_distance
+      WHERE (:lastDistance IS NULL AND :lastPlaceId IS NULL)
+        OR (distance > :lastDistance)
+        OR (distance = :lastDistance AND id > :lastPlaceId)
+      ORDER BY distance, id
+      LIMIT :size
+      """, nativeQuery = true)
+  List<Place> findPlacesByGuidebookOrderByDistance(
+      @Param("userLat") Double userLat,
+      @Param("userLon") Double userLon,
+      @Param("guidebookId") UUID guidebookId,
+      @Param("lastDistance") Double lastDistance,
+      @Param("lastPlaceId") UUID lastPlaceId,
+      @Param("size") int size
+  );
 
   @Modifying
   @Query("""

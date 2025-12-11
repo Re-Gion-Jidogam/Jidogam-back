@@ -109,25 +109,21 @@ public class PlaceService {
       }
     }
 
-    List<Place> byGuidebookOrderByDistance = placeRepository.findPlacesByGuidebookOrderByDistance(
-        userLat,
-        userLon,
-        userId, // 이거 확인하기
-        guidebookId,
-        filter.getValue(),
-        placeCursor != null ? placeCursor.distance() : null,
-        placeCursor != null ? placeCursor.lastId() : null,
-        size + 1
+    Double lastDistance = placeCursor != null ? placeCursor.distance() : null;
+    UUID lastId = placeCursor != null ? placeCursor.lastId() : null;
+    List<Place> places = findPlacesByDistance(
+        guidebookId, userId, userLat, userLon, filter,
+        lastDistance, lastId, size + 1
     );
 
-    boolean hasNext = byGuidebookOrderByDistance.size() > size;
+    boolean hasNext = places.size() > size;
     if (hasNext) {
-      byGuidebookOrderByDistance.remove(size);
+      places.remove(size);
     }
 
-    Map<UUID, LocalDateTime> visitedDateMap = getVisitedDateMap(userId, byGuidebookOrderByDistance);
+    Map<UUID, LocalDateTime> visitedDateMap = getVisitedDateMap(userId, places);
 
-    List<PlaceResponse> responses = byGuidebookOrderByDistance.stream()
+    List<PlaceResponse> responses = places.stream()
         .map(place -> placeMapper.toResponse(
             place,
             userLat,
@@ -151,7 +147,7 @@ public class PlaceService {
         .hasNext(hasNext)
         .nextCursor(nextCursor)
         .sortBy(PlaceSortBy.DISTANCE.getValue())
-        .sortDirection(SortDirection.DESC)
+        .sortDirection(SortDirection.ASC)
         .build();
   }
 
@@ -166,7 +162,7 @@ public class PlaceService {
 
     PlaceCursor placeCursor = cursorCodecUtil.decodeplaceCursor(cursor, PlaceSortBy.STAMP_COUNT);
 
-    List<Place> byGuidebookOrderByStamp = placeRepository.searchPlaceByGuidebook(
+    List<Place> places = placeRepository.searchPlaceByGuidebook(
         guidebookId,
         userId,
         filter,
@@ -176,14 +172,14 @@ public class PlaceService {
         size + 1
     );
 
-    boolean hasNext = byGuidebookOrderByStamp.size() > size;
+    boolean hasNext = places.size() > size;
     if (hasNext) {
-      byGuidebookOrderByStamp.remove(size);
+      places.remove(size);
     }
 
-    Map<UUID, LocalDateTime> visitedDateMap = getVisitedDateMap(userId, byGuidebookOrderByStamp);
+    Map<UUID, LocalDateTime> visitedDateMap = getVisitedDateMap(userId, places);
 
-    List<PlaceResponse> responses = byGuidebookOrderByStamp.stream()
+    List<PlaceResponse> responses = places.stream()
         .map(place -> placeMapper.toResponse(
             place,
             userLat,
@@ -265,5 +261,20 @@ public class PlaceService {
             PlaceVisitInfo::placeId,
             PlaceVisitInfo::visitedDate
         ));
+  }
+
+  private List<Place> findPlacesByDistance(
+      UUID guidebookId, UUID userId, Double userLat, Double userLon, PlaceFilter filter,
+      Double lastDistance, UUID lastId, int limit
+  ) {
+    if (userId == null) {
+      return placeRepository.findPlacesByGuidebookOrderByDistance(
+          userLat, userLon, guidebookId, lastDistance, lastId, limit
+      );
+    }
+    return placeRepository.findPlacesByGuidebookOrderByDistanceWithUser(
+        userLat, userLon, userId, guidebookId, filter.getValue(),
+        lastDistance, lastId, limit
+    );
   }
 }

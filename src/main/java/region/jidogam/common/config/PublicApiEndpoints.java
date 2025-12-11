@@ -29,6 +29,7 @@ public final class PublicApiEndpoints {
   // 비로그인 사용자 접근 가능 API
   public static final String GUIDEBOOK_LIST = "/api/guidebooks";
   public static final String POPULAR_GUIDEBOOK_LIST = "/api/guidebooks/popular";
+  public static final String GUIDEBOOK_PLACE_LIST = "/api/guidebooks/*/places";
   public static final String NEARBY_PLACE_LIST = "/api/places/nearby";
 
   /**
@@ -57,7 +58,8 @@ public final class PublicApiEndpoints {
         API_DOCS,
         GUIDEBOOK_LIST,
         POPULAR_GUIDEBOOK_LIST,
-        NEARBY_PLACE_LIST
+        NEARBY_PLACE_LIST,
+        GUIDEBOOK_PLACE_LIST
     };
   }
 }
