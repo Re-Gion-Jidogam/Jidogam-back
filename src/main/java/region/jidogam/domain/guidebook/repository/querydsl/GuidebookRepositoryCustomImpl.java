@@ -2,6 +2,7 @@ package region.jidogam.domain.guidebook.repository.querydsl;
 
 import static region.jidogam.domain.guidebook.entity.QGuidebook.guidebook;
 import static region.jidogam.domain.guidebook.entity.QGuidebookAreaRatio.guidebookAreaRatio;
+import static region.jidogam.domain.guidebook.entity.QGuidebookPlace.guidebookPlace;
 import static region.jidogam.domain.user.entity.QUser.user;
 
 import com.querydsl.core.BooleanBuilder;
@@ -108,6 +109,60 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
         .select(guidebook.count())
         .from(guidebook)
         .where(where)
+        .fetchOne();
+
+    return count != null ? count : 0L;
+  }
+
+  @Override
+  public List<Guidebook> searchGuidebooksByPlaceId(
+      UUID placeId,
+      GuidebookCursor cursor,
+      String keyword,
+      GuidebookSortBy sortBy,
+      SortDirection direction,
+      Boolean isLocal,
+      int limit
+  ) {
+    QArea firstArea = new QArea("firstArea");
+    QArea secondArea = new QArea("secondArea");
+    QArea thirdArea = new QArea("thirdArea");
+
+    JPAQuery<Guidebook> query = queryFactory
+        .selectFrom(guidebook)
+        .join(guidebookPlace).on(guidebookPlace.guidebook.eq(guidebook))
+        .leftJoin(guidebook.author, user).fetchJoin()
+        .leftJoin(guidebook.areaRatio, guidebookAreaRatio).fetchJoin()
+        .leftJoin(guidebookAreaRatio.firstArea, firstArea).fetchJoin()
+        .leftJoin(guidebookAreaRatio.secondArea, secondArea).fetchJoin()
+        .leftJoin(guidebookAreaRatio.thirdArea, thirdArea).fetchJoin();
+
+    BooleanBuilder where = new BooleanBuilder();
+
+    where.and(guidebookPlace.place.id.eq(placeId));
+    where.and(GuidebookCondition.isPublished());
+    where.and(GuidebookCondition.titleContains(keyword));
+    where.and(GuidebookCondition.isLocalGuidebook(isLocal));
+    where.and(GuidebookCursorCondition.buildGuidebookCursor(cursor, sortBy, direction));
+
+    query.where(where);
+    query.orderBy(GuidebookOrderBuilder.forGuidebook(sortBy, direction));
+    query.limit(limit);
+
+    return query.fetch();
+  }
+
+  @Override
+  public long countGuidebooksByPlaceId(UUID placeId, String keyword, Boolean isLocal) {
+
+    Long count = queryFactory
+        .select(guidebook.count())
+        .from(guidebook)
+        .join(guidebookPlace).on(guidebookPlace.guidebook.eq(guidebook))
+        .where(guidebookPlace.place.id.eq(placeId),
+            GuidebookCondition.isPublished(),
+            GuidebookCondition.titleContains(keyword),
+            GuidebookCondition.isLocalGuidebook(isLocal))
         .fetchOne();
 
     return count != null ? count : 0L;
