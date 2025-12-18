@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,13 +28,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
+import region.jidogam.common.dto.SortDirection;
+import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.File.storage.FileStorage;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.guidebook.dto.AreaRatioDto;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
+import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
+import region.jidogam.domain.guidebook.dto.GuidebookCursor;
+import region.jidogam.domain.guidebook.dto.GuidebookFilter;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookSortBy;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
@@ -615,6 +622,315 @@ class GuidebookServiceTest {
     verify(guidebookRepository).updateParticipantCount(guidebookId, -1);
   }
 
+  @Nested
+  @DisplayName("장소(placeId)별 가이드북 목록 조회")
+  class ListByPlaceId {
+
+    @Test
+    @DisplayName("장소별 가이드북 목록 조회 성공 - 다음 페이지 있음")
+    void successWithNextPage() {
+      // given
+      UUID placeId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      UUID guidebookId1 = UUID.randomUUID();
+      UUID guidebookId2 = UUID.randomUUID();
+      UUID guidebookId3 = UUID.randomUUID();
+
+      GuidebookConditionRequest request = new GuidebookConditionRequest(null,
+          GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 2, null);
+
+      Guidebook guidebook1 = createGuidebook(userId, guidebookId1);
+      Guidebook guidebook2 = createGuidebook(userId, guidebookId2);
+      Guidebook guidebook3 = createGuidebook(userId, guidebookId3);
+
+      GuidebookResponse response1 = createResponse(userId, guidebookId1, 5);
+      GuidebookResponse response2 = createResponse(userId, guidebookId2, 3);
+
+      when(cursorCodecUtil.decodeGuidebookCursor(null, GuidebookSortBy.CREATED_AT))
+          .thenReturn(null);
+
+      when(guidebookRepository.searchGuidebooksByPlaceId(placeId, null, null,
+          GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 3))
+          .thenReturn(new ArrayList<>(List.of(guidebook1, guidebook2, guidebook3)));
+      when(guidebookRepository.countGuidebooksByPlaceId(placeId, null, null))
+          .thenReturn(5L);
+
+      when(stampRepository.countUserStampsInGuidebook(userId, guidebookId1)).thenReturn(5);
+      when(stampRepository.countUserStampsInGuidebook(userId, guidebookId2)).thenReturn(3);
+
+      when(guidebookMapper.toResponse(guidebook1, 5)).thenReturn(response1);
+      when(guidebookMapper.toResponse(guidebook2, 3)).thenReturn(response2);
+
+      when(cursorCodecUtil.encodeNextCursor(response2, GuidebookSortBy.CREATED_AT))
+          .thenReturn("nextCursorValue");
+
+      // when
+      CursorPageResponseDto<GuidebookResponse> result = guidebookService.listByPlaceId(
+          placeId, request, userId);
+
+      // then
+      assertThat(result.data()).hasSize(2);
+      assertThat(result.hasNext()).isTrue();
+      assertThat(result.nextCursor()).isEqualTo("nextCursorValue");
+      assertThat(result.totalCount()).isEqualTo(5L);
+      assertThat(result.sortBy()).isEqualTo("createdAt");
+    }
+
+    @Test
+    @DisplayName("장소별 가이드북 목록 조회 성공 - 다음 페이지 없음")
+    void successWithoutNextPage() {
+      // given
+      UUID placeId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      UUID guidebookId1 = UUID.randomUUID();
+
+      GuidebookConditionRequest request = new GuidebookConditionRequest(
+          null, GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 10, null
+      );
+
+      Guidebook guidebook1 = createGuidebook(userId, guidebookId1);
+      GuidebookResponse response1 = createResponse(userId, guidebookId1, 2);
+
+      when(cursorCodecUtil.decodeGuidebookCursor(null, GuidebookSortBy.CREATED_AT))
+          .thenReturn(null);
+
+      when(guidebookRepository.searchGuidebooksByPlaceId(placeId, null, null,
+          GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 11))
+          .thenReturn(List.of(guidebook1));
+      when(guidebookRepository.countGuidebooksByPlaceId(placeId, null, null))
+          .thenReturn(1L);
+
+      when(stampRepository.countUserStampsInGuidebook(userId, guidebookId1)).thenReturn(2);
+
+      when(guidebookMapper.toResponse(guidebook1, 2)).thenReturn(response1);
+
+      // when
+      CursorPageResponseDto<GuidebookResponse> result = guidebookService.listByPlaceId(
+          placeId, request, userId);
+
+      // then
+      assertThat(result.data()).hasSize(1);
+      assertThat(result.hasNext()).isFalse();
+      assertThat(result.nextCursor()).isNull();
+      assertThat(result.totalCount()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("장소별 가이드북 목록 조회 - 빈 결과")
+    void successWithEmptyResult() {
+      // given
+      UUID placeId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      GuidebookConditionRequest request = new GuidebookConditionRequest(
+          null, GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 10, null
+      );
+
+      when(cursorCodecUtil.decodeGuidebookCursor(null, GuidebookSortBy.CREATED_AT))
+          .thenReturn(null);
+
+      when(guidebookRepository.searchGuidebooksByPlaceId(placeId, null, null,
+          GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 11))
+          .thenReturn(List.of());
+      when(guidebookRepository.countGuidebooksByPlaceId(placeId, null, null))
+          .thenReturn(0L);
+
+      // when
+      CursorPageResponseDto<GuidebookResponse> result = guidebookService.listByPlaceId(
+          placeId, request, userId);
+
+      // then
+      assertThat(result.data()).isEmpty();
+      assertThat(result.hasNext()).isFalse();
+      assertThat(result.nextCursor()).isNull();
+      assertThat(result.totalCount()).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("LOCAL 필터 적용 시 isLocal=true로 조회")
+    void successWithLocalFilter() {
+      // given
+      UUID placeId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
+
+      GuidebookConditionRequest request = new GuidebookConditionRequest(
+          GuidebookFilter.LOCAL, GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 10, null
+      );
+
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
+      GuidebookResponse response = createResponse(userId, guidebookId, 0);
+
+      when(cursorCodecUtil.decodeGuidebookCursor(null, GuidebookSortBy.CREATED_AT))
+          .thenReturn(null);
+
+      when(guidebookRepository.searchGuidebooksByPlaceId(placeId, null, null,
+          GuidebookSortBy.CREATED_AT, SortDirection.DESC, true, 11))
+          .thenReturn(List.of(guidebook));
+      when(guidebookRepository.countGuidebooksByPlaceId(placeId, null, true))
+          .thenReturn(1L);
+
+      when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(0);
+
+      when(guidebookMapper.toResponse(guidebook, 0)).thenReturn(response);
+
+      // when
+      CursorPageResponseDto<GuidebookResponse> result = guidebookService.listByPlaceId(
+          placeId, request, userId);
+
+      // then
+      assertThat(result.data()).hasSize(1);
+      verify(guidebookRepository).searchGuidebooksByPlaceId(
+          placeId, null, null, GuidebookSortBy.CREATED_AT, SortDirection.DESC, true, 11);
+      verify(guidebookRepository).countGuidebooksByPlaceId(placeId, null, true);
+    }
+
+    @Test
+    @DisplayName("비로그인 사용자(userId=null)의 경우 visitedPlaceCount=0")
+    void successWithNullUserId() {
+      // given
+      UUID placeId = UUID.randomUUID();
+      UUID authorId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
+
+      GuidebookConditionRequest request = new GuidebookConditionRequest(
+          null, GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 10, null
+      );
+
+      Guidebook guidebook = createGuidebook(authorId, guidebookId);
+      GuidebookResponse response = createResponse(authorId, guidebookId, 0);
+
+      when(cursorCodecUtil.decodeGuidebookCursor(null, GuidebookSortBy.CREATED_AT))
+          .thenReturn(null);
+
+      when(guidebookRepository.searchGuidebooksByPlaceId(placeId, null, null,
+          GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 11))
+          .thenReturn(List.of(guidebook));
+      when(guidebookRepository.countGuidebooksByPlaceId(placeId, null, null))
+          .thenReturn(1L);
+
+      when(guidebookMapper.toResponse(guidebook, 0)).thenReturn(response);
+
+      // when
+      CursorPageResponseDto<GuidebookResponse> result = guidebookService.listByPlaceId(
+          placeId, request, null);
+
+      // then
+      assertThat(result.data()).hasSize(1);
+      assertThat(result.data().get(0).visitedPlaceCount()).isEqualTo(0);
+      verify(stampRepository, Mockito.never()).countUserStampsInGuidebook(any(), any());
+    }
+
+    @Test
+    @DisplayName("키워드 검색 적용")
+    void successWithKeyword() {
+      // given
+      UUID placeId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
+
+      String keyword = "서울";
+      GuidebookConditionRequest request = new GuidebookConditionRequest(
+          null, GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 10, keyword
+      );
+
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
+      GuidebookResponse response = createResponse(userId, guidebookId, 1);
+
+      when(cursorCodecUtil.decodeGuidebookCursor(null, GuidebookSortBy.CREATED_AT))
+          .thenReturn(null);
+      when(guidebookRepository.searchGuidebooksByPlaceId(
+          placeId, null, keyword, GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 11))
+          .thenReturn(List.of(guidebook));
+      when(guidebookRepository.countGuidebooksByPlaceId(placeId, keyword, null))
+          .thenReturn(1L);
+      when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(1);
+      when(guidebookMapper.toResponse(guidebook, 1)).thenReturn(response);
+
+      // when
+      CursorPageResponseDto<GuidebookResponse> result = guidebookService.listByPlaceId(
+          placeId, request, userId);
+
+      // then
+      assertThat(result.data()).hasSize(1);
+      verify(guidebookRepository).searchGuidebooksByPlaceId(
+          placeId, null, keyword, GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 11);
+    }
+
+    @Test
+    @DisplayName("참여자 수 기준 정렬")
+    void successSortByParticipantCount() {
+      // given
+      UUID placeId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
+
+      GuidebookConditionRequest request = new GuidebookConditionRequest(
+          null, GuidebookSortBy.PARTICIPANT_COUNT, SortDirection.DESC, null, 10, null
+      );
+
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
+      GuidebookResponse response = createResponse(userId, guidebookId, 0);
+
+      when(cursorCodecUtil.decodeGuidebookCursor(null, GuidebookSortBy.PARTICIPANT_COUNT))
+          .thenReturn(null);
+      when(guidebookRepository.searchGuidebooksByPlaceId(
+          placeId, null, null, GuidebookSortBy.PARTICIPANT_COUNT, SortDirection.DESC, null, 11))
+          .thenReturn(List.of(guidebook));
+      when(guidebookRepository.countGuidebooksByPlaceId(placeId, null, null))
+          .thenReturn(1L);
+      when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(0);
+      when(guidebookMapper.toResponse(guidebook, 0)).thenReturn(response);
+
+      // when
+      CursorPageResponseDto<GuidebookResponse> result = guidebookService.listByPlaceId(
+          placeId, request, userId);
+
+      // then
+      assertThat(result.sortBy()).isEqualTo("participantCount");
+      verify(guidebookRepository).searchGuidebooksByPlaceId(
+          placeId, null, null, GuidebookSortBy.PARTICIPANT_COUNT, SortDirection.DESC, null, 11);
+    }
+
+    @Test
+    @DisplayName("커서 기반 페이지네이션")
+    void successWithCursor() {
+      // given
+      UUID placeId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
+
+      String cursorValue = "encodedCursor";
+      GuidebookCursor decodedCursor = new GuidebookCursor(null, FIXED_DATE_TIME, UUID.randomUUID());
+
+      GuidebookConditionRequest request = new GuidebookConditionRequest(
+          null, GuidebookSortBy.CREATED_AT, SortDirection.DESC, cursorValue, 10, null
+      );
+
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
+      GuidebookResponse response = createResponse(userId, guidebookId, 0);
+
+      when(cursorCodecUtil.decodeGuidebookCursor(cursorValue, GuidebookSortBy.CREATED_AT))
+          .thenReturn(decodedCursor);
+      when(guidebookRepository.searchGuidebooksByPlaceId(
+          placeId, decodedCursor, null, GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 11))
+          .thenReturn(List.of(guidebook));
+      when(guidebookRepository.countGuidebooksByPlaceId(placeId, null, null))
+          .thenReturn(10L);
+      when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(0);
+      when(guidebookMapper.toResponse(guidebook, 0)).thenReturn(response);
+
+      // when
+      CursorPageResponseDto<GuidebookResponse> result = guidebookService.listByPlaceId(
+          placeId, request, userId);
+
+      // then
+      assertThat(result.data()).hasSize(1);
+      verify(cursorCodecUtil).decodeGuidebookCursor(cursorValue, GuidebookSortBy.CREATED_AT);
+      verify(guidebookRepository).searchGuidebooksByPlaceId(
+          placeId, decodedCursor, null, GuidebookSortBy.CREATED_AT, SortDirection.DESC, null, 11);
+    }
+  }
 
   /***
    * 이하 편의 클래스
