@@ -27,6 +27,9 @@ public class Place extends BaseEntity {
   @JoinColumn(name = "area_id", nullable = false)
   private Area area;
 
+  @Column(nullable = false, unique = true)
+  private String kakaoId;
+
   @Column(nullable = false)
   private String name;
 
@@ -53,4 +56,29 @@ public class Place extends BaseEntity {
   @Column
   @Builder.Default
   private Integer stampCount = 0;
+
+  public void updateName(String name) {
+    this.name = name;
+  }
+
+  public void updateAddress(String address) {
+    this.address = address;
+  }
+
+  public void updateCoordinates(BigDecimal x, BigDecimal y) {
+    this.x = x;
+    this.y = y;
+  }
+
+  public void updateCategory(String category) {
+    this.category = category;
+  }
+
+  public void updateArea(Area area) {
+    this.area = area;
+  }
+
+  public void updatePoint(int points) {
+    this.points = points;
+  }
 }

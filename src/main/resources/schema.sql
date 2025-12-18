@@ -97,6 +97,7 @@ CREATE TABLE areas
 CREATE TABLE places
 (
     id              UUID PRIMARY KEY,
+    kakao_id        VARCHAR(255)             NOT NULL UNIQUE,
     area_id         UUID                     NOT NULL,
     name            VARCHAR(255)             NOT NULL,
     x               DECIMAL(18, 14)          NOT NULL,
@@ -186,6 +187,16 @@ CREATE TABLE retry_failure_log
     resolved_at        TIMESTAMP WITH TIME ZONE,
     created_at         TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at         TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE place_change_histories
+(
+    id             UUID PRIMARY KEY,
+    place_id       UUID                     NOT NULL,
+    kakao_id       VARCHAR(255)             NOT NULL,
+    changed_fields JSONB                    NOT NULL,
+    source         VARCHAR(50)              NOT NULL,
+    created_at     TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 -- Foreign Key Constraints
