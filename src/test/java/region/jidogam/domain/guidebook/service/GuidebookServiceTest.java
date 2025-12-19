@@ -422,6 +422,7 @@ class GuidebookServiceTest {
       );
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
+      when(guidebookPlaceRepository.existsByGuidebookAndPlace(any(), any())).thenReturn(false);
       when(mockGuidebook.getId()).thenReturn(guidebookId);
       when(mockGuidebook.getAuthor()).thenReturn(user);
 

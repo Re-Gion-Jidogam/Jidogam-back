@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import region.jidogam.domain.guidebook.dto.AreaRatioDto;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookPlace;
+import region.jidogam.domain.place.entity.Place;
 
 public interface GuidebookPlaceRepository extends JpaRepository<GuidebookPlace, UUID> {
 
@@ -32,4 +33,6 @@ public interface GuidebookPlaceRepository extends JpaRepository<GuidebookPlace, 
       @Param("guidebookId") UUID guidebookId,
       Pageable pageable
   );
+
+  boolean existsByGuidebookAndPlace(Guidebook guidebook, Place place);
 }
