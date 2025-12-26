@@ -34,6 +34,7 @@ import region.jidogam.common.dto.SortDirection;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.area.entity.Area;
+import region.jidogam.domain.area.entity.Area.AreaType;
 import region.jidogam.domain.auth.entity.EmailAuthCode;
 import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
 import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
@@ -55,11 +56,10 @@ import region.jidogam.domain.user.dto.GuidebookParticipationCursor;
 import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
 import region.jidogam.domain.user.dto.GuidebookParticipationSearchRequest;
 import region.jidogam.domain.user.dto.GuidebookParticipationSortBy;
-import region.jidogam.domain.user.dto.UserGuideBookSortBy;
-import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
-import region.jidogam.domain.user.mapper.UserMapper;
 import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.dto.UserDto;
+import region.jidogam.domain.user.dto.UserGuideBookSortBy;
+import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
 import region.jidogam.domain.user.dto.UserUpdateRequest;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.InvalidEmailFormatException;
@@ -71,6 +71,7 @@ import region.jidogam.domain.user.exception.UserNicknameConflictException;
 import region.jidogam.domain.user.exception.UserNicknameLengthException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.domain.user.exception.UserRestorePeriodExpiredException;
+import region.jidogam.domain.user.mapper.UserMapper;
 import region.jidogam.domain.user.repository.UserRepository;
 import region.jidogam.domain.user.util.LevelCalculator;
 import region.jidogam.infrastructure.jwt.JwtProvider;
@@ -1156,7 +1157,8 @@ class UserServiceTest {
           .sido("서울특별시")
           .sigungu("강남구")
           .sigunguCode("1168000000")
-          .weight(1)
+          .weight(1.0)
+          .type(AreaType.NORMAL)
           .build();
 
       testPlace1 = Place.builder()
@@ -1970,7 +1972,6 @@ class UserServiceTest {
           null
       )).thenReturn(1L);
 
-
       //when
       CursorPageResponseDto<GuidebookParticipationResponse> result =
           userService.getUserParticipation(currentUserId, testUserId, request);
@@ -2131,7 +2132,8 @@ class UserServiceTest {
       when(passwordEncoder.matches(password, "encodedPassword")).thenReturn(true);
 
       //when & then
-      assertThrows(UserRestorePeriodExpiredException.class, () -> userService.restore(email, password));
+      assertThrows(UserRestorePeriodExpiredException.class,
+          () -> userService.restore(email, password));
       verify(userRepository, times(1)).findByEmail(email);
       verify(passwordEncoder, times(1)).matches(password, "encodedPassword");
       verify(user, never()).restore();
