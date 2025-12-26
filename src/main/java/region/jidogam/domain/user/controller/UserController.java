@@ -39,7 +39,7 @@ import region.jidogam.infrastructure.jwt.dto.TokenResponse;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-public class UserController {
+public class UserController implements UserApi {
 
   private final UserService userService;
   private final EmailAuthService emailAuthService;

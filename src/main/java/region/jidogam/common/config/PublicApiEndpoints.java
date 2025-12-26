@@ -22,7 +22,7 @@ public final class PublicApiEndpoints {
   public static final String EMAIL_AUTH = "/api/users/auth-code";
   public static final String EMAIL_AUTH_CHECK = "/api/users/check-code";
 
-  // 공개 조회 API
+  // Swagger
   public static final String SWAGGER_UI = "/swagger-ui/**";
   public static final String API_DOCS = "/api-docs/**";
 
