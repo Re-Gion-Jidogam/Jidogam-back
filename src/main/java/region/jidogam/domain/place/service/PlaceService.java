@@ -27,6 +27,7 @@ import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.place.dto.PlaceSortBy;
 import region.jidogam.domain.place.dto.PlaceVisitInfo;
 import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.exception.PlaceMismatchException;
 import region.jidogam.domain.place.exception.PlaceNotFoundException;
 import region.jidogam.domain.place.mapper.PlaceMapper;
 import region.jidogam.domain.place.repository.PlaceRepository;
@@ -41,6 +42,8 @@ public class PlaceService {
 
   private final PlaceRepository placeRepository;
   private final AreaService areaService;
+  private final PlaceUpdateService changeTrackingService;
+  private final PointService pointService;
   private final PlaceMapper placeMapper;
   private final CursorCodecUtil cursorCodecUtil;
 
@@ -210,13 +213,24 @@ public class PlaceService {
   @Transactional
   public Place getOrCreatePlace(UUID id, PlaceCreateRequest request) {
 
-    // TODO: id가 없을때, placeId로도 조회하여 확인하는 로직 필요
-
     if (id != null) {
-      return placeRepository.findById(id)
+      Place place = placeRepository.findById(id)
           .orElseThrow(() -> PlaceNotFoundException.withId(id));
+
+      if (!place.getKakaoId().equals(request.id())) {
+        throw PlaceMismatchException.idMismatch(id, request.id());
+      }
+
+      changeTrackingService.detectUpdateAndRecord(place, request);
+      return place;
     }
-    return createPlace(request);
+
+    return placeRepository.findByKakaoId(request.id())
+        .map(place -> {
+          changeTrackingService.detectUpdateAndRecord(place, request);
+          return place;
+        })
+        .orElseGet(() -> createPlace(request));
   }
 
   // 내부 서비스용
@@ -226,9 +240,10 @@ public class PlaceService {
 
     Area area = areaService.getAreaByAddress(request.addressName());
 
-    int points = calculatePoint(area.getWeight());
+    int points = pointService.calculatePlacePoint(area.getWeight());
 
     Place place = Place.builder()
+        .kakaoId(request.id())
         .name(request.placeName())
         .address(request.addressName())
         .x(request.x())
@@ -240,10 +255,6 @@ public class PlaceService {
 
     log.info("장소 생성 완료: placeName = {}", request.placeName());
     return placeRepository.save(place);
-  }
-
-  private int calculatePoint(Integer weight) {
-    return weight * 10; // 임시
   }
 
   private Map<UUID, LocalDateTime> getVisitedDateMap(UUID userId, List<Place> places) {

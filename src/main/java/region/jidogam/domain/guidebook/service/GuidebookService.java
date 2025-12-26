@@ -33,6 +33,7 @@ import region.jidogam.domain.guidebook.exception.GuidebookAlreadyParticipatedExc
 import region.jidogam.domain.guidebook.exception.GuidebookBackgroundRequiredException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotPublishedException;
+import region.jidogam.domain.guidebook.exception.GuidebookPlaceDuplicateException;
 import region.jidogam.domain.guidebook.exception.GuidebookPublishConditionException;
 import region.jidogam.domain.guidebook.exception.GuidebookPublishedException;
 import region.jidogam.domain.guidebook.exception.GuidebookUnpublishViolationException;
@@ -326,6 +327,10 @@ public class GuidebookService {
 
     // 장소 추가
     Place place = placeService.getOrCreatePlace(request.pid(), request.place());
+
+    if (guidebookPlaceRepository.existsByGuidebookAndPlace(guidebook, place)) {
+      throw GuidebookPlaceDuplicateException.duplicate();
+    }
 
     GuidebookPlace guidebookPlace = GuidebookPlace.builder()
         .guidebook(guidebook)
