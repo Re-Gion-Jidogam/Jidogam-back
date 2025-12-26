@@ -7,7 +7,8 @@ import region.jidogam.common.exception.ErrorCode;
 @Getter
 public enum AreaErrorCode implements ErrorCode {
   UNKNOWN_SIDO(HttpStatus.BAD_REQUEST, "AREA_001", "잘못된 시도 값입니다."),
-  AREA_NOT_FOUND(HttpStatus.BAD_REQUEST, "AREA_002", "해당 지역 정보가 존재하지 않습니다.");
+  AREA_NOT_FOUND(HttpStatus.BAD_REQUEST, "AREA_002", "해당 지역 정보가 존재하지 않습니다."),
+  AREA_WEIGHT_IS_NULL(HttpStatus.BAD_REQUEST, "AREA_003", "기본 값 설정이 아닐 경우 설정 값은 필수입니다.");
 
   private final HttpStatus status;
   private final String code;

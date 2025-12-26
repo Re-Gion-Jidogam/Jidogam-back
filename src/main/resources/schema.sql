@@ -84,13 +84,15 @@ CREATE TABLE stamps
 -- Areas table
 CREATE TABLE areas
 (
-    id           UUID PRIMARY KEY,
-    sido         VARCHAR(50)              NOT NULL,
-    sigungu      VARCHAR(50)              NOT NULL,
-    weight       INTEGER                  NOT NULL,
-    sigungu_code VARCHAR(10)              NOT NULL UNIQUE,
-    created_at   TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at   TIMESTAMP WITH TIME ZONE
+    id                UUID PRIMARY KEY,
+    sido              VARCHAR(50)              NOT NULL,
+    sigungu           VARCHAR(50)              NOT NULL,
+    weight            DOUBLE PRECISION         NOT NULL,
+    type              VARCHAR(50)              NOT NULL,
+    sigungu_code      VARCHAR(10)              NOT NULL UNIQUE,
+    created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at        TIMESTAMP WITH TIME ZONE,
+    weight_updated_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
 -- Places table

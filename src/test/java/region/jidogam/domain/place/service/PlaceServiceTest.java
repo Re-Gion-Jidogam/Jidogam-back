@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import region.jidogam.domain.area.entity.Area;
+import region.jidogam.domain.area.entity.Area.AreaType;
 import region.jidogam.domain.area.service.AreaService;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
@@ -43,7 +45,9 @@ class PlaceServiceTest {
         .sigunguCode("1234")
         .sido("전라북도특별자치도")
         .sigungu("익산시")
-        .weight(1)
+        .weight(1.0)
+        .weightUpdatedAt(LocalDateTime.now())
+        .type(AreaType.NORMAL)
         .build();
 
     PlaceCreateRequest request = new PlaceCreateRequest(
@@ -66,7 +70,7 @@ class PlaceServiceTest {
         .points(10)
         .build();
 
-    when(pointService.calculatePlacePoint(1)).thenReturn(10);
+    when(pointService.calculatePlacePoint(1.0)).thenReturn(10);
     when(areaService.getAreaByAddress(any(String.class))).thenReturn(area);
     when(placeRepository.save(any(Place.class))).thenReturn(place);
 

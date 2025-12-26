@@ -24,7 +24,7 @@ public class AreaInitService {
     // 2. 각 시도별 시군구 목록 API 호출 후 저장
     sidos.forEach(sido -> {
       List<Sigungu> sigungus = areaApiService.getSigungu(sido);
-      areaService.saveAreaDate(sido, sigungus);
+      areaService.saveAreaData(sido, sigungus);
     });
 
     log.info("모든 지역 정보 저장 완료");

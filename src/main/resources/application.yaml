@@ -50,6 +50,13 @@ jidogam:
     password-reset:
       expiration: ${PASSWORD_RESET_TOKEN_EXPIRATION:15m}
       frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  points:
+    base-point: 10
+  area:
+    weights:
+      normal: 1.0
+      interest: 1.5
+      underserved: 2.0
 
 jwt:
   secret: ${JWT_SECRET}
