@@ -92,7 +92,7 @@ public interface UserApi {
       @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
   })
   ResponseEntity<UserDto> getProfile(
-      @Parameter(hidden = true) @CurrentUserId UUID userId
+      @CurrentUserId UUID userId
   );
 
   @Operation(summary = "사용자 가이드북 목록 조회", description = "특정 사용자가 작성한 가이드북 목록을 조회합니다.")
@@ -102,7 +102,7 @@ public interface UserApi {
       @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
   })
   ResponseEntity<CursorPageResponseDto<GuidebookResponse>> getGuidebooks(
-      @Parameter(hidden = true) @CurrentUserId UUID userId,
+      @CurrentUserId UUID userId,
       @Parameter(description = "가이드북 작성자 ID", required = true) @PathVariable UUID authorId,
       @Valid @ModelAttribute UserGuidebookSearchRequest request
   );
@@ -116,7 +116,7 @@ public interface UserApi {
       @ApiResponse(responseCode = "409", description = "닉네임 중복")
   })
   ResponseEntity<UserDto> updateProfile(
-      @Parameter(hidden = true) @CurrentUserId UUID userId,
+      @CurrentUserId UUID userId,
       @Valid @RequestBody UserUpdateRequest request
   );
 
@@ -126,7 +126,7 @@ public interface UserApi {
       @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
   })
   ResponseEntity<CursorPageResponseDto<PlaceResponse>> getStamps(
-      @Parameter(hidden = true) @CurrentUserId UUID currentUserId,
+      @CurrentUserId UUID currentUserId,
       @Valid @ModelAttribute StampSearchRequest request
   );
 
@@ -137,7 +137,7 @@ public interface UserApi {
       @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
   })
   ResponseEntity<CursorPageResponseDto<GuidebookParticipationResponse>> getParticipation(
-      @Parameter(hidden = true) @CurrentUserId UUID currentUserId,
+      @CurrentUserId UUID currentUserId,
       @Parameter(description = "조회할 사용자 ID", required = true) @PathVariable UUID userId,
       @Valid @ModelAttribute GuidebookParticipationSearchRequest request
   );
@@ -148,7 +148,7 @@ public interface UserApi {
       @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
   })
   ResponseEntity<Void> delete(
-      @Parameter(hidden = true) @CurrentUserId UUID userId
+      @CurrentUserId UUID userId
   );
 
   @Operation(summary = "계정 복구", description = "탈퇴한 계정을 복구합니다.")
