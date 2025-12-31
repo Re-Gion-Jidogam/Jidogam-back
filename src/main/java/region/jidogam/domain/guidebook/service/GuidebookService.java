@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -72,6 +73,9 @@ public class GuidebookService {
   private final GuidebookMapper guidebookMapper;
   private final CursorCodecUtil cursorCodecUtil;
   private final ApplicationEventPublisher eventPublisher;
+
+  @Value("${jidogam.guidebook.reward.completion-rate}")
+  private double guidebookCompletionRate;
 
   @Transactional(readOnly = true)
   public List<GuidebookResponse> popularList(int limit) {
@@ -429,6 +433,7 @@ public class GuidebookService {
     }
   }
 
+  // 이건 가이드북 수정과 별개로 분리하는게 가장 좋을 것 같음
   private void publish(Guidebook guidebook) {
 
     // 모든 가이드북 장소-지역 중 top3 지역 가져오기
@@ -449,7 +454,7 @@ public class GuidebookService {
             area.placeCount(),
             calculateRatio(area.placeCount(), guidebook.getTotalPlaceCount())
         ))
-        .collect(Collectors.toList());
+        .toList();
 
     // 장소 개수와 1위 지역의 비율에 따라 local 가이드북 확인
     Boolean isLocalGuidebook = isLocalGuidebook(
@@ -470,6 +475,14 @@ public class GuidebookService {
     if (withRatios.size() > 2) {
       guidebookAreaRatio.setThirdArea(withRatios.get(2).area(), withRatios.get(2).ratio());
     }
+
+    // 가이드북 포인트 설정
+    List<Place> places = guidebookPlaceRepository.findPlaceByGuidebookId(guidebook.getId());
+    double totalPoints = places.stream()
+        .mapToDouble(Place::getPoints)
+        .sum();
+    int finalPoints = (int) Math.floor(totalPoints * guidebookCompletionRate);
+    guidebook.updatePoints(finalPoints);
 
     guidebookAreaRatioRepository.save(guidebookAreaRatio);
   }
