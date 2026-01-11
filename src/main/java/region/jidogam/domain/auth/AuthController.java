@@ -23,12 +23,13 @@ import region.jidogam.infrastructure.jwt.dto.TokenResponse;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class AuthController {
+public class AuthController implements AuthApi {
 
   private final AuthService authService;
   private final CookieUtil cookieUtil;
   private final RefreshTokenService refreshTokenService;
 
+  @Override
   @PostMapping("/login")
   public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request, HttpServletResponse response)
     throws AuthException {
@@ -41,6 +42,7 @@ public class AuthController {
       .body(new TokenResponse(tokenPair.accessToken()));
   }
 
+  @Override
   @PostMapping("/logout")
   public ResponseEntity<String> logout(
     @CookieValue(value = "refresh", required = false) String refreshToken,
@@ -54,6 +56,7 @@ public class AuthController {
     return ResponseEntity.noContent().build();
   }
 
+  @Override
   @PostMapping("/refresh")
   public ResponseEntity<TokenResponse> refresh(
     @CookieValue(value = "refresh", required = false) String refreshToken,
@@ -68,6 +71,7 @@ public class AuthController {
       .body(new TokenResponse(tokenPair.accessToken()));
   }
 
+  @Override
   @PostMapping("/password/reset-link")
   public ResponseEntity<Void> sendEmailWithPasswordResetUrl(
       @Valid @RequestBody PasswordResetRequest request) {
@@ -76,6 +80,7 @@ public class AuthController {
     return ResponseEntity.ok().build();
   }
 
+  @Override
   @PostMapping("/password/new")
   public ResponseEntity<String> changePassword(
       @Valid @RequestBody NewPasswordChangeRequest request) {

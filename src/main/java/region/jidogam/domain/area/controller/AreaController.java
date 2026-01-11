@@ -10,11 +10,11 @@ import region.jidogam.domain.area.service.AreaInitService;
 @RestController
 @RequestMapping("/api/admin/area")
 @RequiredArgsConstructor
-public class AreaController {
+public class AreaController implements AreaApi {
 
   private final AreaInitService areaInitService;
 
-  // only admin
+  @Override
   @GetMapping("/init")
   public ResponseEntity<Void> saveAreaData() {
     areaInitService.initializeAreaData();

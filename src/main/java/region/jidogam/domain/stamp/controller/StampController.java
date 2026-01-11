@@ -17,10 +17,11 @@ import region.jidogam.domain.stamp.service.StampService;
 @RestController
 @RequestMapping("/api/stamps")
 @RequiredArgsConstructor
-public class StampController {
+public class StampController implements StampApi {
 
   private final StampService stampService;
 
+  @Override
   @PostMapping
   public ResponseEntity<Void> stampPlace(
       @Valid @RequestBody PlaceStampRequest request,
@@ -30,8 +31,9 @@ public class StampController {
     return ResponseEntity.ok().build();
   }
 
+  @Override
   @DeleteMapping("/{placeId}")
-  public ResponseEntity<Void> stampPlace(
+  public ResponseEntity<Void> cancelStamp(
       @PathVariable UUID placeId,
       @CurrentUserId UUID userId
   ) {

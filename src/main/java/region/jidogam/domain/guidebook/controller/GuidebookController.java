@@ -31,11 +31,12 @@ import region.jidogam.domain.place.dto.PlaceResponse;
 @RestController
 @RequestMapping("/api/guidebooks")
 @RequiredArgsConstructor
-public class GuidebookController {
+public class GuidebookController implements GuidebookApi {
 
   private final GuidebookService guidebookService;
   private final GuidebookPlaceService guidebookPlaceService;
 
+  @Override
   @GetMapping
   public ResponseEntity<CursorPageResponseDto<GuidebookResponse>> list(
       @Valid @ModelAttribute GuidebookConditionRequest request
@@ -44,6 +45,7 @@ public class GuidebookController {
     return ResponseEntity.ok(response);
   }
 
+  @Override
   @GetMapping("/popular")
   public ResponseEntity<List<GuidebookResponse>> popularList(
       @RequestParam(required = false, defaultValue = "20") int limit
@@ -52,6 +54,7 @@ public class GuidebookController {
     return ResponseEntity.ok(response);
   }
 
+  @Override
   @GetMapping("/local")
   public ResponseEntity<List<GuidebookResponse>> localList(
       @RequestParam(required = false, defaultValue = "20") int limit
@@ -60,6 +63,7 @@ public class GuidebookController {
     return ResponseEntity.ok(response);
   }
 
+  @Override
   @PostMapping
   public ResponseEntity<Void> create(
       @Valid @RequestBody GuidebookCreateRequest request,
@@ -69,6 +73,7 @@ public class GuidebookController {
     return ResponseEntity.status(HttpStatus.CREATED).build();
   }
 
+  @Override
   @GetMapping("/{id}")
   public ResponseEntity<GuidebookResponse> getById(
       @PathVariable UUID id,
@@ -78,6 +83,7 @@ public class GuidebookController {
     return ResponseEntity.ok(response);
   }
 
+  @Override
   @PatchMapping("/{id}")
   public ResponseEntity<GuidebookResponse> update(
       @PathVariable UUID id,
@@ -88,6 +94,7 @@ public class GuidebookController {
     return ResponseEntity.ok(response);
   }
 
+  @Override
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> delete(
       @PathVariable UUID id,
@@ -97,6 +104,7 @@ public class GuidebookController {
     return ResponseEntity.noContent().build();
   }
 
+  @Override
   @GetMapping("/{id}/places")
   public ResponseEntity<CursorPageResponseDto<PlaceResponse>> getPlaces(
       @PathVariable UUID id,
@@ -108,6 +116,7 @@ public class GuidebookController {
     return ResponseEntity.ok(response);
   }
 
+  @Override
   @PostMapping("/{id}/places")
   public ResponseEntity<GuidebookResponse> addPlace(
       @PathVariable UUID id,
@@ -118,6 +127,7 @@ public class GuidebookController {
     return ResponseEntity.ok(response);
   }
 
+  @Override
   @DeleteMapping("/{id}/places/{placeId}")
   public ResponseEntity<Void> removePlace(
       @PathVariable UUID id,
@@ -128,6 +138,7 @@ public class GuidebookController {
     return ResponseEntity.noContent().build();
   }
 
+  @Override
   @PostMapping("/{id}/participants")
   public ResponseEntity<Void> addParticipant(
       @PathVariable UUID id,
@@ -137,6 +148,7 @@ public class GuidebookController {
     return ResponseEntity.ok().build();
   }
 
+  @Override
   @DeleteMapping("/{id}/participants")
   public ResponseEntity<Void> cancelParticipation(
       @PathVariable UUID id,
