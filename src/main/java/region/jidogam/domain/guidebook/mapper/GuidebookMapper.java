@@ -9,6 +9,7 @@ import region.jidogam.domain.guidebook.dto.GuidebookResponse.AuthorDto;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookAreaRatio;
 import region.jidogam.domain.user.entity.User;
+import region.jidogam.domain.user.util.LevelCalculator;
 
 @Component
 @RequiredArgsConstructor
@@ -49,7 +50,7 @@ public class GuidebookMapper {
     return new GuidebookResponse.AuthorDto(
         user.getId(),
         user.getNickname(),
-        null // 임시 처리
+        LevelCalculator.calculateLevel(user.getExp())
     );
   }
 

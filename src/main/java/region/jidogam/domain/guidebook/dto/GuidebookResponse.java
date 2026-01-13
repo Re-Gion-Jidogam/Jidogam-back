@@ -28,7 +28,7 @@ public record GuidebookResponse(
   public record AuthorDto(
       UUID uid,
       String nickname,
-      Long level
+      Integer level
   ) {
 
   }

@@ -35,4 +35,12 @@ public interface GuidebookPlaceRepository extends JpaRepository<GuidebookPlace, 
   );
 
   boolean existsByGuidebookAndPlace(Guidebook guidebook, Place place);
+
+  @Query("""
+      SELECT p
+      FROM GuidebookPlace gp
+      JOIN gp.place p
+      WHERE gp.guidebook.id = :guidebookId
+      """)
+  List<Place> findPlaceByGuidebookId(@Param("guidebookId") UUID guidebookId);
 }

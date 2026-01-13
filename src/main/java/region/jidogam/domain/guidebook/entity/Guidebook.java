@@ -129,4 +129,8 @@ public class Guidebook extends BaseUpdatableEntity {
   public void invalidateAreaRatio() {
     this.areaRatio = null;
   }
+
+  public void updatePoints(int points) {
+    this.points = points;
+  }
 }

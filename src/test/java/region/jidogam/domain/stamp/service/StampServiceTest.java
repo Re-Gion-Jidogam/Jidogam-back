@@ -25,6 +25,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import region.jidogam.domain.area.entity.Area;
+import region.jidogam.domain.area.entity.Area.AreaType;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.exception.PlaceNotFoundException;
@@ -93,7 +94,8 @@ class StampServiceTest {
         .sigunguCode("1234")
         .sido("전라북도특별자치도")
         .sigungu("익산시")
-        .weight(1)
+        .weight(1.0)
+        .type(AreaType.NORMAL)
         .build();
 
     place = Place.builder()
