@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.entity.Area.AreaType;
 import region.jidogam.domain.area.service.AreaService;
+import region.jidogam.domain.exp.service.ExpService;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.repository.PlaceRepository;

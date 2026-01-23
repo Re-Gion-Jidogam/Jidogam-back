@@ -50,6 +50,8 @@ CREATE TABLE guidebook_participations
     created_at            TIMESTAMP WITH TIME ZONE NOT NULL,
     UNIQUE (user_id, guidebook_id)
 );
+CREATE INDEX idx_guidebook_participation_user_completed
+    ON guidebook_participations (user_id, is_completed);
 
 -- Guidebook places table
 CREATE TABLE guidebook_places

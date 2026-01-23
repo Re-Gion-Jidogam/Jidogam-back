@@ -64,4 +64,11 @@ public class GuidebookParticipation extends BaseEntity {
     this.isCompleted = false;
   }
 
+  public void incrementCompletedPlaceCount() {
+    this.completedPlaceCount++;
+  }
+
+  public void addEarnedExp(int exp) {
+    this.earnedExp += exp;
+  }
 }

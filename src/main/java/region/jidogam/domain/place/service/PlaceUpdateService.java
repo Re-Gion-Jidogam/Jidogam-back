@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.service.AreaService;
+import region.jidogam.domain.exp.service.ExpService;
 import region.jidogam.domain.place.dto.FieldChange;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;

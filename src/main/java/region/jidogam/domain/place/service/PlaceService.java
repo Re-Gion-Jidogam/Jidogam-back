@@ -18,6 +18,7 @@ import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.common.util.DistanceCalculatorUtil;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.service.AreaService;
+import region.jidogam.domain.exp.service.ExpService;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.dto.PlaceCursor;
 import region.jidogam.domain.place.dto.PlaceFilter;
