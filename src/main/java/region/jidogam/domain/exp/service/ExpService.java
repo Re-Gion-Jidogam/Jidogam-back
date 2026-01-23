@@ -25,10 +25,10 @@ public class ExpService {
   /**
    * 가이드북 완료 보상 경험치 계산
    *
-   * @param totalEarnedExp 가이드북 참여 일자 기준으로 이후 획득한 총 경험치
+   * @param totalExp 가이드북 참여 일자 기준으로 이후 획득한 총 경험치
    * @return 완료 보상 경험치
    */
-  public int calculateGuidebookCompletionExp(int totalEarnedExp) {
-    return (int) (totalEarnedExp * guidebookCompletionRate);
+  public int calculateGuidebookCompletionExp(int totalExp) {
+    return (int) (totalExp * guidebookCompletionRate);
   }
 }

@@ -130,7 +130,7 @@ public class Guidebook extends BaseUpdatableEntity {
     this.areaRatio = null;
   }
 
-  public void updatePoints(int points) {
-    this.points = points;
+  public void updateExp(int exp) {
+    this.exp = exp;
   }
 }

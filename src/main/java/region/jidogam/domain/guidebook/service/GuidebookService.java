@@ -16,6 +16,7 @@ import region.jidogam.common.dto.SortDirection;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.common.exception.InvalidCursorException;
 import region.jidogam.common.util.CursorCodecUtil;
+import region.jidogam.domain.exp.service.ExpService;
 import region.jidogam.domain.guidebook.dto.AreaRatioDto;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
@@ -71,6 +72,7 @@ public class GuidebookService {
   private final StampRepository stampRepository;
   private final PlaceRepository placeRepository;
   private final PlaceService placeService;
+  private final ExpService expService;
   private final GuidebookMapper guidebookMapper;
   private final CursorCodecUtil cursorCodecUtil;
   private final ApplicationEventPublisher eventPublisher;
@@ -483,11 +485,11 @@ public class GuidebookService {
 
     // 가이드북 포인트 설정
     List<Place> places = guidebookPlaceRepository.findPlaceByGuidebookId(guidebook.getId());
-    double totalPoints = places.stream()
-        .mapToDouble(Place::getPoints)
+    int totalExps = places.stream()
+        .mapToInt(Place::getExp)
         .sum();
-    int finalPoints = (int) Math.floor(totalPoints * guidebookCompletionRate);
-    guidebook.updatePoints(finalPoints);
+    int finalExp = expService.calculateGuidebookCompletionExp(totalExps);
+    guidebook.updateExp(finalExp);
 
     guidebookAreaRatioRepository.save(guidebookAreaRatio);
   }
