@@ -3,6 +3,7 @@ package region.jidogam.domain.guidebook.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -89,20 +90,21 @@ class GuidebookServiceTest {
   @Mock
   private PlaceService placeService;
   @Mock
-  private ExpService expService;
-  @Mock
   private CursorCodecUtil cursorCodecUtil;
   @Mock
   private ApplicationEventPublisher eventPublisher;
   @Spy
   private FileStorage fileStorage;
+  @Mock
+  private ExpService expService;
 
   private GuidebookMapper guidebookMapper;
   private GuidebookService guidebookService;
 
   @BeforeEach
   void setUp() {
-    guidebookMapper = Mockito.spy(new GuidebookMapper(fileStorage));
+
+    guidebookMapper = Mockito.spy(new GuidebookMapper(fileStorage, expService));
 
     guidebookService = new GuidebookService(
         userRepository,
@@ -113,7 +115,6 @@ class GuidebookServiceTest {
         stampRepository,
         placeRepository,
         placeService,
-        expService,
         guidebookMapper,
         cursorCodecUtil,
         eventPublisher
@@ -247,6 +248,8 @@ class GuidebookServiceTest {
       Guidebook guidebook = createGuidebook(userId, guidebookId, 0);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(0);
+      when(expService.calculateGuidebookCompletionExp(anyInt()))
+          .thenAnswer(invocation -> invocation.getArgument(0));
 
       GuidebookUpdateRequest request = new GuidebookUpdateRequest(
           "제목 수정",
@@ -338,6 +341,8 @@ class GuidebookServiceTest {
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(guidebookPlaceRepository.findAreasByPlaceCountDesc(guidebookId, PageRequest.of(0, 3)))
           .thenReturn(areas);
+      when(expService.calculateGuidebookCompletionExp(anyInt()))
+          .thenAnswer(invocation -> invocation.getArgument(0));
 
       // when
       guidebookService.update(guidebookId, userId,
@@ -663,6 +668,9 @@ class GuidebookServiceTest {
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId1)).thenReturn(5);
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId2)).thenReturn(3);
 
+      when(expService.calculateGuidebookCompletionExp(anyInt()))
+          .thenAnswer(invocation -> invocation.getArgument(0));
+
       when(guidebookMapper.toResponse(guidebook1, 5)).thenReturn(response1);
       when(guidebookMapper.toResponse(guidebook2, 3)).thenReturn(response2);
 
@@ -707,6 +715,8 @@ class GuidebookServiceTest {
 
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId1)).thenReturn(2);
 
+      when(expService.calculateGuidebookCompletionExp(anyInt()))
+          .thenAnswer(invocation -> invocation.getArgument(0));
       when(guidebookMapper.toResponse(guidebook1, 2)).thenReturn(response1);
 
       // when
@@ -777,6 +787,8 @@ class GuidebookServiceTest {
 
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(0);
 
+      when(expService.calculateGuidebookCompletionExp(anyInt()))
+          .thenAnswer(invocation -> invocation.getArgument(0));
       when(guidebookMapper.toResponse(guidebook, 0)).thenReturn(response);
 
       // when
@@ -814,6 +826,8 @@ class GuidebookServiceTest {
       when(guidebookRepository.countGuidebooksByPlaceId(placeId, null, null))
           .thenReturn(1L);
 
+      when(expService.calculateGuidebookCompletionExp(anyInt()))
+          .thenAnswer(invocation -> invocation.getArgument(0));
       when(guidebookMapper.toResponse(guidebook, 0)).thenReturn(response);
 
       // when

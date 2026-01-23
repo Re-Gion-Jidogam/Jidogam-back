@@ -3,6 +3,7 @@ package region.jidogam.domain.guidebook.mapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import region.jidogam.domain.File.storage.FileStorage;
+import region.jidogam.domain.exp.service.ExpService;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse.AreaRatioDto;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse.AuthorDto;
@@ -16,6 +17,7 @@ import region.jidogam.domain.user.util.LevelCalculator;
 public class GuidebookMapper {
 
   private final FileStorage fileStorage;
+  private final ExpService expService;
 
   public GuidebookResponse toResponse(Guidebook guidebook) {
     return toResponse(guidebook, 0);
@@ -29,7 +31,7 @@ public class GuidebookMapper {
         .thumbnailUrl(fileStorage.generateGetUrl(guidebook.getThumbnailUrl()))
         .emoji(guidebook.getEmoji())
         .color(guidebook.getColor())
-        .exp(guidebook.getExp())
+        .exp(expService.calculateGuidebookCompletionExp(guidebook.getExp()))
         .createdAt(guidebook.getCreatedAt())
         .updatedAt(guidebook.getUpdatedAt())
         .publishedDate(guidebook.getPublishedDate())
@@ -74,4 +76,5 @@ public class GuidebookMapper {
     );
 
   }
+
 }
