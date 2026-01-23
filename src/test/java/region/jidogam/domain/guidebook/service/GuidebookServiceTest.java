@@ -33,6 +33,7 @@ import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.File.storage.FileStorage;
 import region.jidogam.domain.area.entity.Area;
+import region.jidogam.domain.exp.service.ExpService;
 import region.jidogam.domain.guidebook.dto.AreaRatioDto;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
@@ -88,6 +89,8 @@ class GuidebookServiceTest {
   @Mock
   private PlaceService placeService;
   @Mock
+  private ExpService expService;
+  @Mock
   private CursorCodecUtil cursorCodecUtil;
   @Mock
   private ApplicationEventPublisher eventPublisher;
@@ -110,6 +113,7 @@ class GuidebookServiceTest {
         stampRepository,
         placeRepository,
         placeService,
+        expService,
         guidebookMapper,
         cursorCodecUtil,
         eventPublisher
