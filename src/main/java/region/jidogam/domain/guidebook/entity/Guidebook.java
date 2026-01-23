@@ -51,7 +51,7 @@ public class Guidebook extends BaseUpdatableEntity {
 
   @Column(nullable = false)
   @Builder.Default
-  private Integer points = 0;
+  private Integer exp = 0;
 
   @Column(nullable = false)
   @Builder.Default

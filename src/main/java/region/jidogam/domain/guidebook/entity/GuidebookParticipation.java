@@ -41,12 +41,22 @@ public class GuidebookParticipation extends BaseEntity {
   @Builder.Default
   private Boolean isCompleted = false;
 
+  @Column
+  private LocalDateTime completedAt;
+
+  @Column(nullable = false)
+  private Integer completedPlaceCount = 0;
+
+  @Column(nullable = false)
+  private Integer earnedExp = 0;
+
   public void updateLastActivityAt(LocalDateTime lastActivityAt) {
     this.lastActivityAt = lastActivityAt;
   }
 
-  public void markAsCompleted() {
+  public void markAsCompleted(LocalDateTime completedAt) {
     this.isCompleted = true;
+    this.completedAt = completedAt;
   }
 
   public void markAsInProgress() {

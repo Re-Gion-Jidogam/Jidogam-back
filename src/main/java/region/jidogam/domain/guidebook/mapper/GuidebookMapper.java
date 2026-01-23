@@ -28,7 +28,7 @@ public class GuidebookMapper {
         .thumbnailUrl(fileStorage.generateGetUrl(guidebook.getThumbnailUrl()))
         .emoji(guidebook.getEmoji())
         .color(guidebook.getColor())
-        .point(guidebook.getPoints())
+        .exp(guidebook.getExp())
         .createdAt(guidebook.getCreatedAt())
         .updatedAt(guidebook.getUpdatedAt())
         .publishedDate(guidebook.getPublishedDate())

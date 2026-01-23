@@ -105,7 +105,7 @@ class StampServiceTest {
         .y(placeCreateRequest.y())
         .category(placeCreateRequest.category())
         .area(area)
-        .points(10)
+        .exp(10)
         .build();
 
     userId = UUID.randomUUID();

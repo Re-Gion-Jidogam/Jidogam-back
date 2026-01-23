@@ -43,7 +43,7 @@ public class PlaceService {
   private final PlaceRepository placeRepository;
   private final AreaService areaService;
   private final PlaceUpdateService changeTrackingService;
-  private final PointService pointService;
+  private final ExpService expService;
   private final PlaceMapper placeMapper;
   private final CursorCodecUtil cursorCodecUtil;
 
@@ -240,7 +240,7 @@ public class PlaceService {
 
     Area area = areaService.getAreaByAddress(request.addressName());
 
-    int points = pointService.calculatePlacePoint(area.getWeight());
+    int exp = expService.calculatePlaceExp(area.getWeight());
 
     Place place = Place.builder()
         .kakaoId(request.id())
@@ -250,7 +250,7 @@ public class PlaceService {
         .y(request.y())
         .category(request.category())
         .area(area)
-        .points(points)
+        .exp(exp)
         .build();
 
     log.info("장소 생성 완료: placeName = {}", request.placeName());
