@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.util.CookieUtil;
 import region.jidogam.domain.auth.dto.LoginRequest;
+import region.jidogam.domain.auth.dto.LoginResponse;
+import region.jidogam.domain.auth.dto.LoginResult;
 import region.jidogam.domain.auth.dto.NewPasswordChangeRequest;
 import region.jidogam.domain.auth.dto.PasswordResetRequest;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
@@ -31,15 +33,15 @@ public class AuthController implements AuthApi {
 
   @Override
   @PostMapping("/login")
-  public ResponseEntity<TokenResponse> login(@RequestBody LoginRequest request, HttpServletResponse response)
+  public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request, HttpServletResponse response)
     throws AuthException {
-    TokenPair tokenPair = authService.login(request);
+    LoginResult loginResult = authService.login(request);
 
-    ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(tokenPair.refreshToken());
+    ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(loginResult.refreshToken());
     response.addHeader("Set-Cookie", refreshCookie.toString());
 
     return ResponseEntity.status(HttpStatus.CREATED)
-      .body(new TokenResponse(tokenPair.accessToken()));
+      .body(new LoginResponse(loginResult.accessToken(), loginResult.lastStampedAt()));
   }
 
   @Override
