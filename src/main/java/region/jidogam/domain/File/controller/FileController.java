@@ -12,10 +12,11 @@ import region.jidogam.domain.File.storage.FileStorage;
 @RestController
 @RequestMapping("/api/files")
 @RequiredArgsConstructor
-public class FileController {
+public class FileController implements FileApi {
 
   private final FileStorage fileStorage;
 
+  @Override
   @PostMapping("/images/upload-url")
   public ResponseEntity<UploadUrlResponse> generateUploadUrl(
       @RequestParam String key

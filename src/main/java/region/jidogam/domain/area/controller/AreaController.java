@@ -15,7 +15,7 @@ import region.jidogam.domain.area.service.AreaService;
 @RestController
 @RequestMapping("/api/admin/area")
 @RequiredArgsConstructor
-public class AreaController {
+public class AreaController implements AreaApi {
 
   private final AreaInitService areaInitService;
   private final AreaService areaService;

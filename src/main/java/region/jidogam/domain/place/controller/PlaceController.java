@@ -23,11 +23,12 @@ import region.jidogam.domain.place.service.PlaceService;
 @RestController
 @RequestMapping("/api/places")
 @RequiredArgsConstructor
-public class PlaceController {
+public class PlaceController implements PlaceApi {
 
   private final PlaceService placeService;
   private final GuidebookService guidebookService;
 
+  @Override
   @GetMapping("/popular")
   public ResponseEntity<List<PlaceResponse>> popularList(
       @Valid @ModelAttribute PlacePopularRequest request
@@ -36,6 +37,7 @@ public class PlaceController {
     return ResponseEntity.ok(responses);
   }
 
+  @Override
   @GetMapping("/nearby")
   public ResponseEntity<List<PlaceResponse>> nearbyList(
       @Valid @ModelAttribute PlaceNearByRequest request,
@@ -45,6 +47,7 @@ public class PlaceController {
     return ResponseEntity.ok(responses);
   }
 
+  @Override
   @GetMapping("/{pid}/guidebooks")
   public ResponseEntity<CursorPageResponseDto<GuidebookResponse>> listGuidebooksByPlace(
       @PathVariable UUID pid,
