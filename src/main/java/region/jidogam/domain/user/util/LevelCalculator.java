@@ -54,7 +54,7 @@ public class LevelCalculator {
   private static final int RANGE_36_PLUS_BASE_LEVEL = 35;
 
   // 경험치로 레벨 계산
-  public int calculateLevel(long exp) {
+  public static int calculateLevel(long exp) {
     if (exp < 0) {
       throw new IllegalArgumentException("EXP는 0 이상이어야 합니다.");
     }

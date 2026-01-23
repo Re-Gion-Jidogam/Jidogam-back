@@ -45,6 +45,14 @@ public interface GuidebookPlaceRepository extends JpaRepository<GuidebookPlace, 
       Pageable pageable
   );
 
+  @Query("""
+      SELECT p
+      FROM GuidebookPlace gp
+      JOIN gp.place p
+      WHERE gp.guidebook.id = :guidebookId
+      """)
+  List<Place> findPlaceByGuidebookId(@Param("guidebookId") UUID guidebookId);
+
   /**
    * 특정 가이드북 목록 중 해당 장소를 포함하는 가이드북 ID 조회
    *

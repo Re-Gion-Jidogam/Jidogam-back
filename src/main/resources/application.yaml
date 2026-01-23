@@ -58,6 +58,9 @@ jidogam:
       normal: 1.0
       interest: 1.5
       underserved: 2.0
+  guidebook:
+    reward:
+      completion-rate: 0.1
 
 jwt:
   secret: ${JWT_SECRET}
