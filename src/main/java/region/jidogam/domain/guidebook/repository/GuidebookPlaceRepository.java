@@ -17,6 +17,8 @@ public interface GuidebookPlaceRepository extends JpaRepository<GuidebookPlace, 
 
   void deleteByGuidebook(Guidebook guidebook);
 
+  boolean existsByGuidebookAndPlace(Guidebook guidebook, Place place);
+
   @Query("""
       SELECT new region.jidogam.domain.guidebook.dto.AreaRatioDto (
             a,
@@ -34,5 +36,4 @@ public interface GuidebookPlaceRepository extends JpaRepository<GuidebookPlace, 
       Pageable pageable
   );
 
-  boolean existsByGuidebookAndPlace(Guidebook guidebook, Place place);
 }

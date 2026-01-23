@@ -47,6 +47,7 @@ public class GuidebookParticipation extends BaseEntity {
   @Column(nullable = false)
   private Integer completedPlaceCount = 0;
 
+  @Builder.Default
   @Column(nullable = false)
   private Integer earnedExp = 0;
 

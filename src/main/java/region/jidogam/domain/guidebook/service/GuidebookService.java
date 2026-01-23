@@ -1,5 +1,6 @@
 package region.jidogam.domain.guidebook.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -373,9 +374,13 @@ public class GuidebookService {
       throw GuidebookAlreadyParticipatedException.withId(guidebook.getId());
     }
 
+    int completedCount = getVisitedPlaceCount(guidebook.getId(), userId);
+
     GuidebookParticipation guidebookParticipation = GuidebookParticipation.builder()
         .guidebook(guidebook)
         .user(user)
+        .completedPlaceCount(completedCount)
+        .lastActivityAt(LocalDateTime.now())
         .build();
 
     guidebookParticipantRepository.save(guidebookParticipation);
