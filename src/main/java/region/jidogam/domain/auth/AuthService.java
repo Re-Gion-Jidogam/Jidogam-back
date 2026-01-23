@@ -13,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.auth.dto.LoginRequest;
+import region.jidogam.domain.auth.dto.LoginResult;
 import region.jidogam.domain.auth.dto.NewPasswordChangeRequest;
 import region.jidogam.domain.auth.entity.PasswordResetToken;
 import region.jidogam.domain.auth.exception.AlreadyUsedPasswordResetTokenException;
@@ -22,6 +23,7 @@ import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.event.PasswordResetEmailSendEvent;
 import region.jidogam.domain.user.exception.UserDeletedException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
+import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.repository.UserRepository;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
@@ -38,6 +40,7 @@ public class AuthService {
   private final RefreshTokenService refreshTokenService;
   private final PasswordResetTokenRepository passwordResetTokenRepository;
   private final ApplicationEventPublisher eventPublisher;
+  private final StampRepository stampRepository;
 
   @Value("${jidogam.email.password-reset.expiration}")
   private Duration passwordResetTokenExpiration;
@@ -47,7 +50,7 @@ public class AuthService {
 
 
   @Transactional
-  public TokenPair login(LoginRequest request) throws AuthException {
+  public LoginResult login(LoginRequest request) throws AuthException {
     log.info("사용자 로그인 시도: email = {}", request.email());
 
     User user = userRepository.findByEmail(request.email())
@@ -68,11 +71,16 @@ public class AuthService {
     String accessToken = jwtProvider.generateAccessToken(user);
     String refreshToken = refreshTokenService.create(user).getRefreshToken();
 
+    LocalDateTime lastStampedAt = stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(user.getId())
+        .map(stamp -> stamp.getCreatedAt())
+        .orElse(null);
+
     log.info("사용자 로그인 완료: id = {}, email = {}", user.getId(), user.getEmail());
 
-    return TokenPair.builder()
+    return LoginResult.builder()
         .accessToken(accessToken)
         .refreshToken(refreshToken)
+        .lastStampedAt(lastStampedAt)
         .build();
   }
 
