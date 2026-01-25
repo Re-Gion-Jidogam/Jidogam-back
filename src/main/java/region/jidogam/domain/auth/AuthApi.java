@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.RequestBody;
 import region.jidogam.domain.auth.dto.LoginRequest;
+import region.jidogam.domain.auth.dto.LoginResponse;
 import region.jidogam.domain.auth.dto.NewPasswordChangeRequest;
 import region.jidogam.domain.auth.dto.PasswordResetRequest;
 import region.jidogam.infrastructure.jwt.dto.TokenResponse;
@@ -24,11 +25,11 @@ public interface AuthApi {
   @Operation(summary = "로그인", description = "이메일과 비밀번호로 로그인합니다.")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "201", description = "로그인 성공",
-          content = @Content(schema = @Schema(implementation = TokenResponse.class))),
+          content = @Content(schema = @Schema(implementation = LoginResponse.class))),
       @ApiResponse(responseCode = "400", description = "잘못된 요청"),
       @ApiResponse(responseCode = "401", description = "인증 실패")
   })
-  ResponseEntity<TokenResponse> login(
+  ResponseEntity<LoginResponse> login(
       @RequestBody @Valid LoginRequest request,
       HttpServletResponse response
   ) throws AuthException;
