@@ -15,7 +15,9 @@ import region.jidogam.domain.place.repository.querydsl.PlaceRepositoryCustom;
 public interface PlaceRepository extends JpaRepository<Place, UUID>, PlaceRepositoryCustom {
 
   Optional<Place> findByKakaoId(String kakaoId);
-  
+
+  List<Place> findAllByKakaoIdIn(List<String> kakaoIds);
+
   List<Place> findAllByOrderByStampCountDesc(Pageable pageable);
 
   /**

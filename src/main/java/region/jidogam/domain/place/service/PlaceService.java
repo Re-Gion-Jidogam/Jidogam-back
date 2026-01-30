@@ -21,6 +21,8 @@ import region.jidogam.domain.area.service.AreaService;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.dto.PlaceCursor;
 import region.jidogam.domain.place.dto.PlaceFilter;
+import region.jidogam.domain.place.dto.PlaceGuidebookCountRequest;
+import region.jidogam.domain.place.dto.PlaceGuidebookCountResponse;
 import region.jidogam.domain.place.dto.PlaceNearByRequest;
 import region.jidogam.domain.place.dto.PlacePopularRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
@@ -46,6 +48,20 @@ public class PlaceService {
   private final PointService pointService;
   private final PlaceMapper placeMapper;
   private final CursorCodecUtil cursorCodecUtil;
+
+  @Transactional(readOnly = true)
+  public List<PlaceGuidebookCountResponse> getGuidebookCounts(
+      PlaceGuidebookCountRequest request) {
+
+    List<Place> places = placeRepository.findAllByKakaoIdIn(request.kakaoPids());
+
+    return places.stream()
+        .map(place -> new PlaceGuidebookCountResponse(
+            place.getId(),
+            place.getKakaoId(),
+            place.getGuidebookCount()))
+        .toList();
+  }
 
   @Transactional(readOnly = true)
   public List<PlaceResponse> popularList(PlacePopularRequest request) {
