@@ -8,13 +8,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.annotation.CurrentUserId;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
+import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.service.GuidebookService;
+import region.jidogam.domain.place.dto.PlaceGuidebookCountRequest;
+import region.jidogam.domain.place.dto.PlaceGuidebookCountResponse;
 import region.jidogam.domain.place.dto.PlaceNearByRequest;
 import region.jidogam.domain.place.dto.PlacePopularRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
@@ -27,6 +32,15 @@ public class PlaceController implements PlaceApi {
 
   private final PlaceService placeService;
   private final GuidebookService guidebookService;
+
+  @Override
+  @PostMapping("/guidebook-counts")
+  public ResponseEntity<ResponseDto<List<PlaceGuidebookCountResponse>>> getGuidebookCounts(
+      @Valid @RequestBody PlaceGuidebookCountRequest request
+  ) {
+    List<PlaceGuidebookCountResponse> responses = placeService.getGuidebookCounts(request);
+    return ResponseEntity.ok(ResponseDto.ok(responses));
+  }
 
   @Override
   @GetMapping("/popular")

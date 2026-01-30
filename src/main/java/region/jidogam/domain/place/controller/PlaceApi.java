@@ -11,16 +11,29 @@ import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import region.jidogam.common.annotation.CurrentUserId;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
+import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.place.dto.PlaceGuidebookCountRequest;
+import region.jidogam.domain.place.dto.PlaceGuidebookCountResponse;
 import region.jidogam.domain.place.dto.PlaceNearByRequest;
 import region.jidogam.domain.place.dto.PlacePopularRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
 
 @Tag(name = "Place", description = "장소 관련 API")
 public interface PlaceApi {
+
+  @Operation(summary = "장소별 가이드북 수 조회", description = "카카오 장소 ID 목록을 받아 각 장소의 가이드북 수를 반환합니다.")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "가이드북 수 조회 성공"),
+      @ApiResponse(responseCode = "400", description = "잘못된 요청")
+  })
+  ResponseEntity<ResponseDto<List<PlaceGuidebookCountResponse>>> getGuidebookCounts(
+      @Valid @RequestBody PlaceGuidebookCountRequest request
+  );
 
   @Operation(summary = "인기 장소 목록 조회", description = "인기 있는 장소 목록을 조회합니다.")
   @ApiResponses(value = {
