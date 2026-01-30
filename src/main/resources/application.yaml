@@ -50,8 +50,9 @@ jidogam:
     password-reset:
       expiration: ${PASSWORD_RESET_TOKEN_EXPIRATION:15m}
       frontend-url: ${FRONTEND_URL:http://localhost:3000}
-  points:
-    base-point: 10
+  exp:
+    base-exp: 10
+    guidebook-completion-rate: 0.7
   area:
     weights:
       normal: 1.0

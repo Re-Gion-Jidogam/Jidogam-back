@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.service.AreaService;
+import region.jidogam.domain.exp.service.ExpService;
 import region.jidogam.domain.place.dto.FieldChange;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
@@ -28,7 +29,7 @@ public class PlaceUpdateService {
 
   private final PlaceChangeHistoryRepository historyRepository;
   private final AreaService areaService;
-  private final PointService pointService;
+  private final ExpService expService;
   private final ObjectMapper objectMapper;
 
   /**
@@ -78,24 +79,24 @@ public class PlaceUpdateService {
     // 변경 전 값 저장
     String oldCoordinates = place.getX() + "," + place.getY();
     String oldAreaId = place.getArea() != null ? place.getArea().getId().toString() : null;
-    Integer oldPoint = place.getPoints();
+    Integer oldExp = place.getExp();
 
     // 새로운 값 계산
     String newCoordinates = request.x() + "," + request.y();
     Area newArea = areaService.getAreaByAddress(request.addressName());
-    int newPoint = pointService.calculatePlacePoint(newArea.getWeight());
+    int newExp = expService.calculatePlaceExp(newArea.getWeight());
 
     // 변경 기록
     changes.put("address", FieldChange.of(place.getAddress(), request.addressName()));
     changes.put("coordinates", FieldChange.of(oldCoordinates, newCoordinates));
     changes.put("areaId", FieldChange.of(oldAreaId, newArea.getId().toString()));
-    changes.put("points", FieldChange.of(oldPoint.toString(), String.valueOf(newPoint)));
+    changes.put("exp", FieldChange.of(oldExp.toString(), String.valueOf(newExp)));
 
     // 업데이트
     place.updateAddress(request.addressName());
     place.updateCoordinates(request.x(), request.y());
     place.updateArea(newArea);
-    place.updatePoint(newPoint);
+    place.updateExp(newExp);
   }
 
   private void recordChangeHistory(UUID placeId, String kakaoId, Map<String, FieldChange> changes) {

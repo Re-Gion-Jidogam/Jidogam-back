@@ -17,7 +17,7 @@ public record PlaceResponse(
     int stampCount,
     String category,
     Double distanceInKm,
-    int points
+    int exp
 ) {
 
 }

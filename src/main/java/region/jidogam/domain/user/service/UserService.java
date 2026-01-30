@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
+import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.auth.entity.EmailAuthCode;
 import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
 import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
@@ -18,40 +19,39 @@ import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
 import region.jidogam.domain.guidebook.mapper.GuidebookMapper;
-import region.jidogam.domain.guidebook.repository.GuidebookRepository;
-import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
+import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.place.mapper.PlaceMapper;
 import region.jidogam.domain.stamp.dto.StampCursor;
 import region.jidogam.domain.stamp.dto.StampSearchRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.repository.StampRepository;
-import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
 import region.jidogam.domain.user.dto.GuidebookParticipationCursor;
+import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
 import region.jidogam.domain.user.dto.GuidebookParticipationSearchRequest;
-import region.jidogam.domain.user.exception.UserExpException;
-import region.jidogam.domain.user.mapper.UserMapper;
+import region.jidogam.domain.user.dto.UserCreateRequest;
 import region.jidogam.domain.user.dto.UserDto;
 import region.jidogam.domain.user.dto.UserGuidebookCursor;
 import region.jidogam.domain.user.dto.UserGuidebookSearchRequest;
 import region.jidogam.domain.user.dto.UserUpdateRequest;
+import region.jidogam.domain.user.entity.User;
+import region.jidogam.domain.user.exception.InvalidEmailFormatException;
 import region.jidogam.domain.user.exception.UnverifiedEmailException;
+import region.jidogam.domain.user.exception.UserAlreadyDeletedException;
+import region.jidogam.domain.user.exception.UserEmailConflictException;
+import region.jidogam.domain.user.exception.UserExpException;
+import region.jidogam.domain.user.exception.UserNicknameConflictException;
+import region.jidogam.domain.user.exception.UserNicknameLengthException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.domain.user.exception.UserPasswordLengthException;
+import region.jidogam.domain.user.exception.UserRestorePeriodExpiredException;
+import region.jidogam.domain.user.mapper.UserMapper;
+import region.jidogam.domain.user.repository.UserRepository;
+import region.jidogam.domain.user.util.LevelCalculator;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
 import region.jidogam.infrastructure.jwt.dto.TokenPair;
-import region.jidogam.domain.user.dto.UserCreateRequest;
-import region.jidogam.domain.user.entity.User;
-import region.jidogam.domain.user.exception.InvalidEmailFormatException;
-import region.jidogam.domain.user.exception.UserAlreadyDeletedException;
-import region.jidogam.domain.user.exception.UserEmailConflictException;
-import region.jidogam.domain.user.exception.UserNicknameConflictException;
-import region.jidogam.domain.user.exception.UserNicknameLengthException;
-import region.jidogam.domain.user.exception.UserRestorePeriodExpiredException;
-import region.jidogam.domain.user.repository.UserRepository;
-import region.jidogam.domain.user.util.LevelCalculator;
 
 @Slf4j
 @Service
@@ -325,6 +325,7 @@ public class UserService {
   @Transactional(readOnly = true)
   public CursorPageResponseDto<GuidebookParticipationResponse> getUserParticipation(
       UUID currentUserId, UUID userId, GuidebookParticipationSearchRequest request) {
+    // currentUserId는 안쓰이고 있는 것 같은데, 확인 한 번 부탁드립니다!
 
     // 유저 조회
     User user = userRepository.findById(userId)

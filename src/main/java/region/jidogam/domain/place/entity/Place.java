@@ -47,7 +47,7 @@ public class Place extends BaseEntity {
 
   @Column(nullable = false)
   @Builder.Default
-  private Integer points = 0;
+  private Integer exp = 0;
 
   @Column
   @Builder.Default
@@ -78,7 +78,7 @@ public class Place extends BaseEntity {
     this.area = area;
   }
 
-  public void updatePoint(int points) {
-    this.points = points;
+  public void updateExp(int exp) {
+    this.exp = exp;
   }
 }

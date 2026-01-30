@@ -3,6 +3,7 @@ package region.jidogam.domain.guidebook.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -33,6 +34,7 @@ import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.File.storage.FileStorage;
 import region.jidogam.domain.area.entity.Area;
+import region.jidogam.domain.exp.service.ExpService;
 import region.jidogam.domain.guidebook.dto.AreaRatioDto;
 import region.jidogam.domain.guidebook.dto.GuidebookAddPlaceRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
@@ -93,13 +95,16 @@ class GuidebookServiceTest {
   private ApplicationEventPublisher eventPublisher;
   @Spy
   private FileStorage fileStorage;
+  @Mock
+  private ExpService expService;
 
   private GuidebookMapper guidebookMapper;
   private GuidebookService guidebookService;
 
   @BeforeEach
   void setUp() {
-    guidebookMapper = Mockito.spy(new GuidebookMapper(fileStorage));
+
+    guidebookMapper = Mockito.spy(new GuidebookMapper(fileStorage, expService));
 
     guidebookService = new GuidebookService(
         userRepository,
@@ -243,6 +248,8 @@ class GuidebookServiceTest {
       Guidebook guidebook = createGuidebook(userId, guidebookId, 0);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(0);
+      when(expService.calculateGuidebookCompletionExp(anyInt()))
+          .thenAnswer(invocation -> invocation.getArgument(0));
 
       GuidebookUpdateRequest request = new GuidebookUpdateRequest(
           "제목 수정",
@@ -334,6 +341,8 @@ class GuidebookServiceTest {
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(guidebookPlaceRepository.findAreasByPlaceCountDesc(guidebookId, PageRequest.of(0, 3)))
           .thenReturn(areas);
+      when(expService.calculateGuidebookCompletionExp(anyInt()))
+          .thenAnswer(invocation -> invocation.getArgument(0));
 
       // when
       guidebookService.update(guidebookId, userId,
@@ -659,6 +668,9 @@ class GuidebookServiceTest {
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId1)).thenReturn(5);
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId2)).thenReturn(3);
 
+      when(expService.calculateGuidebookCompletionExp(anyInt()))
+          .thenAnswer(invocation -> invocation.getArgument(0));
+
       when(guidebookMapper.toResponse(guidebook1, 5)).thenReturn(response1);
       when(guidebookMapper.toResponse(guidebook2, 3)).thenReturn(response2);
 
@@ -703,6 +715,8 @@ class GuidebookServiceTest {
 
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId1)).thenReturn(2);
 
+      when(expService.calculateGuidebookCompletionExp(anyInt()))
+          .thenAnswer(invocation -> invocation.getArgument(0));
       when(guidebookMapper.toResponse(guidebook1, 2)).thenReturn(response1);
 
       // when
@@ -773,6 +787,8 @@ class GuidebookServiceTest {
 
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(0);
 
+      when(expService.calculateGuidebookCompletionExp(anyInt()))
+          .thenAnswer(invocation -> invocation.getArgument(0));
       when(guidebookMapper.toResponse(guidebook, 0)).thenReturn(response);
 
       // when
@@ -810,6 +826,8 @@ class GuidebookServiceTest {
       when(guidebookRepository.countGuidebooksByPlaceId(placeId, null, null))
           .thenReturn(1L);
 
+      when(expService.calculateGuidebookCompletionExp(anyInt()))
+          .thenAnswer(invocation -> invocation.getArgument(0));
       when(guidebookMapper.toResponse(guidebook, 0)).thenReturn(response);
 
       // when
@@ -961,7 +979,7 @@ class GuidebookServiceTest {
         .thumbnailUrl("https://test.com/url")
         .emoji("😭")
         .color("#12345")
-        .points(100)
+        .exp(100)
         .publishedDate(FIXED_DATE_TIME)
         .mapImageUrl("https://test.com/url")
         .participantCount(3)
@@ -987,7 +1005,7 @@ class GuidebookServiceTest {
         .thumbnailUrl("https://test.com/url")
         .emoji("😭")
         .color("#12345")
-        .point(100)
+        .exp(100)
         .createdAt(FIXED_DATE_TIME)
         .updatedAt(FIXED_DATE_TIME)
         .publishedDate(FIXED_DATE_TIME)

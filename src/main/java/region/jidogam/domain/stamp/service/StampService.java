@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import region.jidogam.domain.guidebook.service.GuidebookParticipationService;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
@@ -21,6 +22,7 @@ import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.domain.user.repository.UserRepository;
+import region.jidogam.domain.user.service.UserService;
 
 @Slf4j
 @Service
@@ -35,6 +37,8 @@ public class StampService {
   private final StampRepository stampRepository;
   private final PlaceRepository placeRepository;
   private final PlaceService placeService;
+  private final UserService userService;
+  private final GuidebookParticipationService guidebookParticipationService;
 
   @Transactional
   public void stampPlace(PlaceStampRequest request, UUID userId) {
@@ -54,16 +58,25 @@ public class StampService {
       validateDuplicateStamp(user, place);
     }
 
-    // 4. 도장
+    // 4. 도장 생성
     Stamp stamp = Stamp.builder()
         .place(place)
         .user(user)
+        .earnedExp(place.getExp())
         .build();
-
     stampRepository.save(stamp);
+
+    // 5. 사용자 경험치 증가
+    userService.increaseUserExp(user, place.getExp());
+
+    // 6. 장소 방문 수 증가
     placeRepository.updateStampCount(place.getId(), 1);
-    log.info("장소 도장 찍기 완료: placeName = {}, email = {}", request.place().placeName(),
-        user.getEmail());
+
+    // 7. 가이드북 완료 확인
+    guidebookParticipationService.updateProgressByStamp(user, place);
+
+    log.info("장소 도장 찍기 완료: placeName = {}, email = {}",
+        request.place().placeName(), user.getEmail());
   }
 
   @Transactional

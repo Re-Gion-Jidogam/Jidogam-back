@@ -2,6 +2,9 @@ package region.jidogam.domain.stamp.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -26,6 +29,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.entity.Area.AreaType;
+import region.jidogam.domain.guidebook.service.GuidebookParticipationService;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.exception.PlaceNotFoundException;
@@ -39,6 +43,7 @@ import region.jidogam.domain.stamp.exception.StampNotFoundException;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.repository.UserRepository;
+import region.jidogam.domain.user.service.UserService;
 
 @ExtendWith(MockitoExtension.class)
 class StampServiceTest {
@@ -54,6 +59,12 @@ class StampServiceTest {
 
   @Mock
   private PlaceService placeService;
+
+  @Mock
+  private UserService userService;
+
+  @Mock
+  private GuidebookParticipationService guidebookParticipationService;
 
   @Mock
   private Clock clock;
@@ -105,7 +116,7 @@ class StampServiceTest {
         .y(placeCreateRequest.y())
         .category(placeCreateRequest.category())
         .area(area)
-        .points(10)
+        .exp(10)
         .build();
 
     userId = UUID.randomUUID();
@@ -125,6 +136,9 @@ class StampServiceTest {
     when(placeService.getOrCreatePlace(placeId, placeCreateRequest)).thenReturn(place);
     when(stampRepository.existsByUser_IdAndPlace_Id(userId, place.getId()))
         .thenReturn(false);
+    doNothing().when(userService).increaseUserExp(any(User.class), anyInt());
+    doNothing().when(guidebookParticipationService)
+        .updateProgressByStamp(any(User.class), any(Place.class));
 
     PlaceStampRequest request = new PlaceStampRequest(placeId, placeCreateRequest);
 
@@ -154,6 +168,9 @@ class StampServiceTest {
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
         .thenReturn(Optional.empty());
     when(placeService.getOrCreatePlace(null, placeCreateRequest)).thenReturn(place);
+    doNothing().when(userService).increaseUserExp(any(User.class), anyInt());
+    doNothing().when(guidebookParticipationService)
+        .updateProgressByStamp(any(User.class), any(Place.class));
 
     PlaceStampRequest request = new PlaceStampRequest(null, placeCreateRequest);
 
@@ -252,6 +269,9 @@ class StampServiceTest {
           .thenReturn(Optional.of(stamp));
 
       when(placeService.getOrCreatePlace(null, placeCreateRequest)).thenReturn(place);
+      doNothing().when(userService).increaseUserExp(any(User.class), anyInt());
+      doNothing().when(guidebookParticipationService)
+          .updateProgressByStamp(any(User.class), any(Place.class));
 
       PlaceStampRequest request = new PlaceStampRequest(null, placeCreateRequest);
 

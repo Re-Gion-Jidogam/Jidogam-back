@@ -13,7 +13,7 @@ public record GuidebookResponse(
     String mapImageUrl,
     String emoji,
     String color,
-    int point,
+    int exp,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
     LocalDateTime publishedDate,
