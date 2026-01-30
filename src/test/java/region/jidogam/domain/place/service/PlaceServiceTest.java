@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.entity.Area.AreaType;
 import region.jidogam.domain.area.service.AreaService;
+import region.jidogam.domain.exp.service.ExpService;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.repository.PlaceRepository;
@@ -32,7 +33,7 @@ class PlaceServiceTest {
   private PlaceUpdateService placeUpdateService;
 
   @Mock
-  private PointService pointService;
+  private ExpService expService;
 
   @InjectMocks
   private PlaceService placeService;
@@ -67,10 +68,10 @@ class PlaceServiceTest {
         .y(request.y())
         .category(request.category())
         .area(area)
-        .points(10)
+        .exp(10)
         .build();
 
-    when(pointService.calculatePlacePoint(1.0)).thenReturn(10);
+    when(expService.calculatePlaceExp(1.0)).thenReturn(10);
     when(areaService.getAreaByAddress(any(String.class))).thenReturn(area);
     when(placeRepository.save(any(Place.class))).thenReturn(place);
 

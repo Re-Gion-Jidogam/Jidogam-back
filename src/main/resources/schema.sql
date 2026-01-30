@@ -26,7 +26,7 @@ CREATE TABLE guidebooks
     color             VARCHAR(50),
     is_published      BOOLEAN                  NOT NULL,
     published_date    TIMESTAMP WITH TIME ZONE,
-    points            INTEGER                  NOT NULL,
+    exp               INTEGER                  NOT NULL,
     rating_sum        BIGINT                   NOT NULL,
     rating_count      INTEGER                  NOT NULL,
     participant_count INTEGER                  NOT NULL,
@@ -39,14 +39,19 @@ CREATE TABLE guidebooks
 -- Guidebook participants table
 CREATE TABLE guidebook_participations
 (
-    id               UUID PRIMARY KEY,
-    user_id          UUID                     NOT NULL,
-    guidebook_id     UUID                     NOT NULL,
-    created_at       TIMESTAMP WITH TIME ZONE NOT NULL,
-    last_activity_at TIMESTAMP WITH TIME ZONE,
-    is_completed     BOOLEAN                  NOT NULL DEFAULT FALSE,
+    id                    UUID PRIMARY KEY,
+    user_id               UUID                     NOT NULL,
+    guidebook_id          UUID                     NOT NULL,
+    completed_place_count INTEGER                  NOT NULL,
+    earned_exp            INTEGER                  NOT NULL,
+    is_completed          BOOLEAN                  NOT NULL,
+    completed_at          TIMESTAMP WITH TIME ZONE,
+    last_activity_at      TIMESTAMP WITH TIME ZONE,
+    created_at            TIMESTAMP WITH TIME ZONE NOT NULL,
     UNIQUE (user_id, guidebook_id)
 );
+CREATE INDEX idx_guidebook_participation_user_completed
+    ON guidebook_participations (user_id, is_completed);
 
 -- Guidebook places table
 CREATE TABLE guidebook_places
@@ -77,6 +82,7 @@ CREATE TABLE stamps
     id         UUID PRIMARY KEY,
     user_id    UUID                     NOT NULL,
     place_id   UUID                     NOT NULL,
+    earned_exp INTEGER                  NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL,
     UNIQUE (user_id, place_id)
 );
@@ -106,7 +112,7 @@ CREATE TABLE places
     y               DECIMAL(17, 14)          NOT NULL,
     address         VARCHAR(255)             NOT NULL,
     category        VARCHAR(50)              NULL,
-    points          INTEGER                  NOT NULL,
+    exp             INTEGER                  NOT NULL,
     guidebook_count INTEGER                  NOT NULL,
     stamp_count     INTEGER                  NOT NULL,
     created_at      TIMESTAMP WITH TIME ZONE NOT NULL,

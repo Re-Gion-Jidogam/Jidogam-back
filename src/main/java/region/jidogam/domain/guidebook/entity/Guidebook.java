@@ -51,7 +51,7 @@ public class Guidebook extends BaseUpdatableEntity {
 
   @Column(nullable = false)
   @Builder.Default
-  private Integer points = 0;
+  private Integer exp = 0;
 
   @Column(nullable = false)
   @Builder.Default
@@ -130,7 +130,7 @@ public class Guidebook extends BaseUpdatableEntity {
     this.areaRatio = null;
   }
 
-  public void updatePoints(int points) {
-    this.points = points;
+  public void updateExp(int exp) {
+    this.exp = exp;
   }
 }

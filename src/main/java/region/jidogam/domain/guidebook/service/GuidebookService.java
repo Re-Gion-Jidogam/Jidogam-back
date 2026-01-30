@@ -1,5 +1,6 @@
 package region.jidogam.domain.guidebook.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -377,9 +378,13 @@ public class GuidebookService {
       throw GuidebookAlreadyParticipatedException.withId(guidebook.getId());
     }
 
+    int completedCount = getVisitedPlaceCount(guidebook.getId(), userId);
+
     GuidebookParticipation guidebookParticipation = GuidebookParticipation.builder()
         .guidebook(guidebook)
         .user(user)
+        .completedPlaceCount(completedCount)
+        .lastActivityAt(LocalDateTime.now())
         .build();
 
     guidebookParticipantRepository.save(guidebookParticipation);
@@ -476,13 +481,12 @@ public class GuidebookService {
       guidebookAreaRatio.setThirdArea(withRatios.get(2).area(), withRatios.get(2).ratio());
     }
 
-    // 가이드북 포인트 설정
+    // 가이드북 장소 전체 포인트 저장
     List<Place> places = guidebookPlaceRepository.findPlaceByGuidebookId(guidebook.getId());
-    double totalPoints = places.stream()
-        .mapToDouble(Place::getPoints)
+    int totalExps = places.stream()
+        .mapToInt(Place::getExp)
         .sum();
-    int finalPoints = (int) Math.floor(totalPoints * guidebookCompletionRate);
-    guidebook.updatePoints(finalPoints);
+    guidebook.updateExp(totalExps);
 
     guidebookAreaRatioRepository.save(guidebookAreaRatio);
   }
