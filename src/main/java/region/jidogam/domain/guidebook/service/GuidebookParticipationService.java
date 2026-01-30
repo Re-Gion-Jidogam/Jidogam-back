@@ -67,14 +67,12 @@ public class GuidebookParticipationService {
    */
   @Transactional(propagation = Propagation.MANDATORY)
   public void updateProgressByStampCancel(User user, Stamp stamp) {
-    log.info("도장 취소 가이드북 확인: {}", stamp.getEarnedExp());
 
     // 1. 유저의 모든 가이드북 참여 목록 조회
     List<GuidebookParticipation> participations =
         guidebookParticipationRepository.findByUserId(user.getId());
 
     if (participations.isEmpty()) {
-      log.info("참여 목록 없음");
       return;
     }
 
