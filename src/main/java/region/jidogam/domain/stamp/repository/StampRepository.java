@@ -11,21 +11,23 @@ import region.jidogam.domain.stamp.repository.querydsl.StampRepositoryCustom;
 public interface StampRepository extends JpaRepository<Stamp, UUID>,
     StampRepositoryCustom {
 
-  Optional<Stamp> findFirstByUser_IdOrderByCreatedAtDesc(UUID uuid);
+  Optional<Stamp> findFirstByUser_IdOrderByCreatedAtDesc(UUID userId);
 
-  boolean existsByUser_IdAndPlace_Id(UUID placeId, UUID userId);
+  Optional<Stamp> findByUser_IdAndPlace_Id(UUID userId, UUID placeId);
 
-  int deleteByUser_IdAndPlace_Id(UUID placeId, UUID userId);
+  boolean existsByUser_IdAndPlace_Id(UUID userId, UUID placeId);
+
+  int deleteByUser_IdAndPlace_Id(UUID userId, UUID placeId);
 
   @Query("""
-    SELECT COUNT(s)
-    FROM Stamp s
-    JOIN GuidebookPlace gp ON s.place.id = gp.place.id
-    WHERE s.user.id = :userId AND gp.guidebook.id = :guidebookId
-    """)
+      SELECT COUNT(s)
+      FROM Stamp s
+      JOIN GuidebookPlace gp ON s.place.id = gp.place.id
+      WHERE s.user.id = :userId AND gp.guidebook.id = :guidebookId
+      """)
   int countUserStampsInGuidebook(
-    @Param("userId") UUID userId,
-    @Param("guidebookId") UUID guidebookId
+      @Param("userId") UUID userId,
+      @Param("guidebookId") UUID guidebookId
   );
 }
 

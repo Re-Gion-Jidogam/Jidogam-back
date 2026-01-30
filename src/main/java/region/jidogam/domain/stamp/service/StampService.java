@@ -83,13 +83,24 @@ public class StampService {
   public void cancelStamp(UUID userId, UUID placeId) {
     log.info("장소 도장 취소 시작: userId = {}, placeId = {}", userId, placeId);
 
-    getUserOrThrow(userId);
+    User user = getUserOrThrow(userId);
 
-    int deleted = stampRepository.deleteByUser_IdAndPlace_Id(userId, placeId);
-    if (deleted == 0) {
-      throw StampNotFoundException.withPlaceIdAndUserId(userId, placeId);
-    }
+    // 1. 도장 정보 가져오기
+    Stamp stamp = stampRepository.findByUser_IdAndPlace_Id(userId, placeId)
+        .orElseThrow(() -> StampNotFoundException.withPlaceIdAndUserId(userId, placeId));
+
+    // 2. 사용자 경험 차감
+    userService.decreaseUserExp(user, stamp.getEarnedExp());
+
+    // 3. 가이드북 확인
+    guidebookParticipationService.updateProgressByStampCancel(user, stamp);
+
+    // 4. 도장 삭제
+    stampRepository.deleteByUser_IdAndPlace_Id(userId, placeId);
+
+    // 5. 장소 방문 수 감소
     placeRepository.updateStampCount(placeId, -1);
+
     log.info("장소 도장 취소 완료: userId = {}, placeId = {}", userId, placeId);
   }
 
