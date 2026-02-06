@@ -17,7 +17,11 @@ public enum GuidebookErrorCode implements ErrorCode {
   GUIDEBOOK_ALREADY_PARTICIPATED(HttpStatus.CONFLICT, "GUIDE_BOOK_006", "이미 참여중인 가이드북입니다."),
   GUIDEBOOK_NOT_PUBLISHED(HttpStatus.BAD_REQUEST, "GUIDE_BOOK_007", "출판되지 않은 가이드북입니다."),
   GUIDEBOOK_NOT_PUBLISHABLE(HttpStatus.BAD_REQUEST, "GUIDE_BOOK_008", "출판할 수 없습니다."),
-  GUIDEBOOK_PLACE_DUPLICATE(HttpStatus.CONFLICT, "GUIDE_BOOK_009", "이미 가이드북에 추가된 장소입니다.");
+  GUIDEBOOK_PLACE_DUPLICATE(HttpStatus.CONFLICT, "GUIDE_BOOK_009", "이미 가이드북에 추가된 장소입니다."),
+  GUIDEBOOK_PARTICIPATE_EARNED_EXP(HttpStatus.INTERNAL_SERVER_ERROR, "GUIDE_BOOK_010",
+      "경험치 데이터가 유효하지 않습니다."),
+  GUIDEBOOK_PARTICIPATE_PLACE_COUNT(HttpStatus.INTERNAL_SERVER_ERROR, "GUIDE_BOOK_011",
+      "완료된 장소 수가 이미 0입니다.");
 
   private HttpStatus status;
   private String code;

@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.exp.service.ExpService;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
+import region.jidogam.domain.guidebook.exception.ParticipationEarnedExpException;
+import region.jidogam.domain.guidebook.exception.ParticipationPlaceCountException;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.place.entity.Place;
@@ -107,10 +109,18 @@ public class GuidebookParticipationService {
       LocalDateTime activityTime) {
 
     if (participation.getCreatedAt().isBefore(stamp.getCreatedAt())) {
+      if (participation.getEarnedExp() < stamp.getEarnedExp()) {
+        throw ParticipationEarnedExpException.insufficientExp(participation.getEarnedExp(),
+            stamp.getEarnedExp());
+      }
       participation.subtractEarnedExp(stamp.getEarnedExp());
     }
 
+    if (participation.getCompletedPlaceCount() <= 0) {
+      throw ParticipationPlaceCountException.invalidPlaceCount();
+    }
     participation.decrementCompletedPlaceCount();
+
     participation.updateLastActivityAt(activityTime);
   }
 
@@ -139,8 +149,7 @@ public class GuidebookParticipationService {
 
     Guidebook guidebook = participation.getGuidebook();
 
-    if (!participation.getIsCompleted()
-        && participation.getCompletedPlaceCount() < guidebook.getTotalPlaceCount()) {
+    if (!participation.getIsCompleted()) {
       return;
     }
 
