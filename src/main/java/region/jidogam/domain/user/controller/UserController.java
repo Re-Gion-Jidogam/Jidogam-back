@@ -114,13 +114,12 @@ public class UserController implements UserApi {
     return ResponseEntity.ok(userService.getUserStamps(currentUserId, request));
   }
 
-  @GetMapping("/{userId}/participations")
+  @GetMapping("/participations")
   public ResponseEntity<CursorPageResponseDto<GuidebookParticipationResponse>> getParticipation(
       @CurrentUserId UUID currentUserId,
-      @PathVariable UUID userId,
       @Valid @ModelAttribute GuidebookParticipationSearchRequest request) {
 
-    return ResponseEntity.ok(userService.getUserParticipation(currentUserId, userId, request));
+    return ResponseEntity.ok(userService.getUserParticipation(currentUserId, request));
   }
 
   @DeleteMapping

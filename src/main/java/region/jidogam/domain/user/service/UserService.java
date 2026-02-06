@@ -324,15 +324,14 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public CursorPageResponseDto<GuidebookParticipationResponse> getUserParticipation(
-      UUID currentUserId, UUID userId, GuidebookParticipationSearchRequest request) {
-    // currentUserId는 안쓰이고 있는 것 같은데, 확인 한 번 부탁드립니다!
+      UUID currentUserId, GuidebookParticipationSearchRequest request) {
 
     // 유저 조회
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> UserNotFoundException.withId(userId));
+    User user = userRepository.findById(currentUserId)
+        .orElseThrow(() -> UserNotFoundException.withId(currentUserId));
 
     if (user.isDeleted()) {
-      throw UserNotFoundException.withId(userId);
+      throw UserNotFoundException.withId(currentUserId);
     }
 
     // 커서 디코딩
@@ -344,7 +343,7 @@ public class UserService {
     // 참여 중인 가이드북 조회 (limit + 1 개 조회하여 hasNext 판단)
     List<GuidebookParticipation> participants =
         guidebookParticipantRepository.searchParticipatingGuidebooks(
-            userId,
+            currentUserId,
             cursor,
             request.keyword(),
             request.sortDirection(),
@@ -354,7 +353,7 @@ public class UserService {
 
     // 총 개수 조회
     long total = guidebookParticipantRepository.countParticipatingGuidebooks(
-        userId,
+        currentUserId,
         request.keyword(),
         request.filter()
     );

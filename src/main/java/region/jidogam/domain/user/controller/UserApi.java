@@ -130,15 +130,13 @@ public interface UserApi {
       @Valid @ModelAttribute StampSearchRequest request
   );
 
-  @Operation(summary = "가이드북 참여 목록 조회", description = "특정 사용자가 참여 중인 가이드북 목록을 조회합니다.")
+  @Operation(summary = "가이드북 참여 목록 조회", description = "현재 로그인한 사용자가 참여 중인 가이드북 목록을 조회합니다.")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "참여 목록 조회 성공"),
-      @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-      @ApiResponse(responseCode = "404", description = "사용자를 찾을 수 없음")
+      @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
   })
   ResponseEntity<CursorPageResponseDto<GuidebookParticipationResponse>> getParticipation(
       @CurrentUserId UUID currentUserId,
-      @Parameter(description = "조회할 사용자 ID", required = true) @PathVariable UUID userId,
       @Valid @ModelAttribute GuidebookParticipationSearchRequest request
   );
 
