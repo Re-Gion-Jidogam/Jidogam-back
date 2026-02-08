@@ -1444,7 +1444,7 @@ class UserServiceTest {
     @BeforeEach
     void setUp() {
       testUserId = UUID.randomUUID();
-      currentUserId = UUID.randomUUID();
+      currentUserId = testUserId;
 
       testUser = User.builder()
           .nickname("테스트유저")
@@ -1539,7 +1539,7 @@ class UserServiceTest {
 
       //when
       CursorPageResponseDto<GuidebookParticipationResponse> result =
-          userService.getUserParticipation(currentUserId, testUserId, request);
+          userService.getUserParticipation(currentUserId, request);
 
       //then
       assertNotNull(result);
@@ -1591,7 +1591,7 @@ class UserServiceTest {
 
       //when
       CursorPageResponseDto<GuidebookParticipationResponse> result =
-          userService.getUserParticipation(currentUserId, testUserId, request);
+          userService.getUserParticipation(currentUserId, request);
 
       //then
       assertNotNull(result);
@@ -1639,7 +1639,7 @@ class UserServiceTest {
 
       //when
       CursorPageResponseDto<GuidebookParticipationResponse> result =
-          userService.getUserParticipation(currentUserId, testUserId, request);
+          userService.getUserParticipation(currentUserId, request);
 
       //then
       assertNotNull(result);
@@ -1686,7 +1686,7 @@ class UserServiceTest {
 
       //when
       CursorPageResponseDto<GuidebookParticipationResponse> result =
-          userService.getUserParticipation(currentUserId, testUserId, request);
+          userService.getUserParticipation(currentUserId, request);
 
       //then
       assertNotNull(result);
@@ -1738,7 +1738,7 @@ class UserServiceTest {
 
       //when
       CursorPageResponseDto<GuidebookParticipationResponse> result =
-          userService.getUserParticipation(currentUserId, testUserId, request);
+          userService.getUserParticipation(currentUserId, request);
 
       //then
       assertNotNull(result);
@@ -1779,7 +1779,7 @@ class UserServiceTest {
 
       //when
       CursorPageResponseDto<GuidebookParticipationResponse> result =
-          userService.getUserParticipation(currentUserId, testUserId, request);
+          userService.getUserParticipation(currentUserId, request);
 
       //then
       assertNotNull(result);
@@ -1820,7 +1820,7 @@ class UserServiceTest {
 
       //when
       CursorPageResponseDto<GuidebookParticipationResponse> result =
-          userService.getUserParticipation(currentUserId, testUserId, request);
+          userService.getUserParticipation(currentUserId, request);
 
       //then
       assertNotNull(result);
@@ -1866,7 +1866,7 @@ class UserServiceTest {
 
       //when
       CursorPageResponseDto<GuidebookParticipationResponse> result =
-          userService.getUserParticipation(currentUserId, testUserId, request);
+          userService.getUserParticipation(currentUserId, request);
 
       //then
       assertNotNull(result);
@@ -1894,7 +1894,7 @@ class UserServiceTest {
 
       //when & then
       assertThrows(UserNotFoundException.class,
-          () -> userService.getUserParticipation(currentUserId, testUserId, request));
+          () -> userService.getUserParticipation(currentUserId, request));
       verify(userRepository, times(1)).findById(testUserId);
       verify(guidebookParticipantRepository, never()).searchParticipatingGuidebooks(
           any(UUID.class), any(), any(), any(SortDirection.class), any(), any(Integer.class)
@@ -1925,7 +1925,7 @@ class UserServiceTest {
 
       //when & then
       assertThrows(UserNotFoundException.class,
-          () -> userService.getUserParticipation(currentUserId, testUserId, request));
+          () -> userService.getUserParticipation(currentUserId, request));
       verify(userRepository, times(1)).findById(testUserId);
       verify(guidebookParticipantRepository, never()).searchParticipatingGuidebooks(
           any(UUID.class), any(), any(), any(SortDirection.class), any(), any(Integer.class)
@@ -1974,7 +1974,7 @@ class UserServiceTest {
 
       //when
       CursorPageResponseDto<GuidebookParticipationResponse> result =
-          userService.getUserParticipation(currentUserId, testUserId, request);
+          userService.getUserParticipation(currentUserId, request);
 
       //then
       assertNotNull(result);
