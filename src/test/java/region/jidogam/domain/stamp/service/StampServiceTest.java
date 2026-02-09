@@ -294,7 +294,14 @@ class StampServiceTest {
   @DisplayName("도장 삭제 성공")
   void cancelStampSuccess() {
     // given
+    Stamp stamp = Stamp.builder()
+        .user(user)
+        .place(place)
+        .earnedExp(10)
+        .build();
+
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(stampRepository.findByUser_IdAndPlace_Id(userId, placeId)).thenReturn(Optional.of(stamp));
     when(stampRepository.deleteByUser_IdAndPlace_Id(userId, placeId)).thenReturn(1);
 
     // when
@@ -302,6 +309,8 @@ class StampServiceTest {
 
     // then
     verify(userRepository).findById(userId);
+    verify(userService).decreaseUserExp(user, 10);
+    verify(guidebookParticipationService).updateProgressByStampCancel(user, stamp);
     verify(stampRepository).deleteByUser_IdAndPlace_Id(userId, placeId);
     verify(placeRepository).updateStampCount(placeId, -1);
   }
@@ -311,11 +320,9 @@ class StampServiceTest {
   void failsCancelStampByStampNotFound() {
     // given
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(stampRepository.deleteByUser_IdAndPlace_Id(userId, placeId)).thenReturn(0);
 
     // when & then
     assertThrows(StampNotFoundException.class, () -> stampService.cancelStamp(userId, placeId));
-
   }
 
   private void setClock() {

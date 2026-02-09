@@ -19,6 +19,19 @@ public interface GuidebookParticipationRepository extends
   int deleteByGuidebook_IdAndUser_Id(UUID guidebookId, UUID userId);
 
   /**
+   * 가이드북 참여 목록 조회
+   *
+   * @param userId 유저 ID
+   * @return 가이드북 참여 목록
+   */
+  @Query("""
+        SELECT gp FROM GuidebookParticipation gp
+        JOIN FETCH gp.guidebook g
+        WHERE gp.user.id = :userId
+      """)
+  List<GuidebookParticipation> findByUserId(@Param("userId") UUID userId);
+
+  /**
    * 유저가 진행 중인 가이드북 참여 목록 조회
    * (완료되지 않은 가이드북만 조회)
    *
