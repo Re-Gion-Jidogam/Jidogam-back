@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.annotation.CurrentUserId;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
+import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.place.dto.PlaceResponse;
@@ -59,15 +60,16 @@ public class UserController implements UserApi {
   }
 
   @GetMapping("/check-nickname")
-  public ResponseEntity<String> checkNickname(@RequestParam("nickname") String nickname) {
+  public ResponseEntity<ResponseDto<String>> checkNickname(
+      @RequestParam("nickname") String nickname) {
     userService.validateNickname(nickname);
-    return ResponseEntity.ok("사용 가능한 닉네임입니다.");
+    return ResponseEntity.ok(ResponseDto.ok("사용 가능한 닉네임입니다."));
   }
 
   @GetMapping("/check-email")
-  public ResponseEntity<String> checkEmail(@RequestParam("email") String email) {
+  public ResponseEntity<ResponseDto<String>> checkEmail(@RequestParam("email") String email) {
     userService.validateEmail(email);
-    return ResponseEntity.ok("사용 가능한 이메일입니다.");
+    return ResponseEntity.ok(ResponseDto.ok("사용 가능한 이메일입니다."));
   }
 
   @PostMapping("/auth-code")
@@ -93,7 +95,8 @@ public class UserController implements UserApi {
       @CurrentUserId UUID userId,
       @PathVariable UUID authorId,
       @Valid @ModelAttribute UserGuidebookSearchRequest request) {
-    CursorPageResponseDto<GuidebookResponse> userGuidebookList = userService.getUserGuidebookList(userId, authorId, request);
+    CursorPageResponseDto<GuidebookResponse> userGuidebookList = userService.getUserGuidebookList(
+        userId, authorId, request);
 
     return ResponseEntity.ok(userGuidebookList);
   }
@@ -102,7 +105,7 @@ public class UserController implements UserApi {
   public ResponseEntity<UserDto> updateProfile(
       @CurrentUserId UUID userId,
       @Valid @RequestBody UserUpdateRequest request
-  ){
+  ) {
     return ResponseEntity.ok(userService.update(userId, request));
   }
 

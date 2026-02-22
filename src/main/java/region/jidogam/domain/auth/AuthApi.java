@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.RequestBody;
+import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.domain.auth.dto.LoginRequest;
 import region.jidogam.domain.auth.dto.LoginResponse;
 import region.jidogam.domain.auth.dto.NewPasswordChangeRequest;
@@ -39,7 +40,7 @@ public interface AuthApi {
       @ApiResponse(responseCode = "204", description = "로그아웃 성공"),
       @ApiResponse(responseCode = "400", description = "refresh token이 없음")
   })
-  ResponseEntity<String> logout(
+  ResponseEntity<ResponseDto<String>> logout(
       @Parameter(hidden = true)
       @CookieValue(value = "refresh", required = false) String refreshToken,
       HttpServletResponse response
@@ -73,7 +74,7 @@ public interface AuthApi {
       @ApiResponse(responseCode = "400", description = "잘못된 요청 또는 유효하지 않은 인증코드"),
       @ApiResponse(responseCode = "410", description = "만료된 인증코드")
   })
-  ResponseEntity<String> changePassword(
+  ResponseEntity<ResponseDto<String>> changePassword(
       @RequestBody @Valid NewPasswordChangeRequest request
   );
 }

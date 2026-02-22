@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.common.util.CookieUtil;
 import region.jidogam.domain.auth.dto.LoginRequest;
 import region.jidogam.domain.auth.dto.LoginResponse;
@@ -33,24 +34,26 @@ public class AuthController implements AuthApi {
 
   @Override
   @PostMapping("/login")
-  public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request, HttpServletResponse response)
-    throws AuthException {
+  public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request,
+      HttpServletResponse response)
+      throws AuthException {
     LoginResult loginResult = authService.login(request);
 
     ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(loginResult.refreshToken());
     response.addHeader("Set-Cookie", refreshCookie.toString());
 
     return ResponseEntity.status(HttpStatus.CREATED)
-      .body(new LoginResponse(loginResult.accessToken(), loginResult.lastStampedAt()));
+        .body(new LoginResponse(loginResult.accessToken(), loginResult.lastStampedAt()));
   }
 
   @Override
   @PostMapping("/logout")
-  public ResponseEntity<String> logout(
-    @CookieValue(value = "refresh", required = false) String refreshToken,
-    HttpServletResponse response) {
+  public ResponseEntity<ResponseDto<String>> logout(
+      @CookieValue(value = "refresh", required = false) String refreshToken,
+      HttpServletResponse response) {
     if (refreshToken == null) {
-      return ResponseEntity.badRequest().body("refresh token이 없습니다.");
+      return ResponseEntity.badRequest()
+          .body(ResponseDto.ok("refresh token이 없습니다."));
     }
     authService.logout(refreshToken);
     ResponseCookie refreshCookie = cookieUtil.deleteRefreshTokenCookie();
@@ -61,8 +64,8 @@ public class AuthController implements AuthApi {
   @Override
   @PostMapping("/refresh")
   public ResponseEntity<TokenResponse> refresh(
-    @CookieValue(value = "refresh", required = false) String refreshToken,
-    HttpServletResponse response) throws AuthException {
+      @CookieValue(value = "refresh", required = false) String refreshToken,
+      HttpServletResponse response) throws AuthException {
 
     TokenPair tokenPair = refreshTokenService.refreshTokens(refreshToken);
 
@@ -70,7 +73,7 @@ public class AuthController implements AuthApi {
     response.addHeader("Set-Cookie", refreshCookie.toString());
 
     return ResponseEntity.status(HttpStatus.CREATED)
-      .body(new TokenResponse(tokenPair.accessToken()));
+        .body(new TokenResponse(tokenPair.accessToken()));
   }
 
   @Override
@@ -84,10 +87,10 @@ public class AuthController implements AuthApi {
 
   @Override
   @PostMapping("/password/new")
-  public ResponseEntity<String> changePassword(
+  public ResponseEntity<ResponseDto<String>> changePassword(
       @Valid @RequestBody NewPasswordChangeRequest request) {
 
     authService.changePassword(request);
-    return ResponseEntity.ok("비밀번호가 재설정 되었습니다. 새로운 비밀번호로 다시 로그인해주세요.");
+    return ResponseEntity.ok(ResponseDto.ok("비밀번호가 재설정 되었습니다. 새로운 비밀번호로 다시 로그인해주세요."));
   }
 }

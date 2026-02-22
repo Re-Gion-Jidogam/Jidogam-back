@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import region.jidogam.common.annotation.CurrentUserId;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
+import region.jidogam.common.dto.response.ResponseDto;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.stamp.dto.StampSearchRequest;
@@ -50,7 +51,7 @@ public interface UserApi {
       @ApiResponse(responseCode = "200", description = "사용 가능한 닉네임"),
       @ApiResponse(responseCode = "409", description = "이미 사용 중인 닉네임")
   })
-  ResponseEntity<String> checkNickname(
+  ResponseEntity<ResponseDto<String>> checkNickname(
       @Parameter(description = "확인할 닉네임", required = true)
       @RequestParam("nickname") String nickname
   );
@@ -60,7 +61,7 @@ public interface UserApi {
       @ApiResponse(responseCode = "200", description = "사용 가능한 이메일"),
       @ApiResponse(responseCode = "409", description = "이미 사용 중인 이메일")
   })
-  ResponseEntity<String> checkEmail(
+  ResponseEntity<ResponseDto<String>> checkEmail(
       @Parameter(description = "확인할 이메일", required = true)
       @RequestParam("email") String email
   );
