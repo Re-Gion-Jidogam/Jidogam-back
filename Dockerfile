@@ -30,6 +30,7 @@ EXPOSE 8080
 
 # 필요한 디렉토리 생성
 RUN mkdir -p /tmp/backup && chmod 777 /tmp/backup
+RUN mkdir -p /var/log/jidogam
 
 # JAR 복사
 COPY --from=build /app/build/libs/*.jar app.jar
