@@ -1,0 +1,26 @@
+name: 🔖 Docker Version Check
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Check version changed
+        run: |
+          MAIN_VERSION=$(git show origin/main:build.gradle | grep "^version" | sed "s/version = '\\(.*\\)'/\\1/")
+          CURRENT_VERSION=$(grep "^version" build.gradle | sed "s/version = '\\(.*\\)'/\\1/")
+
+          if [ "$MAIN_VERSION" == "$CURRENT_VERSION" ]; then
+            echo "❌ 버전이 변경되지 않았습니다. ($CURRENT_VERSION)"
+            echo "버전을 올리고 다시 시도해주세요."
+            exit 1
+          fi
+
+          echo "✅ 버전 변경 확인: $MAIN_VERSION → $CURRENT_VERSION"
