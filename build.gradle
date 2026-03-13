@@ -30,6 +30,7 @@ dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-mail'
   implementation 'org.springframework.retry:spring-retry'
   implementation 'org.springframework.boot:spring-boot-starter-aop'
+  implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
   //Security
   implementation 'org.springframework.boot:spring-boot-starter-security'
