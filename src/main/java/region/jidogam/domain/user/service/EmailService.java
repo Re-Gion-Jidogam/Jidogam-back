@@ -16,6 +16,7 @@ import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import region.jidogam.common.util.LogMaskUtil;
 import region.jidogam.domain.auth.entity.EmailSendFailureLog;
 import region.jidogam.domain.auth.repository.EmailSendFailureLogRepository;
 
@@ -41,16 +42,16 @@ public class EmailService {
       int currentRetry = retryCountHolder.get();
       retryCountHolder.set(currentRetry + 1);
 
-      log.info("이메일 인증 코드 전송 시도 ({}/3) - email: {}", retryCountHolder.get(), email);
+      log.debug("이메일 인증 코드 전송 시도 ({}/3) - email: {}", retryCountHolder.get(), email);
 
       MimeMessage message = createMimeMessage(email, authCode, expiration);
       mailSender.send(message);
 
-      log.info("이메일 인증 코드 전송 완료: {}", email);
+      log.debug("이메일 인증 코드 전송 완료: {}", email);
       retryCountHolder.remove();
 
     } catch (MessagingException | IOException e) {
-      log.error("이메일 발송 실패 ({}/3) - 수신자: {}", retryCountHolder.get(), email, e);
+      log.warn("이메일 발송 실패 ({}/3) - 수신자: {}", retryCountHolder.get(), email, e);
       throw new RuntimeException("이메일 발송에 실패했습니다.", e);
     }
   }
@@ -66,16 +67,16 @@ public class EmailService {
       int currentRetry = retryCountHolder.get();
       retryCountHolder.set(currentRetry + 1);
 
-      log.info("비밀번호 재설정 이메일 전송 시도 ({}/3) - email: {}", retryCountHolder.get(), email);
+      log.debug("비밀번호 재설정 이메일 전송 시도 ({}/3) - email: {}", retryCountHolder.get(), email);
 
       MimeMessage message = createPasswordResetMessage(email, resetUrl, expiration);
       mailSender.send(message);
 
-      log.info("비밀번호 재설정 이메일 전송 완료: {}", email);
+      log.debug("비밀번호 재설정 이메일 전송 완료: {}", email);
       retryCountHolder.remove();
 
     } catch (MessagingException | IOException e) {
-      log.error("비밀번호 재설정 이메일 발송 실패 ({}/3) - 수신자: {}", retryCountHolder.get(), email, e);
+      log.warn("비밀번호 재설정 이메일 발송 실패 ({}/3) - 수신자: {}", retryCountHolder.get(), email, e);
       throw new RuntimeException("비밀번호 재설정 이메일 발송에 실패했습니다.", e);
     }
   }
@@ -97,7 +98,7 @@ public class EmailService {
         .build();
 
     emailSendFailureLogRepository.save(failureLog);
-    log.info("이메일 전송 실패 로그 저장 완료: email = {}", email);
+    log.warn("이메일 전송 실패 로그 저장 완료: email = {}", LogMaskUtil.maskEmail(email));
   }
 
   private String maskAuthCode(String authCode) {

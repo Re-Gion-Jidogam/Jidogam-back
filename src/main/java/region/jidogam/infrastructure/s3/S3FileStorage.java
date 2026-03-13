@@ -84,7 +84,7 @@ public class S3FileStorage implements FileStorage {
             .key(key)
             .build());
 
-        log.info("S3 image deleted successfully: {} (attempt: {})", key, attempt);
+        log.debug("S3 image deleted successfully: {} (attempt: {})", key, attempt);
         return;
 
       } catch (Exception e) {

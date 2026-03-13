@@ -38,7 +38,7 @@ public class EmailAuthService {
     emailAuthCodeRepository.save(emailAuthCode);
 
     eventPublisher.publishEvent(EmailAuthCodeSendEvent.of(email, authCode, expiration));
-    log.info("이메일 인증 코드 이벤트 발행 완료: {}", email);
+    log.debug("이메일 인증 코드 이벤트 발행 완료: {}", email);
   }
 
   private EmailAuthCode createOrUpdateEmailAuthCode(String email, String authCode) {

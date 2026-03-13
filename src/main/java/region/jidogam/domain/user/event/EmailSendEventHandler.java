@@ -18,7 +18,7 @@ public class EmailSendEventHandler {
   @Async
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT) // 커밋 후 실행
   public void handleEmailAuthCodeSend(EmailAuthCodeSendEvent event) {
-    log.info("이메일 인증 코드 전송 시작: {}", event.email());
+    log.debug("이메일 인증 코드 전송 시작: {}", event.email());
       emailService.sendAuthCodeEmail(
           event.email(),
           event.authCode(),
@@ -29,7 +29,7 @@ public class EmailSendEventHandler {
   @Async
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT) // 커밋 후 실행
   public void handlePasswordResetEmailSend(PasswordResetEmailSendEvent event) {
-    log.info("비밀번호 재설정 이메일 전송 시작: {}", event.email());
+    log.debug("비밀번호 재설정 이메일 전송 시작: {}", event.email());
       emailService.sendPasswordResetEmail(
           event.email(),
           event.resetUrl(),

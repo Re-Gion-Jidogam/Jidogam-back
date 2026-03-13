@@ -18,7 +18,7 @@ public class GuidebookEventListener {
   @Async
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void handleImageDelete(ImageDeleteEvent event) {
-    log.info("이미지 삭제 이벤트 수신: imageKey={}, entityType={}, entityId={}",
+    log.debug("이미지 삭제 이벤트 수신: imageKey={}, entityType={}, entityId={}",
         event.imageKey(), event.entityType(), event.entityId());
 
     fileStorage.deleteWithRetry(event.imageKey(), event.entityType(), event.entityId());

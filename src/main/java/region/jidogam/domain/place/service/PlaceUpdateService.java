@@ -62,7 +62,7 @@ public class PlaceUpdateService {
     // 변경사항이 있으면 이력 저장
     if (!changes.isEmpty()) {
       recordChangeHistory(place.getId(), place.getKakaoId(), changes);
-      log.info("Place updated: placeId={}, changedFields={}", place.getId(), changes.keySet());
+      log.debug("Place updated: placeId={}, changedFields={}", place.getId(), changes.keySet());
     }
   }
 

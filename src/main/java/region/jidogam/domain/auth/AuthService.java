@@ -19,6 +19,7 @@ import region.jidogam.domain.auth.entity.PasswordResetToken;
 import region.jidogam.domain.auth.exception.AlreadyUsedPasswordResetTokenException;
 import region.jidogam.domain.auth.exception.InvalidPasswordResetTokenException;
 import region.jidogam.domain.auth.repository.PasswordResetTokenRepository;
+import region.jidogam.common.util.LogMaskUtil;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.event.PasswordResetEmailSendEvent;
 import region.jidogam.domain.user.exception.UserDeletedException;
@@ -51,18 +52,18 @@ public class AuthService {
 
   @Transactional
   public LoginResult login(LoginRequest request) throws AuthException {
-    log.info("사용자 로그인 시도: email = {}", request.email());
+    log.debug("사용자 로그인 시도: email = {}", request.email());
 
     User user = userRepository.findByEmail(request.email())
         .orElseThrow(() -> new AuthException("이메일 또는 비밀번호가 올바르지 않습니다"));
 
     if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-      log.warn("비밀번호 불일치: email = {}", request.email());
+      log.warn("비밀번호 불일치: email = {}", LogMaskUtil.maskEmail(request.email()));
       throw new AuthException("이메일 또는 비밀번호가 올바르지 않습니다");
     }
 
     if (user.isDeleted()) {
-      log.warn("탈퇴한 사용자 로그인 시도: email = {}", request.email());
+      log.warn("탈퇴한 사용자 로그인 시도: email = {}", LogMaskUtil.maskEmail(request.email()));
       throw UserDeletedException.withEmail(request.email());
     }
 
@@ -75,7 +76,7 @@ public class AuthService {
         .map(stamp -> stamp.getCreatedAt())
         .orElse(null);
 
-    log.info("사용자 로그인 완료: id = {}, email = {}", user.getId(), user.getEmail());
+    log.info("사용자 로그인 완료: id = {}, email = {}", user.getId(), LogMaskUtil.maskEmail(user.getEmail()));
 
     return LoginResult.builder()
         .accessToken(accessToken)
@@ -86,19 +87,19 @@ public class AuthService {
 
   @Transactional
   public void logout(String refreshToken) {
-    log.info("사용자 로그아웃 시도");
+    log.debug("사용자 로그아웃 시도");
     UUID userId = jwtProvider.extractUserId(refreshToken);
 
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
     refreshTokenService.delete(user);
-    log.info("사용자 로그아웃 완료: id = {}", userId);
+    log.debug("사용자 로그아웃 완료: id = {}", userId);
   }
 
   @Transactional
   public void sendEmailWithPasswordResetUrl(String email) {
-    log.info("비밀번호 재설정 이메일 발송 시도: email = {}", email);
+    log.debug("비밀번호 재설정 이메일 발송 시도: email = {}", email);
 
     // 사용자 존재 여부 확인
     User user = userRepository.findByEmail(email)
@@ -115,7 +116,7 @@ public class AuthService {
 
     if (existingToken.isPresent()) {
       existingToken.get().updateTokenWithExpiresAt(jti, passwordResetTokenExpiration);
-      log.info("기존 비밀번호 재설정 토큰 업데이트: email = {}, jti = {}", email, jti);
+      log.debug("기존 비밀번호 재설정 토큰 업데이트: email = {}, jti = {}", email, jti);
     } else {
       PasswordResetToken passwordResetToken = PasswordResetToken.builder()
           .email(email)
@@ -124,7 +125,7 @@ public class AuthService {
           .used(false)
           .build();
       passwordResetTokenRepository.save(passwordResetToken);
-      log.info("새로운 비밀번호 재설정 토큰 생성: email = {}, jti = {}", email, jti);
+      log.debug("새로운 비밀번호 재설정 토큰 생성: email = {}, jti = {}", email, jti);
     }
 
     // 비밀번호 재설정 URL 생성 (전체 JWT 토큰 사용)
@@ -135,12 +136,12 @@ public class AuthService {
         PasswordResetEmailSendEvent.of(email, resetUrl, passwordResetTokenExpiration)
     );
 
-    log.info("비밀번호 재설정 이메일 발송 이벤트 발행 완료: email = {}", email);
+    log.debug("비밀번호 재설정 이메일 발송 이벤트 발행 완료: email = {}", email);
   }
 
   @Transactional
   public void changePassword(NewPasswordChangeRequest request) {
-    log.info("비밀번호 재설정 시도");
+    log.debug("비밀번호 재설정 시도");
 
     String jwtToken = request.authCode();
 
@@ -176,6 +177,6 @@ public class AuthService {
 
     user.changePassword(passwordEncoder.encode((request.newPassword())));
 
-    log.info("비밀번호 재설정 완료: email = {}", passwordResetToken.getEmail());
+    log.info("비밀번호 재설정 완료: email = {}", LogMaskUtil.maskEmail(passwordResetToken.getEmail()));
   }
 }

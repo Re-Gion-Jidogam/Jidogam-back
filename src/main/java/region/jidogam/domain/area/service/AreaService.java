@@ -52,7 +52,7 @@ public class AreaService {
         .toList();
 
     areaRepository.saveAll(areas);
-    log.info("{} 지역 시군구 저장 완료 (total: {})", sido.addressName(), sigungus.size());
+    log.debug("{} 지역 시군구 저장 완료 (total: {})", sido.addressName(), sigungus.size());
   }
 
   // 캐시 필요

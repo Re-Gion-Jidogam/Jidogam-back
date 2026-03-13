@@ -38,7 +38,7 @@ public class AreaApiService {
    * 지역 API 에서 시도 데이터 가져오기
    */
   public List<Sido> getSido() {
-    log.info("시도 정보 요청");
+    log.debug("시도 정보 요청");
 
     return callApiWithRetry("시도 정보", () ->
       restClient.get()
@@ -55,7 +55,7 @@ public class AreaApiService {
    * 지역 API 에서 시군구 데이터 가져오기
    */
   public List<Sigungu> getSigungu(Sido sido) {
-    log.info("{} 지역 시군구 정보 요청", sido.addressName());
+    log.debug("{} 지역 시군구 정보 요청", sido.addressName());
 
     return callApiWithRetry(sido.addressName() + " 시군구 정보", () ->
       restClient.get()
@@ -127,13 +127,13 @@ public class AreaApiService {
       .body(new ParameterizedTypeReference<AreaApiResponse<AuthResponse>>() {
       });
 
-    log.error("{} : {}", response.errCd(), response.errMsg());
+    log.debug("토큰 발급 응답: errCd={}, errMsg={}", response.errCd(), response.errMsg());
 
     if (response == null || response.result() == null || response.result().accessToken() == null) {
       throw new RuntimeException("토큰 발급 실패: 응답 비정상");
     }
     this.accessToken = response.result().accessToken();
-    log.info("토큰 발급 성공: {}", accessToken);
+    log.debug("토큰 발급 성공");
   }
 
 }
