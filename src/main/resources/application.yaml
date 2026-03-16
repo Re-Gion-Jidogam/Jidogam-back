@@ -32,7 +32,7 @@ spring:
 
 jidogam:
   storage:
-    type: ${STORAGE_TYPE:local}
+    type: ${STORAGE_TYPE}
     local:
       root-path: ${STORAGE_LOCAL_ROOT_PATH:.jidogam/storage}
     s3:
@@ -41,6 +41,14 @@ jidogam:
       region: ${AWS_S3_REGION}
       bucket: ${AWS_S3_BUCKET}
       presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600}
+    oci:
+      namespace: ${OCI_NAMESPACE}
+      region: ${OCI_REGION}
+      access-key: ${OCI_ACCESS_KEY}
+      secret-key: ${OCI_SECRET_KEY}
+      bucket: ${OCI_BUCKET}
+      upload-expiration: ${OCI_UPLOAD_EXPIRATION:PT10M}
+      get-expiration: ${OCI_GET_EXPIRATION:PT1H}
   stamp:
     cooldown:
       time: ${STAMP_COOLDOWN_TIME:5m}
