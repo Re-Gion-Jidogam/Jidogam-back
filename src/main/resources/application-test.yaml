@@ -31,7 +31,7 @@ logging:
 
 jidogam:
   storage:
-    type: local
+    type: oci
     s3:
       access-key: test-dummy
       secret-key: test-dummy
