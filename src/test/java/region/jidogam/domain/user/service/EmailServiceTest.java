@@ -15,6 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.autoconfigure.mail.MailHealthContributorAutoConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -23,6 +25,7 @@ import region.jidogam.domain.auth.entity.EmailSendFailureLog;
 import region.jidogam.domain.auth.repository.EmailSendFailureLogRepository;
 
 @SpringBootTest
+@EnableAutoConfiguration(exclude = MailHealthContributorAutoConfiguration.class)
 class EmailServiceTest {
 
   @Autowired
