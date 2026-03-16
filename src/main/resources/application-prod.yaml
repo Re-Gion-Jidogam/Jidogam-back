@@ -3,10 +3,3 @@ spring:
     hibernate:
       ddl-auto: validate
 
-logging:
-  level:
-    root: WARN
-    region.jidogam: INFO
-    org.springframework: INFO
-    org.hibernate.sql: INFO
-    org.hibernate.type.descriptor.sql.BasicBinder: INFO

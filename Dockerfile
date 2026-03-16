@@ -26,6 +26,9 @@ WORKDIR /app
 # Spring Boot 기본 포트 노출
 EXPOSE 8080
 
+# 로그 디렉토리 생성
+RUN mkdir -p /var/log/jidogam
+
 # JAR 복사
 COPY --from=build /app/build/libs/*.jar app.jar
 
