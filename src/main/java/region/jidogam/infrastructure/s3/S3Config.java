@@ -14,13 +14,13 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 @ConditionalOnProperty(name = "jidogam.storage.type", havingValue = "s3")
 public class S3Config {
 
-  @Value("${cloud.aws.credentials.access-key}")
+  @Value("${jidogam.storage.s3.access-key}")
   private String accessKey;
 
-  @Value("${cloud.aws.credentials.secret-key}")
+  @Value("${jidogam.storage.s3.secret-key}")
   private String secretKey;
 
-  @Value("${cloud.aws.region.static}")
+  @Value("${jidogam.storage.s3.region}")
   private String region;
 
   @Bean

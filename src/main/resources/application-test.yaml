@@ -29,10 +29,22 @@ logging:
     org.hibernate.sql: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: INFO
 
-cloud:
-  aws:
+jidogam:
+  storage:
+    type: local
     s3:
-      bucket: dummy-name
-    credentials:
-      access-key: dummy-key-id
-      secret-key: dummy-access-key
+      access-key: test-dummy
+      secret-key: test-dummy
+      region: test-dummy
+      bucket: test-dummy
+    oci:
+      namespace: test-dummy
+      region: test-dummy
+      access-key: test-dummy
+      secret-key: test-dummy
+      bucket: test-dummy
+
+api:
+  area:
+    service-id: test-dummy
+    secret-key: test-dummy

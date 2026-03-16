@@ -34,13 +34,13 @@ public class S3FileStorage implements FileStorage {
   private final S3Client s3Client;
   private final RetryFailureLogRepository failureRepository;
 
-  @Value("${cloud.aws.s3.bucket}")
+  @Value("${jidogam.storage.s3.bucket}")
   private String bucket;
 
-  @Value("${cloud.aws.region.static}")
+  @Value("${jidogam.storage.s3.region}")
   private String region;
 
-  @Value("${cloud.aws.s3.upload-expiration}")
+  @Value("${jidogam.storage.s3.presigned-url-expiration}")
   private Duration uploadExpiration;
 
   @Override
