@@ -61,9 +61,9 @@ public class CursorCodecUtil {
    * @param encodedCursor 인코딩된 문자열 값
    */
   private Cursor decodeCursor(String encodedCursor) {
-    log.info("decodeCursor - cursor 값 Base64 디코딩 시작");
+    log.trace("decodeCursor - cursor 값 Base64 디코딩 시작");
     if (encodedCursor == null || encodedCursor.isBlank()) {
-      log.info("null 입력으로 null를 반환");
+      log.trace("null 입력으로 null를 반환");
       return null;
     }
     try {
@@ -75,7 +75,7 @@ public class CursorCodecUtil {
       return objectMapper.readValue(decodedJson, Cursor.class);
     } catch (Exception e) {
       // 에러 커스텀 - 잘못된 입력
-      log.info("Base64 문자열을 디코딩하여 객체로 변환 중 오류 발생", e);
+      log.warn("Base64 문자열을 디코딩하여 객체로 변환 중 오류 발생", e);
       throw InvalidCursorException.withMessage("잘못된 커서 값 입니다.");
     }
   }

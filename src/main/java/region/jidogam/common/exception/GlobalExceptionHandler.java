@@ -37,7 +37,7 @@ public class GlobalExceptionHandler {
     ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
     FieldError fieldError = ex.getFieldErrors().get(0);
 
-    log.info("Validation failed: {} - {}", fieldError.getField(),
+    log.warn("Validation failed: {} - {}", fieldError.getField(),
         fieldError.getRejectedValue());
 
     String errMsg = "'" + fieldError.getField() + "=" + fieldError.getRejectedValue() + "' "
@@ -51,7 +51,7 @@ public class GlobalExceptionHandler {
   protected ResponseEntity<ResponseDto<Void>> handleHttpRequestMethodNotSupport(
       HttpRequestMethodNotSupportedException ex) {
 
-    log.info("Request method not supported: {}", ex.getMethod());
+    log.warn("Request method not supported: {}", ex.getMethod());
 
     ErrorCode errorCode = CommonErrorCode.METHOD_NOT_ALLOWED;
 
@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
   protected ResponseEntity<ResponseDto<Void>> handleNoResourceFoundException(
       NoResourceFoundException ex) {
 
-    log.info("Request for unsupported URI: {}", ex.getResourcePath());
+    log.warn("Request for unsupported URI: {}", ex.getResourcePath());
 
     ErrorCode errorCode = CommonErrorCode.URI_NOT_FOUND;
 
@@ -75,7 +75,7 @@ public class GlobalExceptionHandler {
   protected ResponseEntity<ResponseDto<Void>> handleHttpMessageNotReadableException(
       HttpMessageNotReadableException ex) {
 
-    log.info("Request with invalid JSON format: {} | Error: {}",
+    log.warn("Request with invalid JSON format: {} | Error: {}",
         ex.getHttpInputMessage(), ex.getMostSpecificCause().getMessage());
 
     ErrorCode errorCode = CommonErrorCode.INVALID_JSON_FORMAT;
@@ -88,7 +88,7 @@ public class GlobalExceptionHandler {
       IllegalArgumentException ex
   ) {
 
-    log.info("Request with invalid input: {}", ex.getMessage());
+    log.warn("Request with invalid input: {}", ex.getMessage());
 
     ErrorCode errorCode = CommonErrorCode.INVALID_INPUT_VALUE;
 
@@ -141,7 +141,7 @@ public class GlobalExceptionHandler {
 
     ErrorCode errorCode = AuthErrorCode.UNAUTHORIZED;
 
-    log.info("Authentication failed : {} | Error: {})",
+    log.warn("Authentication failed : {} | Error: {})",
         errorCode, errorCode.getMessage());
 
     // refresh token 쿠키 무효화

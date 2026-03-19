@@ -48,6 +48,7 @@ import region.jidogam.domain.user.exception.UserPasswordLengthException;
 import region.jidogam.domain.user.exception.UserRestorePeriodExpiredException;
 import region.jidogam.domain.user.mapper.UserMapper;
 import region.jidogam.domain.user.repository.UserRepository;
+import region.jidogam.common.util.LogMaskUtil;
 import region.jidogam.domain.user.util.LevelCalculator;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.jwt.RefreshTokenService;
@@ -78,7 +79,7 @@ public class UserService {
 
   @Transactional
   public TokenPair create(UserCreateRequest request) {
-    log.info("유저 생성 시작: nickname = {}, email = {}", request.nickname(), request.email());
+    log.debug("유저 생성 시작: nickname = {}, email = {}", request.nickname(), request.email());
     if (userRepository.existsByNickname(request.nickname())) {
       throw UserNicknameConflictException.withNickname(request.nickname());
     }
@@ -104,7 +105,7 @@ public class UserService {
     String accessToken = jwtProvider.generateAccessToken(savedUser);
     String refreshToken = refreshTokenService.create(savedUser).getRefreshToken();
 
-    log.info("유저 생성 완료: nickname = {}, email = {}", request.nickname(), request.email());
+    log.info("유저 생성 완료: nickname = {}, email = {}", request.nickname(), LogMaskUtil.maskEmail(request.email()));
 
     return TokenPair.builder()
         .accessToken(accessToken)
@@ -397,7 +398,7 @@ public class UserService {
 
   @Transactional
   public void delete(UUID userId) {
-    log.info("사용자 탈퇴 시작: userId = {}", userId);
+    log.debug("사용자 탈퇴 시작: userId = {}", userId);
 
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
@@ -414,18 +415,18 @@ public class UserService {
 
   @Transactional
   public void restore(String email, String password) {
-    log.info("사용자 복구 시작: email = {}", email);
+    log.debug("사용자 복구 시작: email = {}", email);
 
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> UserNotFoundException.withEmail(email));
 
     if (!user.isDeleted()) {
-      log.warn("탈퇴하지 않은 사용자 복구 시도: email = {}", email);
+      log.warn("탈퇴하지 않은 사용자 복구 시도: email = {}", LogMaskUtil.maskEmail(email));
       return;
     }
 
     if (!passwordEncoder.matches(password, user.getPassword())) {
-      log.warn("비밀번호 불일치: email = {}", email);
+      log.warn("비밀번호 불일치: email = {}", LogMaskUtil.maskEmail(email));
       throw UserNotFoundException.withEmail(email);
     }
 
@@ -438,6 +439,6 @@ public class UserService {
 
     user.restore();
 
-    log.info("사용자 복구 완료: email = {}", email);
+    log.info("사용자 복구 완료: email = {}", LogMaskUtil.maskEmail(email));
   }
 }

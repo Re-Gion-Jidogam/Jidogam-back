@@ -42,7 +42,7 @@ public class StampService {
 
   @Transactional
   public void stampPlace(PlaceStampRequest request, UUID userId) {
-    log.info("장소 도장 찍기 시작: placeName = {}, userId = {}", request.place().placeName(), userId);
+    log.debug("장소 도장 찍기 시작: placeName = {}, userId = {}", request.place().placeName(), userId);
 
     // 1. 유저 확인
     User user = getUserOrThrow(userId);
@@ -75,13 +75,13 @@ public class StampService {
     // 7. 가이드북 완료 확인
     guidebookParticipationService.updateProgressByStamp(user, place);
 
-    log.info("장소 도장 찍기 완료: placeName = {}, email = {}",
+    log.debug("장소 도장 찍기 완료: placeName = {}, email = {}",
         request.place().placeName(), user.getEmail());
   }
 
   @Transactional
   public void cancelStamp(UUID userId, UUID placeId) {
-    log.info("장소 도장 취소 시작: userId = {}, placeId = {}", userId, placeId);
+    log.debug("장소 도장 취소 시작: userId = {}, placeId = {}", userId, placeId);
 
     User user = getUserOrThrow(userId);
 
@@ -101,7 +101,7 @@ public class StampService {
     // 5. 장소 방문 수 감소
     placeRepository.updateStampCount(placeId, -1);
 
-    log.info("장소 도장 취소 완료: userId = {}, placeId = {}", userId, placeId);
+    log.debug("장소 도장 취소 완료: userId = {}, placeId = {}", userId, placeId);
   }
 
   // TODO: 도장 수 조회 메서드 추가 및 캐시 적용 필요

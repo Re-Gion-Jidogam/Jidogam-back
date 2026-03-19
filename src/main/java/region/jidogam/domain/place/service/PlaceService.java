@@ -253,7 +253,7 @@ public class PlaceService {
   // 내부 서비스용
   @Transactional
   public Place createPlace(PlaceCreateRequest request) {
-    log.info("장소 생성 시작: placeName = {}", request.placeName());
+    log.debug("장소 생성 시작: placeName = {}", request.placeName());
 
     Area area = areaService.getAreaByAddress(request.addressName());
 

@@ -27,7 +27,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
   public void commence(HttpServletRequest request, HttpServletResponse response,
       AuthenticationException authException) throws IOException, ServletException {
 
-    log.info("인증 오류: {}, path = {}", authException.getMessage(), request.getRequestURI());
+    log.warn("인증 오류: {}, path = {}", authException.getMessage(), request.getRequestURI());
 
     AuthErrorCode errorCode = AuthErrorCode.UNAUTHORIZED;
 

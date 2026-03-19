@@ -24,7 +24,7 @@ public class RefreshTokenService {
 
   @Transactional
   public RefreshToken create(User user) {
-    log.info("사용자 RefreshToken 생성 시작: userId = {}", user.getId());
+    log.debug("사용자 RefreshToken 생성 시작: userId = {}", user.getId());
 
     deleteExistingToken(user.getId());
 
@@ -38,7 +38,7 @@ public class RefreshTokenService {
         .build();
 
     refreshTokenRepository.save(refreshToken);
-    log.info("사용자 RefreshToken 생성 및 저장 완료");
+    log.debug("사용자 RefreshToken 생성 및 저장 완료");
 
     return refreshToken;
   }
@@ -50,7 +50,7 @@ public class RefreshTokenService {
 
   @Transactional
   public TokenPair refreshTokens(String refreshTokenString) throws AuthException {
-    log.info("RefreshToken으로 AccessToken 재발급 시도");
+    log.debug("RefreshToken으로 AccessToken 재발급 시도");
 
     User user = validateAndGetUser(refreshTokenString);
 
@@ -58,7 +58,7 @@ public class RefreshTokenService {
     String accessToken = jwtProvider.generateAccessToken(user);
     RefreshToken newRefreshToken = create(user);
 
-    log.info("AccessToken 재발급 완료: userId = {}", user.getId());
+    log.debug("AccessToken 재발급 완료: userId = {}", user.getId());
 
     return TokenPair.builder()
         .accessToken(accessToken)
