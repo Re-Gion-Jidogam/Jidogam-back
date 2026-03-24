@@ -58,7 +58,8 @@ public class RetryFailureLog extends BaseUpdatableEntity {
   @RequiredArgsConstructor
   public enum FailureType {
     EMAIL_SEND("이메일 발송"),
-    S3_DELETE("S3 파일 삭제");
+    S3_DELETE("S3 파일 삭제"),
+    OCI_OBJECT_STORAGE_DELETE("OCI Object Storage 파일 삭제");
 
     private final String description;
   }

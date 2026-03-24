@@ -1,4 +1,4 @@
-package region.jidogam.infrastructure.s3;
+package region.jidogam.infrastructure.objectstorage;
 
 import java.net.URL;
 import java.time.Duration;
@@ -17,42 +17,57 @@ import region.jidogam.domain.File.dto.UploadUrlResponse;
 import region.jidogam.domain.File.storage.FileStorage;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "jidogam.storage.type", havingValue = "s3")
-public class S3FileStorage implements FileStorage {
+@ConditionalOnProperty(name = "jidogam.storage.type", havingValue = "oci")
+public class OciObjectStorageFileStorage implements FileStorage {
 
-  private static final String S3_IMAGE_FOLDER_NAME = "images";
+  private static final String IMAGE_FOLDER = "images";
   private static final int MAX_RETRIES = 3;
 
-  private final S3Presigner s3Presigner;
   private final S3Client s3Client;
+  private final S3Presigner s3Presigner;
   private final RetryFailureLogRepository failureRepository;
 
-  @Value("${jidogam.storage.s3.bucket}")
+  @Value("${jidogam.storage.oci.bucket}")
   private String bucket;
 
-  @Value("${jidogam.storage.s3.region}")
-  private String region;
-
-  @Value("${jidogam.storage.s3.presigned-url-expiration}")
+  @Value("${jidogam.storage.oci.upload-expiration}")
   private Duration uploadExpiration;
+
+  @Value("${jidogam.storage.oci.get-expiration}")
+  private Duration getExpiration;
 
   @Override
   public String generateGetUrl(String key) {
+
     if (key == null || key.isBlank()) {
       return null;
     }
-    return String.format("https://%s.s3.%s.amazonaws.com/%s", bucket, region, key);
+
+    GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+        .bucket(bucket)
+        .key(key)
+        .build();
+
+    GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+        .signatureDuration(getExpiration)
+        .getObjectRequest(getObjectRequest)
+        .build();
+
+    return s3Presigner.presignGetObject(presignRequest).url().toString();
   }
 
   @Override
   public UploadUrlResponse generateUploadUrl(String keyName) {
+    log.debug("Generating OCI Object Storage presigned upload URL: keyName={}", keyName);
 
     String key = generateKey(keyName);
 
@@ -86,14 +101,14 @@ public class S3FileStorage implements FileStorage {
             .key(key)
             .build());
 
-        log.debug("S3 image deleted successfully: {} (attempt: {})", key, attempt);
+        log.info("OCI object deleted successfully: {} (attempt: {})", key, attempt);
         return;
 
       } catch (Exception e) {
         retryCount++;
         lastException = e;
-        log.warn("S3 delete failed (attempt {}/{}): {}",
-            attempt, MAX_RETRIES, e.getMessage());
+        log.warn("OCI object delete failed (attempt {}/{}): {}", attempt, MAX_RETRIES,
+            e.getMessage());
 
         if (attempt < MAX_RETRIES) {
           try {
@@ -110,22 +125,19 @@ public class S3FileStorage implements FileStorage {
   }
 
   private String generateKey(String keyName) {
-    return String.format("%s/%s/%s",
-        S3_IMAGE_FOLDER_NAME,
-        UUID.randomUUID(),
-        keyName);
+    return String.format("%s/%s/%s", IMAGE_FOLDER, UUID.randomUUID(), keyName);
   }
 
-  private void saveFailureLog(String key, String entityType, UUID entityId, Exception exception,
-      int retryCount) {
+  private void saveFailureLog(String key, String entityType, UUID entityId,
+      Exception exception, int retryCount) {
     try {
       RetryFailureLog failureLog = RetryFailureLog.builder()
-          .failureType(FailureType.S3_DELETE)
+          .failureType(FailureType.OCI_OBJECT_STORAGE_DELETE)
           .targetIdentifier(key)
           .context(Map.of(
               "bucket", bucket,
               "related_entity_type", entityType,
-              "related_entity_id", entityId
+              "related_entity_id", entityId.toString()
           ))
           .errorMessage(exception.getMessage())
           .retryCount(retryCount)
@@ -134,10 +146,9 @@ public class S3FileStorage implements FileStorage {
           .build();
 
       failureRepository.save(failureLog);
-      log.error("All S3 delete attempts failed. Saved to failure log: {}", key);
+      log.error("All OCI delete attempts failed. Saved to failure log: {}", key);
     } catch (Exception e) {
-      log.error("Failed to save failure log for S3 deletion: {}", key, e);
+      log.error("Failed to save failure log for OCI deletion: {}", key, e);
     }
   }
-
 }
