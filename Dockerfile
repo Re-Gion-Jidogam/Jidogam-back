@@ -20,20 +20,17 @@ RUN ./gradlew clean build -x test --no-daemon
 
 # 실행 스테이지
 FROM eclipse-temurin:17-jre AS runtime
+
 WORKDIR /app
 
-# JVM 옵션
-ENV JVM_OPTS="-Xmx512m -Xms256m -XX:MaxMetaspaceSize=256m"
-
-# Spring Boot 기본 포트
+# Spring Boot 기본 포트 노출
 EXPOSE 8080
 
-# 필요한 디렉토리 생성
-RUN mkdir -p /tmp/backup && chmod 777 /tmp/backup
+# 로그 디렉토리 생성
 RUN mkdir -p /var/log/jidogam
 
 # JAR 복사
 COPY --from=build /app/build/libs/*.jar app.jar
 
 # 실행 (타임존 + JVM 옵션)
-ENTRYPOINT ["sh", "-c", "java $JVM_OPTS -Duser.timezone=Asia/Seoul -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JVM_OPTS -jar app.jar"]
