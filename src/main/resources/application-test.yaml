@@ -30,6 +30,10 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: INFO
 
 jidogam:
+  admin:
+    email: test-admin@jidogam.com
+    password: testpassword1234!
+    nickname: test-admin
   storage:
     type: oci
     s3:
