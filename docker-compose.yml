@@ -12,7 +12,7 @@ services:
     volumes:
       - ./logs:/var/log/jidogam
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080${MGMT_PATH:-/actuator}/health || exit 1" ]
       interval: 60s
       timeout: 10s
       retries: 3
