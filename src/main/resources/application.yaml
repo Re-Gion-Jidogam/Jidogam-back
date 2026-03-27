@@ -69,6 +69,10 @@ jidogam:
   guidebook:
     reward:
       completion-rate: 0.1
+  admin:
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}
+    nickname: ${ADMIN_NICKNAME}
 
 jwt:
   secret: ${JWT_SECRET}
