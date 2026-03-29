@@ -38,6 +38,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, PublicApiEndpoints.getPublicPostEndpoints())
             .permitAll()
             .requestMatchers(HttpMethod.GET, PublicApiEndpoints.getPublicGetEndpoints()).permitAll()
+            .requestMatchers(EndpointRequest.to("health")).permitAll()
             .requestMatchers(EndpointRequest.toAnyEndpoint()).hasRole("ADMIN")
             .anyRequest().hasRole("USER"))
 
