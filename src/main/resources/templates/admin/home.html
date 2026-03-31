@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>지도감 관리자</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">지도감 Admin</div>
+      <ul class="sidebar-nav">
+        <li><a href="/jidogam-admin/home" class="active">홈</a></li>
+      </ul>
+    </aside>
+
+    <div class="main-content">
+      <header class="top-bar">
+        <div class="admin-info">
+          <span class="admin-name" id="adminName">관리자</span>
+          <button type="button" class="btn-logout" id="logoutBtn">로그아웃</button>
+        </div>
+      </header>
+
+      <main class="content-area">
+        <h2>대시보드</h2>
+        <div class="dashboard-cards">
+          <div class="dashboard-card">
+            <div class="card-label">환영합니다</div>
+            <div class="card-value" style="font-size: 18px;">지도감 관리자 페이지입니다.</div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('adminToken');
+
+    if (!token) {
+      location.href = '/jidogam-admin/login';
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('adminToken');
+      location.href = '/jidogam-admin/login';
+    });
+  </script>
+</body>
+</html>

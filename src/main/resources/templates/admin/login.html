@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>지도감 관리자 로그인</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <h1>지도감</h1>
+      <p class="subtitle">관리자 로그인</p>
+
+      <div id="errorMessage" class="message-error" style="display:none;"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">이메일</label>
+          <input type="email" id="email" placeholder="admin@jidogam.com" required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label for="password">비밀번호</label>
+          <input type="password" id="password" placeholder="비밀번호를 입력하세요" required>
+        </div>
+
+        <button type="submit" class="btn-login">로그인</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // 이미 로그인 상태면 홈으로 이동
+    if (localStorage.getItem('adminToken')) {
+      location.href = '/jidogam-admin/home';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.style.display = 'none';
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          errorDiv.textContent = data.message || '이메일 또는 비밀번호가 올바르지 않습니다.';
+          errorDiv.style.display = 'block';
+          return;
+        }
+
+        const data = await res.json();
+        localStorage.setItem('adminToken', data.accessToken);
+        location.href = '/jidogam-admin/home';
+      } catch (err) {
+        errorDiv.textContent = '서버 연결에 실패했습니다.';
+        errorDiv.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
