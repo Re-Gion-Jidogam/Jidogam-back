@@ -1,6 +1,7 @@
 package region.jidogam.common.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -37,8 +38,9 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, PublicApiEndpoints.getPublicPostEndpoints())
             .permitAll()
             .requestMatchers(HttpMethod.GET, PublicApiEndpoints.getPublicGetEndpoints()).permitAll()
+            .requestMatchers(EndpointRequest.to("health")).permitAll()
+            .requestMatchers(EndpointRequest.toAnyEndpoint()).hasRole("ADMIN")
             .anyRequest().hasRole("USER"))
-        //.anyRequest().permitAll()) // 개발용
 
         .exceptionHandling(e -> e
             .accessDeniedHandler(accessDeniedHandler)

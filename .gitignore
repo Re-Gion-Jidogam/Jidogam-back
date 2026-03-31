@@ -208,6 +208,7 @@ $RECYCLE.BIN/
 
 # 환경변수
 *.env
+.env.local
 
 # build
 build/
