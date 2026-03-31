@@ -27,7 +27,7 @@ jobs:
       - name: Get version
         id: get_version
         run: |
-          VERSION=$(grep "^version" build.gradle | sed "s/version = '\\(.*\\)'/\\1/")
+          VERSION=$(grep "^version" build.gradle | cut -d"'" -f2)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Docker metadata
@@ -37,7 +37,7 @@ jobs:
           images: yerimyeon/jidogam
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=semver,value=${{ steps.get_version.outputs.version }}
+            type=semver,pattern={{version}},value=v${{ steps.get_version.outputs.version }}
 
       - name: Build and push
         uses: docker/build-push-action@v4
