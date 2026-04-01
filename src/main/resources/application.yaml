@@ -88,11 +88,12 @@ springdoc:
 management:
   endpoints:
     web:
+      base-path: ${MGMT_PATH:/actuator}
       exposure:
         include: health,info,metrics
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
 
 api:
   area:

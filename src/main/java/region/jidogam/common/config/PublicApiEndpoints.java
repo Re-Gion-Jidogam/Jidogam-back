@@ -26,9 +26,6 @@ public final class PublicApiEndpoints {
   public static final String SWAGGER_UI = "/swagger-ui/**";
   public static final String API_DOCS = "/api-docs/**";
 
-  // Actuator
-  public static final String ACTUATOR = "/actuator/**";
-
   // 비로그인 사용자 접근 가능 API
   public static final String GUIDEBOOK_LIST = "/api/guidebooks";
   public static final String POPULAR_GUIDEBOOK_LIST = "/api/guidebooks/popular";
@@ -68,7 +65,6 @@ public final class PublicApiEndpoints {
         POPULAR_GUIDEBOOK_LIST,
         NEARBY_PLACE_LIST,
         GUIDEBOOK_PLACE_LIST,
-        ACTUATOR,
         ADMIN_PAGES,
         STATIC_CSS,
         FAVICON
