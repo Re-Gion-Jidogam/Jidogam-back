@@ -37,7 +37,7 @@ jobs:
           images: yerimyeon/jidogam
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-            type=semver,pattern={{version}},value=v${{ steps.get_version.outputs.version }}
+            type=semver,pattern=v{{version}},value=${{ steps.get_version.outputs.version }}
 
       - name: Build and push
         uses: docker/build-push-action@v4
