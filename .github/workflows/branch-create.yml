@@ -1,0 +1,78 @@
+name: 🪴 Auto Create Issue Branch
+
+on:
+  issues:
+    types: [ assigned ]
+
+permissions:
+  contents: write
+  issues: read
+
+jobs:
+  create-issue-branch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract branch keyword
+        id: extract_keyword
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const body = context.payload.issue.body;
+            const keywordMatch = body.match(/🌳 Branch Keyword\s*\n([^\n]+)/);
+            const keyword = keywordMatch ? keywordMatch[1].trim() : null;
+            core.setOutput('keyword', keyword);
+
+      - name: Validate keyword
+        if: ${{ steps.extract_keyword.outputs.keyword == '' }}
+        run: |
+          echo "::error::브랜치 키워드가 입력되지 않았습니다."
+          exit 1
+
+      - name: Set branch metadata
+        id: set_metadata
+        run: |
+          labels=$(echo "${{ join(github.event.issue.labels.*.name, ',') }}" | tr '[:upper:]' '[:lower:]')
+          echo "Input labels: $labels"
+          if [[ "$labels" == *"🐞bug"* ]]; then
+            echo "prefix=bugfix" >> $GITHUB_OUTPUT
+          elif [[ "$labels" == *"✨feature"* ]]; then
+            echo "prefix=feature" >> $GITHUB_OUTPUT
+          elif [[ "$labels" == *"🍪chore"* ]]; then
+            echo "prefix=chore" >> $GITHUB_OUTPUT
+          elif [[ "$labels" == *"🚀deploy"* ]]; then
+            echo "prefix=deploy" >> $GITHUB_OUTPUT
+          elif [[ "$labels" == *"❗hotfix"* ]]; then
+            echo "prefix=hotfix" >> $GITHUB_OUTPUT
+          elif [[ "$labels" == *"🔧refactor"* ]]; then
+            echo "prefix=refactor" >> $GITHUB_OUTPUT
+          elif [[ "$labels" == *"🧩test"* ]]; then
+            echo "prefix=test" >> $GITHUB_OUTPUT
+          else
+            echo "prefix=misc" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Sanitize branch name
+        id: sanitize
+        run: |
+          CLEAN_KEYWORD=$(echo "${{ steps.extract_keyword.outputs.keyword }}" | 
+            iconv -f utf-8 -t ascii//TRANSLIT//IGNORE |
+            tr -cd '[:alnum:]-_' |
+            tr '[:upper:]' '[:lower:]' |
+            cut -c 1-30)
+          echo "Sanitized branch keyword: $CLEAN_KEYWORD"
+          echo "name=$CLEAN_KEYWORD" >> $GITHUB_OUTPUT
+
+      - name: Debug branch name
+        run: |
+          echo "Final branch: ${{ steps.set_metadata.outputs.prefix }}/${{ github.event.issue.number }}/${{ steps.sanitize.outputs.name }}"
+
+      - name: Create branch
+        uses: peterjgrainger/action-create-branch@v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          branch: ${{ steps.set_metadata.outputs.prefix }}/${{ github.event.issue.number }}/${{ steps.sanitize.outputs.name }}

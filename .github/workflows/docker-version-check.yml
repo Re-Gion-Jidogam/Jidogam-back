@@ -1,0 +1,51 @@
+name: 🔖 Docker Version Check
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      #
+      - name: Check version changed
+        run: |
+          
+          CURRENT_VERSION=$(grep "^version" build.gradle | sed -E "s/version[[:space:]]*=[[:space:]]*['\"](.*)['\"]/\1/")
+          RAW_MAIN_VERSION=$(git show origin/main:build.gradle 2>/dev/null | grep "^version" | sed -E "s/version[[:space:]]*=[[:space:]]*['\"](.*)['\"]/\1/" || echo "0.0.0")
+          
+          if [[ "$RAW_MAIN_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            MAIN_VERSION=$RAW_MAIN_VERSION
+          else
+            echo "⚠️ 경고: Main 브랜치의 버전 형식이 올바르지 않아 '0.0.0'으로 대체합니다. (원본: $RAW_MAIN_VERSION)"
+            MAIN_VERSION="0.0.0"
+          fi
+
+          echo "🔍 비교 시작: Main($MAIN_VERSION) vs Current($CURRENT_VERSION)"
+
+          if ! [[ "$CURRENT_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ 오류: 버전 형식이 올바르지 않습니다. ($CURRENT_VERSION)"
+            echo "도움말: '1.2.3'과 같은 숫자 형식을 사용해야 합니다."
+            exit 1
+          fi
+
+          if [ "$MAIN_VERSION" == "$CURRENT_VERSION" ]; then
+            echo "❌ 오류: 버전이 변경되지 않았습니다. ($CURRENT_VERSION)"
+            echo "도움말: build.gradle 파일의 버전을 올리고 다시 Push 해주세요."
+            exit 1
+          fi
+
+          HIGHER=$(printf "%s\n%s" "$MAIN_VERSION" "$CURRENT_VERSION" | sort -V | tail -n 1)
+          if [ "$HIGHER" != "$CURRENT_VERSION" ]; then
+            echo "❌ 오류: 버전 다운그레이드가 감지되었습니다!"
+            echo "상태: $MAIN_VERSION (Main) → $CURRENT_VERSION (PR)"
+            exit 1
+          fi
+
+          echo "✅ 버전 체크 완료: $MAIN_VERSION → $CURRENT_VERSION (정상)"

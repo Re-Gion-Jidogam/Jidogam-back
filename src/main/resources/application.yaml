@@ -18,10 +18,21 @@ spring:
       hibernate:
         highlight_sql: false
         format_sql: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 jidogam:
   storage:
-    type: ${STORAGE_TYPE:local}
+    type: ${STORAGE_TYPE}
     local:
       root-path: ${STORAGE_LOCAL_ROOT_PATH:.jidogam/storage}
     s3:
@@ -30,11 +41,43 @@ jidogam:
       region: ${AWS_S3_REGION}
       bucket: ${AWS_S3_BUCKET}
       presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600}
+    oci:
+      namespace: ${OCI_NAMESPACE}
+      region: ${OCI_REGION}
+      access-key: ${OCI_ACCESS_KEY}
+      secret-key: ${OCI_SECRET_KEY}
+      bucket: ${OCI_BUCKET}
+      upload-expiration: ${OCI_UPLOAD_EXPIRATION:PT10M}
+      get-expiration: ${OCI_GET_EXPIRATION:PT1H}
+  stamp:
+    cooldown:
+      time: ${STAMP_COOLDOWN_TIME:5m}
+  email:
+    auth:
+      expiration: ${EMAIL_AUTH_CODE_EXPIRATION:5m}
+    password-reset:
+      expiration: ${PASSWORD_RESET_TOKEN_EXPIRATION:15m}
+      frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  exp:
+    base-exp: 10
+    guidebook-completion-rate: 0.7
+  area:
+    weights:
+      normal: 1.0
+      interest: 1.5
+      underserved: 2.0
+  guidebook:
+    reward:
+      completion-rate: 0.1
+  admin:
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}
+    nickname: ${ADMIN_NICKNAME}
 
 jwt:
   secret: ${JWT_SECRET}
-  access-token-expiration: 900000   # 15?
-  refresh-token-expiration: 604800000   # 7?
+  access-token-expiration: 15m
+  refresh-token-expiration: 7d
 
 springdoc:
   api-docs:
@@ -42,10 +85,17 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-logging:
-  level:
-    root: WARN
-    region.jidogam: INFO
-    org.springframework: INFO
-    org.hibernate.sql: INFO
-    org.hibernate.type.descriptor.sql.BasicBinder: INFO
+management:
+  endpoints:
+    web:
+      base-path: ${MGMT_PATH:/actuator}
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
+api:
+  area:
+    service-id: ${AREA_SERVICE_ID}
+    secret-key: ${AREA_SECRET_KEY}

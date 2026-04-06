@@ -18,6 +18,9 @@ spring:
     init:
       mode: never
 
+jwt:
+  secret: 'this-is-jwt-secret-code-of-jidogam-porject-for-test'
+
 logging:
   level:
     root: WARN
@@ -25,3 +28,27 @@ logging:
     org.springframework: INFO
     org.hibernate.sql: INFO
     org.hibernate.type.descriptor.sql.BasicBinder: INFO
+
+jidogam:
+  admin:
+    email: test-admin@jidogam.com
+    password: testpassword1234!
+    nickname: test-admin
+  storage:
+    type: oci
+    s3:
+      access-key: test-dummy
+      secret-key: test-dummy
+      region: test-dummy
+      bucket: test-dummy
+    oci:
+      namespace: test-dummy
+      region: test-dummy
+      access-key: test-dummy
+      secret-key: test-dummy
+      bucket: test-dummy
+
+api:
+  area:
+    service-id: test-dummy
+    secret-key: test-dummy

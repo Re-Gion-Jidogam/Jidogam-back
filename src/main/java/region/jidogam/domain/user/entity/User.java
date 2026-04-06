@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,8 +42,38 @@ public class User extends BaseUpdatableEntity {
   @Builder.Default
   private Role role = Role.USER;
 
+  @Column(columnDefinition = "timestamp with time zone")
+  private LocalDateTime deletedAt;
+
   public enum Role {
     USER, ADMIN
   }
 
+  public void changeNickname(String nickname) {
+      this.nickname = nickname;
+  }
+
+  public void changePassword(String password) {
+      this.password = password;
+  }
+
+  public void changeProfileImage(String profileImageUrl) {
+    this.profileImageUrl = profileImageUrl;   // null 허용
+  }
+
+  public void updateExp(long exp) {
+    this.exp = exp;
+  }
+
+  public void softDelete() {
+    this.deletedAt = LocalDateTime.now();
+  }
+
+  public void restore() {
+    this.deletedAt = null;
+  }
+
+  public boolean isDeleted() {
+    return this.deletedAt != null;
+  }
 }

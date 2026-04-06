@@ -1,0 +1,189 @@
+package region.jidogam.common.util;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import region.jidogam.common.dto.Cursor;
+import region.jidogam.common.exception.InvalidCursorException;
+import region.jidogam.domain.guidebook.dto.GuidebookCursor;
+import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookSortBy;
+import region.jidogam.domain.place.dto.PlaceCursor;
+import region.jidogam.domain.place.dto.PlaceResponse;
+import region.jidogam.domain.place.dto.PlaceSortBy;
+import region.jidogam.domain.stamp.dto.StampCursor;
+import region.jidogam.domain.stamp.dto.StampSortBy;
+import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
+import region.jidogam.domain.user.dto.GuidebookParticipationCursor;
+import region.jidogam.domain.user.dto.GuidebookParticipationSortBy;
+import region.jidogam.domain.user.dto.UserGuideBookSortBy;
+import region.jidogam.domain.user.dto.UserGuidebookCursor;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class CursorCodecUtil {
+
+  public final ObjectMapper objectMapper;
+
+  public GuidebookCursor decodeGuidebookCursor(String encodedCursor, GuidebookSortBy sortBy) {
+    Cursor cursor = decodeCursor(encodedCursor);
+    return GuidebookCursor.from(cursor, sortBy);
+  }
+
+  public UserGuidebookCursor decodeUserGuidebookCursor(String encodedCursor) {
+    Cursor cursor = decodeCursor(encodedCursor);
+    return UserGuidebookCursor.from(cursor);
+  }
+
+  public PlaceCursor decodeplaceCursor(String encodedCursor, PlaceSortBy sortBy) {
+    Cursor cursor = decodeCursor(encodedCursor);
+    return PlaceCursor.from(cursor, sortBy);
+  }
+
+  public StampCursor decodeStampCursor(String encodedCursor) {
+    Cursor cursor = decodeCursor(encodedCursor);
+    return StampCursor.from(cursor);
+  }
+
+  public GuidebookParticipationCursor decodeParticipantGuidebookCursor(String encodedCursor) {
+    Cursor cursor = decodeCursor(encodedCursor);
+    return GuidebookParticipationCursor.from(cursor);
+  }
+
+  /**
+   * 인코딩된 cursor 값을 디코딩하는 메서드
+   *
+   * @param encodedCursor 인코딩된 문자열 값
+   */
+  private Cursor decodeCursor(String encodedCursor) {
+    log.trace("decodeCursor - cursor 값 Base64 디코딩 시작");
+    if (encodedCursor == null || encodedCursor.isBlank()) {
+      log.trace("null 입력으로 null를 반환");
+      return null;
+    }
+    try {
+      // 1. Base64 문자열 → Byte 변환
+      byte[] decodedBytes = Base64.getUrlDecoder().decode(encodedCursor);
+      // 2. Byte → JSON 변환
+      String decodedJson = new String(decodedBytes, StandardCharsets.UTF_8);
+      // 4. JSON → Cursor 객체 변환및 반환
+      return objectMapper.readValue(decodedJson, Cursor.class);
+    } catch (Exception e) {
+      // 에러 커스텀 - 잘못된 입력
+      log.warn("Base64 문자열을 디코딩하여 객체로 변환 중 오류 발생", e);
+      throw InvalidCursorException.withMessage("잘못된 커서 값 입니다.");
+    }
+  }
+
+  /**
+   * 가이드북 커서 페이지네이션의 마지막 데이터를 인코딩하여 반환하는 메서드
+   *
+   * @param lastItem GuidebookResponse 타입의 아이템
+   * @param sortBy   정렬 기준
+   */
+  public String encodeNextCursor(GuidebookResponse lastItem, GuidebookSortBy sortBy) {
+    UUID lastId = lastItem.gid();
+
+    String lastValue;
+    switch (sortBy) {
+      case CREATED_AT -> lastValue = lastItem.createdAt().toString();
+      case PARTICIPANT_COUNT -> lastValue = Integer.toString(lastItem.participantCount());
+      default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
+    }
+    return encodeNextCursor(new Cursor(lastValue, lastId.toString()));
+  }
+
+  /**
+   * 특정 사용자 소유의 가이드북 커서 페이지네이션의 마지막 데이터를 인코딩하여 반환하는 메서드
+   *
+   * @param lastItem GuidebookResponse 타입의 아이템
+   * @param sortBy   정렬 기준
+   */
+  public String encodeNextCursor(GuidebookResponse lastItem, UserGuideBookSortBy sortBy) {
+    UUID lastId = lastItem.gid();
+
+    String lastValue;
+    switch (sortBy) {
+      case CREATED_AT -> lastValue = lastItem.createdAt().toString();
+      case UPDATED_AT -> lastValue = lastItem.updatedAt().toString();
+      default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
+    }
+    return encodeNextCursor(new Cursor(lastValue, lastId.toString()));
+  }
+
+  /**
+   * 장소 커서 페이지네이션의 마지막 데이터를 인코딩하여 반환하는 메서드
+   *
+   * @param lastItem PlaceResponse 타입의 아이템
+   * @param sortBy   정렬 기준
+   */
+  public String encodeNextCursor(PlaceResponse lastItem, PlaceSortBy sortBy, Double userLat,
+      Double userLon) {
+    UUID lastId = lastItem.pid();
+
+    String lastValue;
+    switch (sortBy) {
+      case STAMP_COUNT -> lastValue = Integer.toString(lastItem.stampCount());
+      case DISTANCE -> lastValue = lastItem.distanceInKm() + "," + userLat + "," + userLon;
+      default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
+    }
+    return encodeNextCursor(new Cursor(lastValue, lastId.toString()));
+  }
+
+  /**
+   * 스탬프 커서 페이지네이션의 마지막 데이터를 인코딩하여 반환하는 메서드
+   *
+   * @param lastItem PlaceResponse 타입의 아이템
+   * @param sortBy   정렬 기준
+   */
+  public String encodeNextCursor(PlaceResponse lastItem, StampSortBy sortBy) {
+    UUID lastId = lastItem.pid();
+
+    String lastValue;
+    switch (sortBy) {
+      case CREATED_AT -> lastValue = lastItem.visitedDate().toString();
+      default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
+    }
+    return encodeNextCursor(new Cursor(lastValue, lastId.toString()));
+  }
+
+  /**
+   * 참여 중인 가이드북 커서 페이지네이션의 마지막 데이터를 인코딩하여 반환하는 메서드
+   *
+   * @param lastItem GuidebookParticipationResponse 타입의 아이템
+   * @param sortBy   정렬 기준
+   */
+  public String encodeNextCursor(GuidebookParticipationResponse lastItem,
+      GuidebookParticipationSortBy sortBy) {
+    UUID lastId = lastItem.guidebookResponse().gid();
+
+    String lastValue;
+    switch (sortBy) {
+      case LAST_ACTIVITY_AT -> lastValue = lastItem.lastActivityAt().toString();
+      default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
+    }
+    return encodeNextCursor(new Cursor(lastValue, lastId.toString()));
+  }
+
+  /**
+   * 내부에서 인코딩 로직을 담당하는 메서드
+   *
+   * @param cursor dto의 id와 value로 이루어진 커서 객체
+   */
+  private String encodeNextCursor(Cursor cursor) {
+    try {
+      // 1. 객체 → JSON 변환
+      String cursorToJson = objectMapper.writeValueAsString(cursor);
+      // 2. JSON → Base64 문자열 변환 및 반환
+      return Base64.getUrlEncoder().encodeToString(cursorToJson.getBytes(StandardCharsets.UTF_8));
+    } catch (Exception e) {
+      log.warn("객체를 Base64로 인코딩 중 오류 발생", e);
+      throw new RuntimeException(e);
+    }
+  }
+}

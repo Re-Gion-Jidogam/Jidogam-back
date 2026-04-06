@@ -1,6 +1,8 @@
 package region.jidogam.domain.stamp.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -24,12 +26,16 @@ import region.jidogam.domain.user.entity.User;
 @Builder
 public class Stamp extends BaseEntity {
 
-  @ManyToOne
-  @JoinColumn(name ="user_id", nullable = false)
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
   private User user;
 
-  @ManyToOne
-  @JoinColumn(name ="place_id", nullable = false)
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "place_id", nullable = false)
   private Place place;
+
+  @Builder.Default
+  @Column(nullable = false)
+  private Integer earnedExp = 0;
 
 }
