@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import region.jidogam.common.annotation.CurrentUserId;
 import region.jidogam.domain.admin.dto.AdminUserResponse;
 import region.jidogam.domain.admin.dto.AdminUserSearchRequest;
 import region.jidogam.domain.admin.dto.AdminUserUpdateRequest;
@@ -61,19 +62,23 @@ public class AdminUserController {
   @PostMapping("/{userId}/edit")
   public String userUpdate(
       @PathVariable UUID userId,
+      @CurrentUserId UUID currentAdminId,
       @RequestParam(value = "nickname", required = false) String nickname,
       @RequestParam(value = "role", required = false) User.Role role,
       RedirectAttributes redirectAttributes) {
 
     AdminUserUpdateRequest request = new AdminUserUpdateRequest(nickname, role);
-    adminUserService.updateUser(userId, request);
+    adminUserService.updateUser(userId, request, currentAdminId);
     redirectAttributes.addFlashAttribute("successMessage", "사용자 정보가 수정되었습니다.");
     return "redirect:/admin/users/" + userId;
   }
 
   @PostMapping("/{userId}/delete")
-  public String userDelete(@PathVariable UUID userId, RedirectAttributes redirectAttributes) {
-    adminUserService.deleteUser(userId);
+  public String userDelete(
+      @PathVariable UUID userId,
+      @CurrentUserId UUID currentAdminId,
+      RedirectAttributes redirectAttributes) {
+    adminUserService.deleteUser(userId, currentAdminId);
     redirectAttributes.addFlashAttribute("successMessage", "사용자가 삭제되었습니다.");
     return "redirect:/admin/users/" + userId;
   }

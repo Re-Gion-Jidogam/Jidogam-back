@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -24,12 +25,35 @@ public class SecurityConfig {
   private final JidogamUserDetailsService jidogamUserDetailsService;
 
   @Bean
-  public SecurityFilterChain securityFilterChain(
+  @Order(1)
+  public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
+    http
+        .securityMatcher("/admin/**", "/css/**")
+
+        .csrf(AbstractHttpConfigurer::disable)
+
+        .sessionManagement(session -> session
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/admin/login", "/admin/api/**", "/css/**").permitAll()
+            .anyRequest().hasRole("ADMIN"))
+
+        .addFilterBefore(
+            new JwtAuthenticationFilter(jwtProvider, jidogamUserDetailsService),
+            UsernamePasswordAuthenticationFilter.class);
+
+    return http.build();
+  }
+
+  @Bean
+  @Order(2)
+  public SecurityFilterChain apiFilterChain(
       HttpSecurity http,
       AccessDeniedHandler accessDeniedHandler,
       AuthenticationEntryPoint authenticationEntryPoint) throws Exception {
     http
-        .csrf(AbstractHttpConfigurer::disable) // REST API
+        .csrf(AbstractHttpConfigurer::disable)
 
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

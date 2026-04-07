@@ -13,6 +13,7 @@ import region.jidogam.domain.admin.dto.AdminUserUpdateRequest;
 import region.jidogam.domain.admin.repository.AdminUserRepository;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserNicknameConflictException;
+import region.jidogam.domain.user.exception.UserNicknameLengthException;
 import region.jidogam.domain.user.exception.UserNotFoundException;
 import region.jidogam.domain.user.repository.UserRepository;
 
@@ -42,26 +43,33 @@ public class AdminUserService {
   }
 
   @Transactional
-  public AdminUserResponse updateUser(UUID userId, AdminUserUpdateRequest request) {
+  public AdminUserResponse updateUser(UUID userId, AdminUserUpdateRequest request,
+      UUID currentAdminId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
     if (request.nickname() != null && !request.nickname().equals(user.getNickname())) {
-      if (userRepository.existsByNickname(request.nickname())) {
-        throw UserNicknameConflictException.withNickname(request.nickname());
-      }
+      validateNickname(request.nickname());
       user.changeNickname(request.nickname());
     }
 
     if (request.role() != null && request.role() != user.getRole()) {
+      if (userId.equals(currentAdminId)) {
+        throw new IllegalStateException("자기 자신의 역할은 변경할 수 없습니다.");
+      }
       user.changeRole(request.role());
     }
 
+    log.info("관리자에 의해 사용자 수정: userId = {}, adminId = {}", userId, currentAdminId);
     return AdminUserResponse.from(user);
   }
 
   @Transactional
-  public void deleteUser(UUID userId) {
+  public void deleteUser(UUID userId, UUID currentAdminId) {
+    if (userId.equals(currentAdminId)) {
+      throw new IllegalStateException("자기 자신을 삭제할 수 없습니다.");
+    }
+
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
@@ -71,7 +79,7 @@ public class AdminUserService {
     }
 
     user.softDelete();
-    log.info("관리자에 의해 사용자 삭제: userId = {}", userId);
+    log.info("관리자에 의해 사용자 삭제: userId = {}, adminId = {}", userId, currentAdminId);
   }
 
   @Transactional
@@ -86,5 +94,14 @@ public class AdminUserService {
 
     user.restore();
     log.info("관리자에 의해 사용자 복구: userId = {}", userId);
+  }
+
+  private void validateNickname(String nickname) {
+    if (nickname == null || nickname.isBlank() || nickname.length() < 2 || nickname.length() > 20) {
+      throw UserNicknameLengthException.withNickname(nickname);
+    }
+    if (userRepository.existsByNickname(nickname)) {
+      throw UserNicknameConflictException.withNickname(nickname);
+    }
   }
 }
