@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 
 <!-- Sidebar Fragment -->
 <aside th:fragment="sidebar" class="sidebar">
@@ -14,11 +13,14 @@
 <!-- Top Bar Fragment -->
 <header th:fragment="topbar" class="top-bar">
   <div class="admin-info">
-    <span class="admin-name" sec:authentication="name">관리자</span>
-    <form th:action="@{/admin/logout}" method="post" style="display:inline;">
-      <button type="submit" class="btn-logout">로그아웃</button>
-    </form>
+    <button type="button" class="btn-logout" onclick="adminLogout()">로그아웃</button>
   </div>
+  <script>
+    async function adminLogout() {
+      await fetch('/admin/api/logout', { method: 'POST' });
+      location.href = '/admin/login';
+    }
+  </script>
 </header>
 
 </html>
