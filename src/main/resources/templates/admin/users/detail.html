@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>사용자 상세 - 지도감 관리자</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside th:replace="~{admin/fragments/layout :: sidebar}" th:with="menu='users'"></aside>
+
+    <div class="main-content">
+      <header th:replace="~{admin/fragments/layout :: topbar}"></header>
+
+      <main class="content-area">
+        <div class="page-header">
+          <h2>사용자 상세</h2>
+          <a th:href="@{/admin/users}" class="btn-back">&larr; 목록으로</a>
+        </div>
+
+        <!-- Success Message -->
+        <div th:if="${successMessage}" class="message-info" th:text="${successMessage}"></div>
+
+        <div class="detail-card">
+          <div class="detail-row">
+            <div class="detail-label">ID</div>
+            <div class="detail-value" th:text="${user.id()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">이메일</div>
+            <div class="detail-value" th:text="${user.email()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">닉네임</div>
+            <div class="detail-value" th:text="${user.nickname()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">프로필 이미지</div>
+            <div class="detail-value">
+              <img th:if="${user.profileImageUrl()}" th:src="${user.profileImageUrl()}"
+                   alt="프로필" class="profile-img">
+              <span th:if="${user.profileImageUrl() == null}">없음</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">역할</div>
+            <div class="detail-value">
+              <span class="badge" th:classappend="${user.role().name() == 'ADMIN'} ? 'badge-admin' : 'badge-user'"
+                    th:text="${user.role()}"></span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">경험치</div>
+            <div class="detail-value" th:text="${user.exp()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">상태</div>
+            <div class="detail-value">
+              <span th:if="${!user.deleted()}" class="status-active">활성</span>
+              <span th:if="${user.deleted()}" class="status-deleted">삭제됨</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">가입일</div>
+            <div class="detail-value" th:text="${#temporals.format(user.createdAt(), 'yyyy-MM-dd HH:mm:ss')}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">수정일</div>
+            <div class="detail-value" th:text="${user.updatedAt() != null ? #temporals.format(user.updatedAt(), 'yyyy-MM-dd HH:mm:ss') : '-'}"></div>
+          </div>
+          <div class="detail-row" th:if="${user.deleted()}">
+            <div class="detail-label">삭제일</div>
+            <div class="detail-value" th:text="${#temporals.format(user.deletedAt(), 'yyyy-MM-dd HH:mm:ss')}"></div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <a th:href="@{/admin/users/{id}/edit(id=${user.id()})}" class="btn-edit">수정</a>
+          <form th:if="${!user.deleted()}" th:action="@{/admin/users/{id}/delete(id=${user.id()})}"
+                method="post" style="display:inline;"
+                onsubmit="return confirm('정말 이 사용자를 삭제하시겠습니까?');">
+            <button type="submit" class="btn-delete">삭제</button>
+          </form>
+          <form th:if="${user.deleted()}" th:action="@{/admin/users/{id}/restore(id=${user.id()})}"
+                method="post" style="display:inline;"
+                onsubmit="return confirm('이 사용자를 복구하시겠습니까?');">
+            <button type="submit" class="btn-restore">복구</button>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

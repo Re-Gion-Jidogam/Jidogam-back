@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,20 +9,10 @@
 </head>
 <body>
   <div class="admin-layout">
-    <aside class="sidebar">
-      <div class="sidebar-logo">지도감 Admin</div>
-      <ul class="sidebar-nav">
-        <li><a href="/jidogam-admin/home" class="active">홈</a></li>
-      </ul>
-    </aside>
+    <aside th:replace="~{admin/fragments/layout :: sidebar}" th:with="menu='home'"></aside>
 
     <div class="main-content">
-      <header class="top-bar">
-        <div class="admin-info">
-          <span class="admin-name" id="adminName">관리자</span>
-          <button type="button" class="btn-logout" id="logoutBtn">로그아웃</button>
-        </div>
-      </header>
+      <header th:replace="~{admin/fragments/layout :: topbar}"></header>
 
       <main class="content-area">
         <h2>대시보드</h2>
@@ -34,18 +25,5 @@
       </main>
     </div>
   </div>
-
-  <script>
-    const token = localStorage.getItem('adminToken');
-
-    if (!token) {
-      location.href = '/jidogam-admin/login';
-    }
-
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('adminToken');
-      location.href = '/jidogam-admin/login';
-    });
-  </script>
 </body>
 </html>
