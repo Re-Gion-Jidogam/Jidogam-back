@@ -32,6 +32,11 @@ public final class PublicApiEndpoints {
   public static final String GUIDEBOOK_PLACE_LIST = "/api/guidebooks/*/places";
   public static final String NEARBY_PLACE_LIST = "/api/places/nearby";
 
+  // 관리자 페이지 (정적 리소스)
+  public static final String ADMIN_PAGES = "/jidogam-admin/**";
+  public static final String STATIC_CSS = "/css/**";
+  public static final String FAVICON = "/favicon.ico";
+
   /**
    * 모든 공개 POST API 엔드포인트를 반환
    */
@@ -59,7 +64,10 @@ public final class PublicApiEndpoints {
         GUIDEBOOK_LIST,
         POPULAR_GUIDEBOOK_LIST,
         NEARBY_PLACE_LIST,
-        GUIDEBOOK_PLACE_LIST
+        GUIDEBOOK_PLACE_LIST,
+        ADMIN_PAGES,
+        STATIC_CSS,
+        FAVICON
     };
   }
 }
