@@ -53,13 +53,12 @@ class AdminUserServiceTest {
   }
 
   @Nested
-  @DisplayName("getUsers 메서드")
+  @DisplayName("getUsers")
   class GetUsers {
 
     @Test
     @DisplayName("검색 조건으로 사용자 목록을 조회한다")
     void returnsPagedUsers() {
-      // given
       AdminUserSearchRequest request = AdminUserSearchRequest.of(null, null, null, 0, 20);
       User user = createUser("test@test.com", "tester", Role.USER);
       Page<User> userPage = new PageImpl<>(List.of(user));
@@ -67,10 +66,8 @@ class AdminUserServiceTest {
       when(adminUserRepository.searchUsers(any(), any(), any(), any(Pageable.class)))
           .thenReturn(userPage);
 
-      // when
       Page<AdminUserResponse> result = adminUserService.getUsers(request);
 
-      // then
       assertThat(result.getContent()).hasSize(1);
       assertThat(result.getContent().get(0).email()).isEqualTo("test@test.com");
     }
@@ -78,38 +75,32 @@ class AdminUserServiceTest {
     @Test
     @DisplayName("키워드로 필터링하여 조회한다")
     void filtersWithKeyword() {
-      // given
       AdminUserSearchRequest request = AdminUserSearchRequest.of("test", null, null, 0, 20);
       Page<User> emptyPage = new PageImpl<>(List.of());
 
       when(adminUserRepository.searchUsers(eq("test"), any(), any(), any(Pageable.class)))
           .thenReturn(emptyPage);
 
-      // when
       Page<AdminUserResponse> result = adminUserService.getUsers(request);
 
-      // then
       assertThat(result.getContent()).isEmpty();
       verify(adminUserRepository).searchUsers(eq("test"), any(), any(), any(Pageable.class));
     }
   }
 
   @Nested
-  @DisplayName("getUser 메서드")
+  @DisplayName("getUser")
   class GetUser {
 
     @Test
     @DisplayName("사용자 ID로 상세 정보를 조회한다")
     void returnsUserDetail() {
-      // given
       UUID userId = UUID.randomUUID();
       User user = createUser("test@test.com", "tester", Role.USER);
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-      // when
       AdminUserResponse result = adminUserService.getUser(userId);
 
-      // then
       assertThat(result.email()).isEqualTo("test@test.com");
       assertThat(result.nickname()).isEqualTo("tester");
     }
@@ -117,121 +108,132 @@ class AdminUserServiceTest {
     @Test
     @DisplayName("존재하지 않는 사용자 조회 시 예외가 발생한다")
     void throwsWhenUserNotFound() {
-      // given
       UUID userId = UUID.randomUUID();
       when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-      // when & then
       assertThatThrownBy(() -> adminUserService.getUser(userId))
           .isInstanceOf(UserNotFoundException.class);
     }
   }
 
   @Nested
-  @DisplayName("updateUser 메서드")
+  @DisplayName("updateUser")
   class UpdateUser {
 
     @Test
     @DisplayName("닉네임을 변경한다")
     void updatesNickname() {
-      // given
       UUID userId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       User user = createUser("test@test.com", "oldNick", Role.USER);
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
       when(userRepository.existsByNickname("newNick")).thenReturn(false);
 
       AdminUserUpdateRequest request = new AdminUserUpdateRequest("newNick", null);
 
-      // when
-      AdminUserResponse result = adminUserService.updateUser(userId, request);
+      AdminUserResponse result = adminUserService.updateUser(userId, request, adminId);
 
-      // then
       assertThat(result.nickname()).isEqualTo("newNick");
     }
 
     @Test
     @DisplayName("역할을 변경한다")
     void updatesRole() {
-      // given
       UUID userId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       User user = createUser("test@test.com", "tester", Role.USER);
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
       AdminUserUpdateRequest request = new AdminUserUpdateRequest(null, Role.ADMIN);
 
-      // when
-      AdminUserResponse result = adminUserService.updateUser(userId, request);
+      AdminUserResponse result = adminUserService.updateUser(userId, request, adminId);
 
-      // then
       assertThat(result.role()).isEqualTo(Role.ADMIN);
     }
 
     @Test
     @DisplayName("중복 닉네임으로 변경 시 예외가 발생한다")
     void throwsOnDuplicateNickname() {
-      // given
       UUID userId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       User user = createUser("test@test.com", "oldNick", Role.USER);
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
       when(userRepository.existsByNickname("dupNick")).thenReturn(true);
 
       AdminUserUpdateRequest request = new AdminUserUpdateRequest("dupNick", null);
 
-      // when & then
-      assertThatThrownBy(() -> adminUserService.updateUser(userId, request))
+      assertThatThrownBy(() -> adminUserService.updateUser(userId, request, adminId))
           .isInstanceOf(UserNicknameConflictException.class);
+    }
+
+    @Test
+    @DisplayName("자기 자신의 역할은 변경할 수 없다")
+    void throwsOnSelfRoleChange() {
+      UUID userId = UUID.randomUUID();
+      User user = createUser("admin@test.com", "admin", Role.ADMIN);
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      AdminUserUpdateRequest request = new AdminUserUpdateRequest(null, Role.USER);
+
+      assertThatThrownBy(() -> adminUserService.updateUser(userId, request, userId))
+          .isInstanceOf(IllegalStateException.class)
+          .hasMessageContaining("자기 자신");
     }
   }
 
   @Nested
-  @DisplayName("deleteUser 메서드")
+  @DisplayName("deleteUser")
   class DeleteUser {
 
     @Test
     @DisplayName("사용자를 소프트 삭제한다")
     void softDeletesUser() {
-      // given
       UUID userId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       User user = createUser("test@test.com", "tester", Role.USER);
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-      // when
-      adminUserService.deleteUser(userId);
+      adminUserService.deleteUser(userId, adminId);
 
-      // then
       assertThat(user.isDeleted()).isTrue();
     }
 
     @Test
     @DisplayName("존재하지 않는 사용자 삭제 시 예외가 발생한다")
     void throwsWhenUserNotFound() {
-      // given
       UUID userId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-      // when & then
-      assertThatThrownBy(() -> adminUserService.deleteUser(userId))
+      assertThatThrownBy(() -> adminUserService.deleteUser(userId, adminId))
           .isInstanceOf(UserNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("자기 자신을 삭제할 수 없다")
+    void throwsOnSelfDelete() {
+      UUID userId = UUID.randomUUID();
+
+      assertThatThrownBy(() -> adminUserService.deleteUser(userId, userId))
+          .isInstanceOf(IllegalStateException.class)
+          .hasMessageContaining("자기 자신");
     }
   }
 
   @Nested
-  @DisplayName("restoreUser 메서드")
+  @DisplayName("restoreUser")
   class RestoreUser {
 
     @Test
     @DisplayName("삭제된 사용자를 복구한다")
     void restoresDeletedUser() {
-      // given
       UUID userId = UUID.randomUUID();
       User user = createUser("test@test.com", "tester", Role.USER);
       user.softDelete();
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-      // when
       adminUserService.restoreUser(userId);
 
-      // then
       assertThat(user.isDeleted()).isFalse();
     }
   }
