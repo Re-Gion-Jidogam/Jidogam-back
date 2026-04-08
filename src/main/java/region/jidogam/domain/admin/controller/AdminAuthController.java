@@ -12,7 +12,7 @@ import region.jidogam.domain.admin.dto.AdminLoginRequest;
 import region.jidogam.domain.admin.service.AdminAuthService;
 
 @RestController
-@RequestMapping("/admin/api")
+@RequestMapping("/jidogam-admin/api")
 @RequiredArgsConstructor
 public class AdminAuthController {
 

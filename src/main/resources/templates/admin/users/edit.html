@@ -17,11 +17,11 @@
       <main class="content-area">
         <div class="page-header">
           <h2>사용자 수정</h2>
-          <a th:href="@{/admin/users/{id}(id=${user.id()})}" class="btn-back">&larr; 상세로</a>
+          <a th:href="@{/jidogam-admin/users/{id}(id=${user.id()})}" class="btn-back">&larr; 상세로</a>
         </div>
 
         <div class="form-card">
-          <form th:action="@{/admin/users/{id}/edit(id=${user.id()})}" method="post">
+          <form th:action="@{/jidogam-admin/users/{id}/edit(id=${user.id()})}" method="post">
             <div class="form-group">
               <label>이메일</label>
               <input type="text" th:value="${user.email()}" disabled class="form-input">
@@ -40,7 +40,7 @@
 
             <div class="form-actions">
               <button type="submit" class="btn-save">저장</button>
-              <a th:href="@{/admin/users/{id}(id=${user.id()})}" class="btn-cancel">취소</a>
+              <a th:href="@{/jidogam-admin/users/{id}(id=${user.id()})}" class="btn-cancel">취소</a>
             </div>
           </form>
         </div>

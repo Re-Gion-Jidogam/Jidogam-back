@@ -41,7 +41,7 @@
       const password = document.getElementById('password').value;
 
       try {
-        const res = await fetch('/admin/api/login', {
+        const res = await fetch('/jidogam-admin/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password })
@@ -54,7 +54,7 @@
           return;
         }
 
-        location.href = '/admin/home';
+        location.href = '/jidogam-admin/home';
       } catch (err) {
         errorDiv.textContent = '서버 연결에 실패했습니다.';
         errorDiv.style.display = 'block';

@@ -28,7 +28,7 @@ public class SecurityConfig {
   @Order(1)
   public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
     http
-        .securityMatcher("/admin/**", "/css/**")
+        .securityMatcher("/jidogam-admin/**", "/css/**")
 
         .csrf(AbstractHttpConfigurer::disable)
 
@@ -36,7 +36,7 @@ public class SecurityConfig {
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/admin/login", "/admin/api/**", "/css/**").permitAll()
+            .requestMatchers("/jidogam-admin/login", "/jidogam-admin/api/**", "/css/**").permitAll()
             .anyRequest().hasRole("ADMIN"))
 
         .addFilterBefore(

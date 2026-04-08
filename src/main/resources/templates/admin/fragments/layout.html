@@ -5,8 +5,8 @@
 <aside th:fragment="sidebar" class="sidebar">
   <div class="sidebar-logo">지도감 Admin</div>
   <ul class="sidebar-nav">
-    <li><a th:href="@{/admin/home}" th:classappend="${menu == 'home'} ? 'active'">홈</a></li>
-    <li><a th:href="@{/admin/users}" th:classappend="${menu == 'users'} ? 'active'">사용자 관리</a></li>
+    <li><a th:href="@{/jidogam-admin/home}" th:classappend="${menu == 'home'} ? 'active'">홈</a></li>
+    <li><a th:href="@{/jidogam-admin/users}" th:classappend="${menu == 'users'} ? 'active'">사용자 관리</a></li>
   </ul>
 </aside>
 
@@ -17,8 +17,8 @@
   </div>
   <script>
     async function adminLogout() {
-      await fetch('/admin/api/logout', { method: 'POST' });
-      location.href = '/admin/login';
+      await fetch('/jidogam-admin/api/logout', { method: 'POST' });
+      location.href = '/jidogam-admin/login';
     }
   </script>
 </header>

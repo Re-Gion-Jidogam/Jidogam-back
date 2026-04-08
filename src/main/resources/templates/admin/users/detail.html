@@ -17,7 +17,7 @@
       <main class="content-area">
         <div class="page-header">
           <h2>사용자 상세</h2>
-          <a th:href="@{/admin/users}" class="btn-back">&larr; 목록으로</a>
+          <a th:href="@{/jidogam-admin/users}" class="btn-back">&larr; 목록으로</a>
         </div>
 
         <!-- Success Message -->
@@ -77,13 +77,13 @@
         </div>
 
         <div class="action-buttons">
-          <a th:href="@{/admin/users/{id}/edit(id=${user.id()})}" class="btn-edit">수정</a>
-          <form th:if="${!user.deleted()}" th:action="@{/admin/users/{id}/delete(id=${user.id()})}"
+          <a th:href="@{/jidogam-admin/users/{id}/edit(id=${user.id()})}" class="btn-edit">수정</a>
+          <form th:if="${!user.deleted()}" th:action="@{/jidogam-admin/users/{id}/delete(id=${user.id()})}"
                 method="post" style="display:inline;"
                 onsubmit="return confirm('정말 이 사용자를 삭제하시겠습니까?');">
             <button type="submit" class="btn-delete">삭제</button>
           </form>
-          <form th:if="${user.deleted()}" th:action="@{/admin/users/{id}/restore(id=${user.id()})}"
+          <form th:if="${user.deleted()}" th:action="@{/jidogam-admin/users/{id}/restore(id=${user.id()})}"
                 method="post" style="display:inline;"
                 onsubmit="return confirm('이 사용자를 복구하시겠습니까?');">
             <button type="submit" class="btn-restore">복구</button>

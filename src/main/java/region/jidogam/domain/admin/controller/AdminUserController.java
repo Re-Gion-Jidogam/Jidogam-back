@@ -19,7 +19,7 @@ import region.jidogam.domain.admin.service.AdminUserService;
 import region.jidogam.domain.user.entity.User;
 
 @Controller
-@RequestMapping("/admin/users")
+@RequestMapping("/jidogam-admin/users")
 @RequiredArgsConstructor
 public class AdminUserController {
 
@@ -70,7 +70,7 @@ public class AdminUserController {
     AdminUserUpdateRequest request = new AdminUserUpdateRequest(nickname, role);
     adminUserService.updateUser(userId, request, currentAdminId);
     redirectAttributes.addFlashAttribute("successMessage", "사용자 정보가 수정되었습니다.");
-    return "redirect:/admin/users/" + userId;
+    return "redirect:/jidogam-admin/users/" + userId;
   }
 
   @PostMapping("/{userId}/delete")
@@ -80,13 +80,13 @@ public class AdminUserController {
       RedirectAttributes redirectAttributes) {
     adminUserService.deleteUser(userId, currentAdminId);
     redirectAttributes.addFlashAttribute("successMessage", "사용자가 삭제되었습니다.");
-    return "redirect:/admin/users/" + userId;
+    return "redirect:/jidogam-admin/users/" + userId;
   }
 
   @PostMapping("/{userId}/restore")
   public String userRestore(@PathVariable UUID userId, RedirectAttributes redirectAttributes) {
     adminUserService.restoreUser(userId);
     redirectAttributes.addFlashAttribute("successMessage", "사용자가 복구되었습니다.");
-    return "redirect:/admin/users/" + userId;
+    return "redirect:/jidogam-admin/users/" + userId;
   }
 }
