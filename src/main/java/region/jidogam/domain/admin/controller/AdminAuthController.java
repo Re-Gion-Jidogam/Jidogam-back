@@ -2,6 +2,7 @@ package region.jidogam.domain.admin.controller;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +19,9 @@ public class AdminAuthController {
 
   private final AdminAuthService adminAuthService;
 
+  @Value("${jidogam.admin.cookie.secure}")
+  private boolean cookieSecure;
+
   @PostMapping("/login")
   public ResponseEntity<Void> login(@RequestBody AdminLoginRequest request,
       HttpServletResponse response) {
@@ -25,7 +29,7 @@ public class AdminAuthController {
 
     ResponseCookie cookie = ResponseCookie.from("access_token", accessToken)
         .httpOnly(true)
-        .secure(false) // 개발환경, 운영에서는 true
+        .secure(cookieSecure)
         .path("/")
         .sameSite("Lax")
         .maxAge(3600) // 1시간
@@ -39,7 +43,7 @@ public class AdminAuthController {
   public ResponseEntity<Void> logout(HttpServletResponse response) {
     ResponseCookie cookie = ResponseCookie.from("access_token", "")
         .httpOnly(true)
-        .secure(false)
+        .secure(cookieSecure)
         .path("/")
         .sameSite("Lax")
         .maxAge(0)
