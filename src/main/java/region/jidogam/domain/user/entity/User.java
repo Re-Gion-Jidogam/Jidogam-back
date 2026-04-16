@@ -57,6 +57,10 @@ public class User extends BaseUpdatableEntity {
       this.password = password;
   }
 
+  public void changeRole(Role role) {
+    this.role = role;
+  }
+
   public void changeProfileImage(String profileImageUrl) {
     this.profileImageUrl = profileImageUrl;   // null 허용
   }

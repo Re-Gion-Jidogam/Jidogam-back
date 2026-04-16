@@ -3,3 +3,8 @@ spring:
     hibernate:
       ddl-auto: validate
 
+
+jidogam:
+  admin:
+    cookie:
+      secure: true

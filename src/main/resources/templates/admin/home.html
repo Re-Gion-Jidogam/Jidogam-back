@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>지도감 관리자</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside th:replace="~{admin/fragments/layout :: sidebar}" th:with="menu='home'"></aside>
+
+    <div class="main-content">
+      <header th:replace="~{admin/fragments/layout :: topbar}"></header>
+
+      <main class="content-area">
+        <h2>대시보드</h2>
+        <div class="dashboard-cards">
+          <div class="dashboard-card">
+            <div class="card-label">환영합니다</div>
+            <div class="card-value" style="font-size: 18px;">지도감 관리자 페이지입니다.</div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
