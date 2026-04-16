@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>사용자 수정 - 지도감 관리자</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside th:replace="~{admin/fragments/layout :: sidebar}" th:with="menu='users'"></aside>
+
+    <div class="main-content">
+      <header th:replace="~{admin/fragments/layout :: topbar}"></header>
+
+      <main class="content-area">
+        <div class="page-header">
+          <h2>사용자 수정</h2>
+          <a th:href="@{/jidogam-admin/users/{id}(id=${user.id()})}" class="btn-back">&larr; 상세로</a>
+        </div>
+
+        <div class="form-card">
+          <form th:action="@{/jidogam-admin/users/{id}/edit(id=${user.id()})}" method="post">
+            <div class="form-group">
+              <label>이메일</label>
+              <input type="text" th:value="${user.email()}" disabled class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="nickname">닉네임</label>
+              <input type="text" id="nickname" name="nickname" th:value="${user.nickname()}" class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="role">역할</label>
+              <select id="role" name="role" class="form-input">
+                <option value="USER" th:selected="${user.role().name() == 'USER'}">USER</option>
+                <option value="ADMIN" th:selected="${user.role().name() == 'ADMIN'}">ADMIN</option>
+              </select>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-save">저장</button>
+              <a th:href="@{/jidogam-admin/users/{id}(id=${user.id()})}" class="btn-cancel">취소</a>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

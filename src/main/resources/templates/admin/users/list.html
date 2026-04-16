@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>사용자 관리 - 지도감 관리자</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside th:replace="~{admin/fragments/layout :: sidebar}" th:with="menu='users'"></aside>
+
+    <div class="main-content">
+      <header th:replace="~{admin/fragments/layout :: topbar}"></header>
+
+      <main class="content-area">
+        <h2>사용자 관리</h2>
+
+        <!-- Search & Filter -->
+        <div class="filter-bar">
+          <form th:action="@{/jidogam-admin/users}" method="get" class="filter-form">
+            <input type="text" name="keyword" th:value="${keyword}"
+                   placeholder="이메일 또는 닉네임 검색" class="filter-input">
+            <select name="role" class="filter-select">
+              <option value="">전체 역할</option>
+              <option value="USER" th:selected="${role != null && role.name() == 'USER'}">USER</option>
+              <option value="ADMIN" th:selected="${role != null && role.name() == 'ADMIN'}">ADMIN</option>
+            </select>
+            <select name="deleted" class="filter-select">
+              <option value="">전체 상태</option>
+              <option value="false" th:selected="${deleted != null && !deleted}">활성</option>
+              <option value="true" th:selected="${deleted != null && deleted}">삭제됨</option>
+            </select>
+            <button type="submit" class="btn-search">검색</button>
+            <a th:href="@{/jidogam-admin/users}" class="btn-reset">초기화</a>
+          </form>
+        </div>
+
+        <!-- User Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>이메일</th>
+                <th>닉네임</th>
+                <th>역할</th>
+                <th>경험치</th>
+                <th>상태</th>
+                <th>가입일</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="user : ${users.content}" th:classappend="${user.deleted()} ? 'row-deleted'">
+                <td th:text="${user.email()}"></td>
+                <td th:text="${user.nickname()}"></td>
+                <td>
+                  <span class="badge" th:classappend="${user.role().name() == 'ADMIN'} ? 'badge-admin' : 'badge-user'"
+                        th:text="${user.role()}"></span>
+                </td>
+                <td th:text="${user.exp()}"></td>
+                <td>
+                  <span th:if="${!user.deleted()}" class="status-active">활성</span>
+                  <span th:if="${user.deleted()}" class="status-deleted">삭제됨</span>
+                </td>
+                <td th:text="${#temporals.format(user.createdAt(), 'yyyy-MM-dd HH:mm')}"></td>
+                <td>
+                  <a th:href="@{/jidogam-admin/users/{id}(id=${user.id()})}" class="btn-detail">상세</a>
+                </td>
+              </tr>
+              <tr th:if="${users.content.isEmpty()}">
+                <td colspan="7" class="empty-message">사용자가 없습니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" th:if="${users.totalPages > 1}">
+          <a th:if="${users.number > 0}"
+             th:href="@{/jidogam-admin/users(keyword=${keyword}, role=${role}, deleted=${deleted}, page=${users.number - 1}, size=${users.size})}"
+             class="page-link">&laquo; 이전</a>
+
+          <th:block th:each="i : ${#numbers.sequence(0, users.totalPages - 1)}">
+            <a th:if="${i == users.number}" class="page-link active" th:text="${i + 1}"></a>
+            <a th:if="${i != users.number}"
+               th:href="@{/jidogam-admin/users(keyword=${keyword}, role=${role}, deleted=${deleted}, page=${i}, size=${users.size})}"
+               class="page-link" th:text="${i + 1}"></a>
+          </th:block>
+
+          <a th:if="${users.number < users.totalPages - 1}"
+             th:href="@{/jidogam-admin/users(keyword=${keyword}, role=${role}, deleted=${deleted}, page=${users.number + 1}, size=${users.size})}"
+             class="page-link">다음 &raquo;</a>
+        </div>
+
+        <div class="pagination-info">
+          <span th:text="'총 ' + ${users.totalElements} + '명'"></span>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

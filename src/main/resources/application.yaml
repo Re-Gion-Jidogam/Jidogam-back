@@ -76,6 +76,8 @@ jidogam:
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}
     nickname: ${ADMIN_NICKNAME}
+    cookie:
+      secure: ${ADMIN_COOKIE_SECURE:false}
 
 jwt:
   secret: ${JWT_SECRET}
