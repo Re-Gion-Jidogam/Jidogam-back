@@ -18,6 +18,8 @@ public interface GuidebookParticipationRepository extends
 
   int deleteByGuidebook_IdAndUser_Id(UUID guidebookId, UUID userId);
 
+  void deleteByGuidebook_Id(UUID guidebookId);
+
   /**
    * 가이드북 참여 목록 조회
    *
