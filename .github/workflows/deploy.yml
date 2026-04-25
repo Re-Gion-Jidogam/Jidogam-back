@@ -1,4 +1,4 @@
-name: 🚀 Deploy to OCI
+name: 🚀 Deploy to Prod Server
 
 on:
   workflow_run:
@@ -32,7 +32,7 @@ jobs:
           fi
           echo "✅ All required keys present"
 
-      - name: Deploy to OCI
+      - name: Deploy to Prod Server
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.OCI_HOST }}
