@@ -104,3 +104,6 @@ api:
   area:
     service-id: ${AREA_SERVICE_ID}
     secret-key: ${AREA_SECRET_KEY}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
