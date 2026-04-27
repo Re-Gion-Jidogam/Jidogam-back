@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>가이드북 관리 - 지도감 관리자</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside th:replace="~{admin/fragments/layout :: sidebar}" th:with="menu='guidebooks'"></aside>
+
+    <div class="main-content">
+      <header th:replace="~{admin/fragments/layout :: topbar}"></header>
+
+      <main class="content-area">
+        <h2>가이드북 관리</h2>
+
+        <!-- Search & Filter -->
+        <div class="filter-bar">
+          <form th:action="@{/jidogam-admin/guidebooks}" method="get" class="filter-form">
+            <input type="text" name="keyword" th:value="${keyword}"
+                   placeholder="제목 또는 작성자 닉네임 검색" class="filter-input">
+            <select name="isPublished" class="filter-select">
+              <option value="">전체 상태</option>
+              <option value="true" th:selected="${isPublished != null && isPublished}">출판됨</option>
+              <option value="false" th:selected="${isPublished != null && !isPublished}">미출판</option>
+            </select>
+            <button type="submit" class="btn-search">검색</button>
+            <a th:href="@{/jidogam-admin/guidebooks}" class="btn-reset">초기화</a>
+          </form>
+        </div>
+
+        <!-- Guidebook Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>제목</th>
+                <th>작성자</th>
+                <th>출판 상태</th>
+                <th>장소 수</th>
+                <th>참여자 수</th>
+                <th>생성일</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="guidebook : ${guidebooks.content}">
+                <td th:text="${guidebook.title()}"></td>
+                <td th:text="${guidebook.authorNickname()}"></td>
+                <td>
+                  <span th:if="${guidebook.isPublished()}" class="status-active">출판됨</span>
+                  <span th:if="${!guidebook.isPublished()}" class="status-deleted">미출판</span>
+                </td>
+                <td th:text="${guidebook.totalPlaceCount()}"></td>
+                <td th:text="${guidebook.participantCount()}"></td>
+                <td th:text="${#temporals.format(guidebook.createdAt(), 'yyyy-MM-dd HH:mm')}"></td>
+                <td>
+                  <a th:href="@{/jidogam-admin/guidebooks/{id}(id=${guidebook.id()})}" class="btn-detail">상세</a>
+                </td>
+              </tr>
+              <tr th:if="${guidebooks.content.isEmpty()}">
+                <td colspan="7" class="empty-message">가이드북이 없습니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" th:if="${guidebooks.totalPages > 1}">
+          <a th:if="${guidebooks.number > 0}"
+             th:href="@{/jidogam-admin/guidebooks(keyword=${keyword}, isPublished=${isPublished}, page=${guidebooks.number - 1}, size=${guidebooks.size})}"
+             class="page-link">&laquo; 이전</a>
+
+          <th:block th:each="i : ${#numbers.sequence(0, guidebooks.totalPages - 1)}">
+            <a th:if="${i == guidebooks.number}" class="page-link active" th:text="${i + 1}"></a>
+            <a th:if="${i != guidebooks.number}"
+               th:href="@{/jidogam-admin/guidebooks(keyword=${keyword}, isPublished=${isPublished}, page=${i}, size=${guidebooks.size})}"
+               class="page-link" th:text="${i + 1}"></a>
+          </th:block>
+
+          <a th:if="${guidebooks.number < guidebooks.totalPages - 1}"
+             th:href="@{/jidogam-admin/guidebooks(keyword=${keyword}, isPublished=${isPublished}, page=${guidebooks.number + 1}, size=${guidebooks.size})}"
+             class="page-link">다음 &raquo;</a>
+        </div>
+
+        <div class="pagination-info">
+          <span th:text="'총 ' + ${guidebooks.totalElements} + '개'"></span>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
