@@ -66,23 +66,27 @@ public class AdminGuidebookService {
     return AdminGuidebookResponse.from(guidebook);
   }
 
+  // TODO: admin_action 테이블 추가 후 관리자 액션 이력 기록 (별도 PR)
+  //       - who(adminId), when(actionAt), target(guidebookId), action(HIDE), reason
+  // TODO: isPublished 관련 조회 쿼리에 adminHidden = false 필터 조건 추가 (별도 작업)
   @Transactional
   public void unpublishGuidebook(UUID guidebookId) {
     Guidebook guidebook = guidebookRepository.findById(guidebookId)
         .orElseThrow(() -> GuidebookNotFoundException.withId(guidebookId));
 
-    if (!Boolean.TRUE.equals(guidebook.getIsPublished())) {
-      log.warn("이미 미출판 상태인 가이드북입니다: guidebookId = {}", guidebookId);
+    if (Boolean.TRUE.equals(guidebook.getAdminHidden())) {
+      log.warn("이미 관리자 숨김 상태인 가이드북입니다: guidebookId = {}", guidebookId);
       return;
     }
 
-    guidebook.invalidateAreaRatio();
-    guidebookAreaRatioRepository.deleteByGuidebook_Id(guidebookId);
-    guidebook.unpublish();
+    guidebook.hideByAdmin();
 
-    log.info("관리자에 의해 가이드북 강제 미출판: guidebookId = {}", guidebookId);
+    log.info("관리자에 의해 가이드북 강제 숨김: guidebookId = {}", guidebookId);
   }
 
+  // TODO: admin_action 테이블 추가 후 관리자 액션 이력 기록 (별도 PR)
+  //       - action: DELETE
+  // TODO: 소프트 삭제(deletedAt) 적용 - 사용자 측 삭제도 현재 물리 삭제이므로 함께 변경 (별도 작업)
   @Transactional
   public void deleteGuidebook(UUID guidebookId) {
     Guidebook guidebook = guidebookRepository.findById(guidebookId)

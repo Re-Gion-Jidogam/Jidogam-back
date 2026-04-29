@@ -210,24 +210,27 @@ class AdminGuidebookServiceTest {
   class UnpublishGuidebook {
 
     @Test
-    @DisplayName("출판된 가이드북을 강제 미출판한다")
-    void forceUnpublishesPublishedGuidebook() {
+    @DisplayName("가이드북을 관리자 숨김 처리한다 (isPublished/지역 비율은 보존)")
+    void forceHidesGuidebookByAdmin() {
       UUID guidebookId = UUID.randomUUID();
       Guidebook guidebook = createGuidebook(guidebookId, true);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
 
       adminGuidebookService.unpublishGuidebook(guidebookId);
 
-      assertThat(guidebook.getIsPublished()).isFalse();
-      assertThat(guidebook.getPublishedDate()).isNull();
-      verify(guidebookAreaRatioRepository).deleteByGuidebook_Id(guidebookId);
+      assertThat(guidebook.getAdminHidden()).isTrue();
+      assertThat(guidebook.getIsPublished()).isTrue();
+      assertThat(guidebook.getPublishedDate()).isNotNull();
+      verify(guidebookAreaRatioRepository, org.mockito.Mockito.never())
+          .deleteByGuidebook_Id(any());
     }
 
     @Test
-    @DisplayName("이미 미출판 상태면 아무것도 하지 않는다")
-    void skipsWhenAlreadyUnpublished() {
+    @DisplayName("이미 관리자 숨김 상태면 아무것도 하지 않는다")
+    void skipsWhenAlreadyHidden() {
       UUID guidebookId = UUID.randomUUID();
-      Guidebook guidebook = createGuidebook(guidebookId, false);
+      Guidebook guidebook = createGuidebook(guidebookId, true);
+      ReflectionTestUtils.setField(guidebook, "adminHidden", true);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
 
       adminGuidebookService.unpublishGuidebook(guidebookId);
@@ -237,7 +240,7 @@ class AdminGuidebookServiceTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 가이드북 미출판 시 예외가 발생한다")
+    @DisplayName("존재하지 않는 가이드북 숨김 시 예외가 발생한다")
     void throwsWhenGuidebookNotFound() {
       UUID guidebookId = UUID.randomUUID();
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.empty());
