@@ -2,7 +2,6 @@ package region.jidogam.infrastructure.jwt;
 
 import jakarta.security.auth.message.AuthException;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -88,9 +87,9 @@ public class RefreshTokenService {
   }
 
   private void deleteExistingToken(UUID userId) {
-    refreshTokenRepository.findByUserId(userId).ifPresent(token -> {
-      log.debug("기존 RefreshToken 삭제: userId={}", userId);
-      refreshTokenRepository.delete(token);
-    });
+    int deleted = refreshTokenRepository.deleteByUserId(userId);
+    if (deleted > 0) {
+      log.debug("기존 RefreshToken 삭제: userId={}, count={}", userId, deleted);
+    }
   }
 }
