@@ -20,7 +20,7 @@ import region.jidogam.common.entity.BaseEntity;
 @Builder
 public class RefreshToken extends BaseEntity {
 
-  @Column(name = "user_id", nullable = false)
+  @Column(name = "user_id", nullable = false, unique = true)
   private UUID userId;
 
   @Column(name = "refresh_token", nullable = false, length = 512)
