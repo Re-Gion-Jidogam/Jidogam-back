@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>가이드북 상세 - 지도감 관리자</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside th:replace="~{admin/fragments/layout :: sidebar}" th:with="menu='guidebooks'"></aside>
+
+    <div class="main-content">
+      <header th:replace="~{admin/fragments/layout :: topbar}"></header>
+
+      <main class="content-area">
+        <div class="page-header">
+          <h2>가이드북 상세</h2>
+          <a th:href="@{/jidogam-admin/guidebooks}" class="btn-back">&larr; 목록으로</a>
+        </div>
+
+        <!-- Success Message -->
+        <div th:if="${successMessage}" class="message-info" th:text="${successMessage}"></div>
+
+        <div class="detail-card">
+          <div class="detail-row">
+            <div class="detail-label">ID</div>
+            <div class="detail-value" th:text="${guidebook.id()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">제목</div>
+            <div class="detail-value" th:text="${guidebook.title()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">설명</div>
+            <div class="detail-value" th:text="${guidebook.description() ?: '-'}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">이모지</div>
+            <div class="detail-value" th:text="${guidebook.emoji() ?: '-'}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">색상</div>
+            <div class="detail-value">
+              <span th:if="${guidebook.color()}" th:text="${guidebook.color()}"
+                    th:style="'padding: 2px 8px; border-radius: 4px; background-color:' + ${guidebook.color()}"></span>
+              <span th:if="${guidebook.color() == null}">-</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">썸네일</div>
+            <div class="detail-value">
+              <img th:if="${guidebook.thumbnailUrl()}" th:src="${guidebook.thumbnailUrl()}"
+                   alt="썸네일" style="max-width: 200px; max-height: 200px; border-radius: 8px;">
+              <span th:if="${guidebook.thumbnailUrl() == null}">없음</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">출판 상태</div>
+            <div class="detail-value">
+              <span th:if="${guidebook.isPublished()}" class="status-active">출판됨</span>
+              <span th:if="${!guidebook.isPublished()}" class="status-deleted">미출판</span>
+            </div>
+          </div>
+          <div class="detail-row" th:if="${guidebook.isPublished()}">
+            <div class="detail-label">출판일</div>
+            <div class="detail-value" th:text="${#temporals.format(guidebook.publishedDate(), 'yyyy-MM-dd HH:mm:ss')}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">장소 수</div>
+            <div class="detail-value" th:text="${guidebook.totalPlaceCount()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">참여자 수</div>
+            <div class="detail-value" th:text="${guidebook.participantCount()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">경험치</div>
+            <div class="detail-value" th:text="${guidebook.exp()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">평균 평점</div>
+            <div class="detail-value" th:text="${guidebook.averageRating()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">작성자</div>
+            <div class="detail-value">
+              <span th:text="${guidebook.authorNickname()}"></span>
+              (<span th:text="${guidebook.authorEmail()}"></span>)
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">생성일</div>
+            <div class="detail-value" th:text="${#temporals.format(guidebook.createdAt(), 'yyyy-MM-dd HH:mm:ss')}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">수정일</div>
+            <div class="detail-value" th:text="${guidebook.updatedAt() != null ? #temporals.format(guidebook.updatedAt(), 'yyyy-MM-dd HH:mm:ss') : '-'}"></div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <a th:href="@{/jidogam-admin/guidebooks/{id}/edit(id=${guidebook.id()})}" class="btn-edit">수정</a>
+          <form th:if="${guidebook.isPublished()}"
+                th:action="@{/jidogam-admin/guidebooks/{id}/unpublish(id=${guidebook.id()})}"
+                method="post" style="display:inline;"
+                onsubmit="return confirm('이 가이드북을 미출판 상태로 변경하시겠습니까? 참여자가 있어도 강제로 미출판됩니다.');">
+            <button type="submit" class="btn-unpublish">출판 취소</button>
+          </form>
+          <form th:action="@{/jidogam-admin/guidebooks/{id}/delete(id=${guidebook.id()})}"
+                method="post" style="display:inline;"
+                onsubmit="return confirm('정말 이 가이드북을 삭제하시겠습니까? 관련된 참여 기록, 장소 연결, 지역 비율 데이터가 모두 삭제됩니다.');">
+            <button type="submit" class="btn-delete">삭제</button>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
