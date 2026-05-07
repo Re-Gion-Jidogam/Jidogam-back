@@ -13,6 +13,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 import region.jidogam.infrastructure.jwt.JwtProvider;
 import region.jidogam.infrastructure.security.JidogamUserDetailsService;
 import region.jidogam.infrastructure.security.JwtAuthenticationFilter;
@@ -23,12 +24,15 @@ public class SecurityConfig {
 
   private final JwtProvider jwtProvider;
   private final JidogamUserDetailsService jidogamUserDetailsService;
+  private final CorsConfigurationSource corsConfigurationSource;
 
   @Bean
   @Order(1)
   public SecurityFilterChain adminFilterChain(HttpSecurity http) throws Exception {
     http
         .securityMatcher("/jidogam-admin/**", "/css/**")
+
+        .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
         .csrf(AbstractHttpConfigurer::disable)
 
@@ -53,6 +57,8 @@ public class SecurityConfig {
       AccessDeniedHandler accessDeniedHandler,
       AuthenticationEntryPoint authenticationEntryPoint) throws Exception {
     http
+        .cors(cors -> cors.configurationSource(corsConfigurationSource))
+
         .csrf(AbstractHttpConfigurer::disable)
 
         .sessionManagement(session -> session

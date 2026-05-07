@@ -3,7 +3,6 @@ package region.jidogam.infrastructure.jwt;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -49,34 +48,6 @@ class RefreshTokenServiceTest {
       String refreshTokenString = "refreshToken";
       LocalDateTime expiresAt = LocalDateTime.now().plusDays(30);
 
-      when(refreshTokenRepository.findByUserId(userId)).thenReturn(Optional.empty());
-      when(jwtProvider.generateRefreshToken(user)).thenReturn(refreshTokenString);
-      when(jwtProvider.extractExpirationTime(refreshTokenString)).thenReturn(expiresAt);
-      when(user.getId()).thenReturn(userId);
-
-      //when 
-      RefreshToken refreshToken = refreshTokenService.create(user);
-
-      //then
-      assertNotNull(refreshToken);
-      assertEquals(userId, refreshToken.getUserId());
-      assertEquals(refreshTokenString, refreshToken.getRefreshToken());
-      assertEquals(expiresAt, refreshToken.getExpiresAt());
-
-      verify(refreshTokenRepository, times(1)).save(any(RefreshToken.class));
-    }
-
-    @Test
-    @DisplayName("이미 발급한 토큰이 있는 경우 삭제 후 성공")
-    void successWhenAlreadyExsitsRefreshToken() {
-      //given
-      UUID userId = UUID.randomUUID();
-      User user = mock(User.class);
-      RefreshToken mockRefreshToken = mock(RefreshToken.class);
-      String refreshTokenString = "refreshToken";
-      LocalDateTime expiresAt = LocalDateTime.now().plusDays(30);
-
-      when(refreshTokenRepository.findByUserId(userId)).thenReturn(Optional.of(mockRefreshToken));
       when(jwtProvider.generateRefreshToken(user)).thenReturn(refreshTokenString);
       when(jwtProvider.extractExpirationTime(refreshTokenString)).thenReturn(expiresAt);
       when(user.getId()).thenReturn(userId);
@@ -90,7 +61,34 @@ class RefreshTokenServiceTest {
       assertEquals(refreshTokenString, refreshToken.getRefreshToken());
       assertEquals(expiresAt, refreshToken.getExpiresAt());
 
-      verify(refreshTokenRepository, times(1)).delete(mockRefreshToken);
+      verify(refreshTokenRepository, times(1)).deleteByUserId(userId);
+      verify(refreshTokenRepository, times(1)).save(any(RefreshToken.class));
+    }
+
+    @Test
+    @DisplayName("이미 발급한 토큰이 있는 경우 삭제 후 성공")
+    void successWhenAlreadyExsitsRefreshToken() {
+      //given
+      UUID userId = UUID.randomUUID();
+      User user = mock(User.class);
+      String refreshTokenString = "refreshToken";
+      LocalDateTime expiresAt = LocalDateTime.now().plusDays(30);
+
+      when(refreshTokenRepository.deleteByUserId(userId)).thenReturn(1);
+      when(jwtProvider.generateRefreshToken(user)).thenReturn(refreshTokenString);
+      when(jwtProvider.extractExpirationTime(refreshTokenString)).thenReturn(expiresAt);
+      when(user.getId()).thenReturn(userId);
+
+      //when
+      RefreshToken refreshToken = refreshTokenService.create(user);
+
+      //then
+      assertNotNull(refreshToken);
+      assertEquals(userId, refreshToken.getUserId());
+      assertEquals(refreshTokenString, refreshToken.getRefreshToken());
+      assertEquals(expiresAt, refreshToken.getExpiresAt());
+
+      verify(refreshTokenRepository, times(1)).deleteByUserId(userId);
       verify(refreshTokenRepository, times(1)).save(any(RefreshToken.class));
     }
   }
@@ -105,17 +103,15 @@ class RefreshTokenServiceTest {
       //given
       UUID userId = UUID.randomUUID();
       User user = mock(User.class);
-      RefreshToken mockRefreshToken = mock(RefreshToken.class);
 
       when(user.getId()).thenReturn(userId);
-      when(refreshTokenRepository.findByUserId(userId)).thenReturn(Optional.of(mockRefreshToken));
+      when(refreshTokenRepository.deleteByUserId(userId)).thenReturn(1);
 
       //when
       refreshTokenService.delete(user);
 
       //then
-      verify(refreshTokenRepository, times(1)).delete(mockRefreshToken);
-
+      verify(refreshTokenRepository, times(1)).deleteByUserId(userId);
     }
 
     @Test
@@ -124,16 +120,14 @@ class RefreshTokenServiceTest {
       //given
       UUID userId = UUID.randomUUID();
       User user = mock(User.class);
-      RefreshToken mockRefreshToken = mock(RefreshToken.class);
 
       when(user.getId()).thenReturn(userId);
-      when(refreshTokenRepository.findByUserId(userId)).thenReturn(Optional.empty());
 
       //when
       refreshTokenService.delete(user);
 
       //then
-      verify(refreshTokenRepository, never()).delete(mockRefreshToken);
+      verify(refreshTokenRepository, times(1)).deleteByUserId(userId);
     }
 
   }
@@ -169,11 +163,7 @@ class RefreshTokenServiceTest {
       // 새 액세스 토큰 생성을 위한 모킹
       when(jwtProvider.generateAccessToken(user)).thenReturn("accessToken");
 
-      // create 메서드 내부에서 호출되는 메서드들을 위한 모킹
-      // 1. deleteExistingToken 호출 시
-      when(refreshTokenRepository.findByUserId(userId)).thenReturn(Optional.empty());
-
-      // 2. 새 리프레시 토큰 생성 시
+      // 새 리프레시 토큰 생성 시
       when(jwtProvider.generateRefreshToken(user)).thenReturn(newRefreshTokenString);
       when(jwtProvider.extractExpirationTime(newRefreshTokenString)).thenReturn(newExpiresAt);
       when(refreshTokenRepository.save(any(RefreshToken.class))).thenReturn(mockNewRefreshToken);

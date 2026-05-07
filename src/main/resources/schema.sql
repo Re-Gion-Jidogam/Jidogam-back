@@ -124,7 +124,7 @@ CREATE INDEX idx_place_coordinates ON places (y, x);
 CREATE TABLE refresh_tokens
 (
     id            UUID PRIMARY KEY,
-    user_id       UUID                     NOT NULL,
+    user_id       UUID                     NOT NULL UNIQUE,
     refresh_token TEXT                     NOT NULL,
     created_at    TIMESTAMP WITH TIME ZONE NOT NULL,
     expires_at    TIMESTAMP WITH TIME ZONE NOT NULL
