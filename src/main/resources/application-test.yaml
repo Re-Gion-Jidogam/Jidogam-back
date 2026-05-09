@@ -17,6 +17,9 @@ spring:
   sql:
     init:
       mode: never
+  spring:
+    flyway:
+      enabled: false
 
 jwt:
   secret: 'this-is-jwt-secret-code-of-jidogam-porject-for-test'

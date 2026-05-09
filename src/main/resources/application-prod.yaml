@@ -2,7 +2,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-
+  flyway:
+    clean-disabled: true  # Clean 명령 차단
 
 jidogam:
   admin:
