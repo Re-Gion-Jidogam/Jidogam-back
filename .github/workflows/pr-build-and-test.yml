@@ -3,7 +3,7 @@ name: 🧪 PR Build & Test
 on:
   pull_request:
     branches: [ main, dev ]
-    
+
 permissions:
   contents: read
   checks: write
@@ -16,6 +16,36 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Check Migration File Naming
+        run: |
+          #!/bin/bash
+          
+          error_count=0
+          migration_dir="src/main/resources/db/migration"
+          
+          [ -d "$migration_dir" ] || exit 0
+          
+          for file in "$migration_dir"/*; do
+            [ -f "$file" ] || continue
+          
+            filename=$(basename "$file")
+          
+            if ! [[ $filename =~ ^V[0-9]{8}_[0-9]{4}__[a-z0-9_]+\.sql$ ]]; then
+              echo "❌ 잘못된 파일명: $filename"
+              echo "   형식: V{yyyyMMdd_HHmm}__{description}.sql"
+              echo "   description은 소문자, 숫자, 언더스코어(_)만 허용"
+              ((error_count++))
+            fi
+          done
+          
+          if [ $error_count -gt 0 ]; then
+            echo ""
+            echo "❌ $error_count 개의 파일명 오류 발견"
+            exit 1
+          fi
+          
+          echo "✅ 모든 마이그레이션 파일명이 규칙을 따릅니다"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -34,7 +64,7 @@ jobs:
         env:
           SPRING_PROFILES_ACTIVE: test
         run: ./gradlew test
-        
+
       - name: Publish test results
         if: always()
         uses: EnricoMi/publish-unit-test-result-action/linux@v2
