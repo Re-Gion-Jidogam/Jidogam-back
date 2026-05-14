@@ -2,10 +2,14 @@ package region.jidogam.domain.admin.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.admin.dto.AdminLoginRequest;
+import region.jidogam.domain.admin.entity.AdminActionHistory.ActionType;
+import region.jidogam.domain.admin.entity.AdminActionHistory.TargetType;
+import region.jidogam.domain.admin.event.AdminActionEvent;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.entity.User.Role;
 import region.jidogam.domain.user.repository.UserRepository;
@@ -19,6 +23,7 @@ public class AdminAuthService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtProvider jwtProvider;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional(readOnly = true)
   public String login(AdminLoginRequest request) {
@@ -38,6 +43,11 @@ public class AdminAuthService {
     }
 
     log.info("관리자 로그인: email = {}", request.email());
+
+    eventPublisher.publishEvent(AdminActionEvent.of(
+        user.getId(), ActionType.ADMIN_LOGIN, TargetType.ADMIN, user.getId()
+    ));
+
     return jwtProvider.generateAccessToken(user);
   }
 }

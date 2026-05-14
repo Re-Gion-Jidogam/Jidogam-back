@@ -1,8 +1,11 @@
 package region.jidogam.domain.admin.service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -10,6 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.admin.dto.AdminUserResponse;
 import region.jidogam.domain.admin.dto.AdminUserSearchRequest;
 import region.jidogam.domain.admin.dto.AdminUserUpdateRequest;
+import region.jidogam.domain.admin.dto.FieldChange;
+import region.jidogam.domain.admin.entity.AdminActionHistory.ActionType;
+import region.jidogam.domain.admin.entity.AdminActionHistory.TargetType;
+import region.jidogam.domain.admin.event.AdminActionEvent;
 import region.jidogam.domain.admin.repository.AdminUserRepository;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserNicknameConflictException;
@@ -24,6 +31,7 @@ public class AdminUserService {
 
   private final UserRepository userRepository;
   private final AdminUserRepository adminUserRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional(readOnly = true)
   public Page<AdminUserResponse> getUsers(AdminUserSearchRequest request) {
@@ -48,8 +56,11 @@ public class AdminUserService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
+    Map<String, FieldChange> changedFields = new HashMap<>();
+
     if (request.nickname() != null && !request.nickname().equals(user.getNickname())) {
       validateNickname(request.nickname());
+      changedFields.put("nickname", FieldChange.of(user.getNickname(), request.nickname()));
       user.changeNickname(request.nickname());
     }
 
@@ -57,10 +68,18 @@ public class AdminUserService {
       if (userId.equals(currentAdminId)) {
         throw new IllegalStateException("자기 자신의 역할은 변경할 수 없습니다.");
       }
+      changedFields.put("role", FieldChange.of(user.getRole(), request.role()));
       user.changeRole(request.role());
     }
 
     log.info("관리자에 의해 사용자 수정: userId = {}, adminId = {}", userId, currentAdminId);
+
+    if (!changedFields.isEmpty()) {
+      eventPublisher.publishEvent(AdminActionEvent.of(
+          currentAdminId, ActionType.USER_UPDATE, TargetType.USER, userId, changedFields
+      ));
+    }
+
     return AdminUserResponse.from(user);
   }
 
@@ -80,10 +99,14 @@ public class AdminUserService {
 
     user.softDelete();
     log.info("관리자에 의해 사용자 삭제: userId = {}, adminId = {}", userId, currentAdminId);
+
+    eventPublisher.publishEvent(AdminActionEvent.of(
+        currentAdminId, ActionType.USER_DELETE, TargetType.USER, userId
+    ));
   }
 
   @Transactional
-  public void restoreUser(UUID userId) {
+  public void restoreUser(UUID userId, UUID currentAdminId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
 
@@ -93,7 +116,11 @@ public class AdminUserService {
     }
 
     user.restore();
-    log.info("관리자에 의해 사용자 복구: userId = {}", userId);
+    log.info("관리자에 의해 사용자 복구: userId = {}, adminId = {}", userId, currentAdminId);
+
+    eventPublisher.publishEvent(AdminActionEvent.of(
+        currentAdminId, ActionType.USER_RESTORE, TargetType.USER, userId
+    ));
   }
 
   private void validateNickname(String nickname) {
