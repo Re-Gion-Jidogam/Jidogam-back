@@ -21,6 +21,7 @@ public record GuidebookResponse(
     int participantCount,
     int totalPlaceCount,
     int visitedPlaceCount,
+    int reviewCount,
     AuthorDto author,
     AreaRatioDto areaRatio
 ) {

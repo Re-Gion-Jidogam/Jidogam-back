@@ -40,6 +40,7 @@ public class GuidebookMapper {
         .participantCount(guidebook.getParticipantCount())
         .totalPlaceCount(guidebook.getTotalPlaceCount())
         .visitedPlaceCount(visitedPlaceCount)
+        .reviewCount(guidebook.getRatingCount())
         .author(toAuthorDto(guidebook.getAuthor()))
         .areaRatio(toAreaRatioDto(guidebook.getAreaRatio()))
         .build();
