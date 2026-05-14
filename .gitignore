@@ -8,6 +8,11 @@
 .idea
 .gradle
 
+# DB migration 임시 파일 무시
+src/main/resources/db/migration/temp*.sql
+src/main/resources/db/migration/test*.sql
+src/main/resources/db/migration/*.bak
+
 # User-specific stuff
 .idea/**/workspace.xml
 .idea/**/tasks.xml

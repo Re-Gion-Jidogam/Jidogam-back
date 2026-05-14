@@ -18,6 +18,12 @@ spring:
       hibernate:
         highlight_sql: false
         format_sql: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 20260429_1645
+    validate-on-migrate: true
+    out-of-order: true
   mail:
     host: smtp.gmail.com
     port: 587
