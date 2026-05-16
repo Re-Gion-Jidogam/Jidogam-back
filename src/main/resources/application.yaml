@@ -78,6 +78,8 @@ jidogam:
   guidebook:
     reward:
       completion-rate: 0.1
+    publish:
+      min-place-count: 5
   admin:
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}

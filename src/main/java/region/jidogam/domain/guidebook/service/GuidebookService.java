@@ -78,6 +78,9 @@ public class GuidebookService {
   @Value("${jidogam.guidebook.reward.completion-rate}")
   private double guidebookCompletionRate;
 
+  @Value("${jidogam.guidebook.publish.min-place-count}")
+  private int publishMinPlaceCount;
+
   @Transactional(readOnly = true)
   public List<GuidebookResponse> popularList(int limit) {
 
@@ -441,16 +444,15 @@ public class GuidebookService {
   // 이건 가이드북 수정과 별개로 분리하는게 가장 좋을 것 같음
   private void publish(Guidebook guidebook) {
 
+    if (guidebook.getTotalPlaceCount() < publishMinPlaceCount) {
+      throw GuidebookPublishConditionException.insufficientPlaces(publishMinPlaceCount);
+    }
+
     // 모든 가이드북 장소-지역 중 top3 지역 가져오기
     List<AreaRatioDto> top3Areas = guidebookPlaceRepository.findAreasByPlaceCountDesc(
         guidebook.getId(),
         PageRequest.of(0, 3)
     );
-
-    // 출판 시 장소가 없는 경우 예외 처리
-    if (top3Areas.isEmpty()) {
-      throw GuidebookPublishConditionException.noPlace();
-    }
 
     // 비율 계산하기
     List<AreaRatioDto> withRatios = top3Areas.stream()

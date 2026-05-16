@@ -299,16 +299,16 @@ class GuidebookServiceTest {
 
     // 출판 시 엣지 조건 확인
     @Test
-    @DisplayName("장소가 없는 가이드북 출판 시 예외 발생")
+    @DisplayName("최소 장소 수 이하인 경우 가이드북 출판 시도 시 예외 발생")
     void failsByNoPlaces() {
       // given
       UUID guidebookId = UUID.randomUUID();
       UUID userId = UUID.randomUUID();
 
-      Guidebook guidebook = createGuidebook(userId, guidebookId);
+      Guidebook guidebook = createGuidebook(userId, guidebookId, 1);
+      ReflectionTestUtils.setField(guidebookService, "publishMinPlaceCount", 5);
+
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
-      when(guidebookPlaceRepository.findAreasByPlaceCountDesc(any(), any()))
-          .thenReturn(List.of());
 
       // when & then
       assertThrows(GuidebookPublishConditionException.class,
