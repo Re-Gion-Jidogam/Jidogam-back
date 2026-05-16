@@ -75,9 +75,6 @@ public class GuidebookService {
   private final CursorCodecUtil cursorCodecUtil;
   private final ApplicationEventPublisher eventPublisher;
 
-  @Value("${jidogam.guidebook.reward.completion-rate}")
-  private double guidebookCompletionRate;
-
   @Value("${jidogam.guidebook.publish.min-place-count}")
   private int publishMinPlaceCount;
 
