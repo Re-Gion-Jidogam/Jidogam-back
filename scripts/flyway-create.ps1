@@ -22,7 +22,7 @@ if ($Description -match '\s') {
     exit 1
 }
 
-$timestamp = Get-Date -Format "yyyyMMdd_HHmm"
+$timestamp = Get-Date -Format "yyyyMMddHHmm"
 $filename = "V${timestamp}__${Description}.sql"
 $filepath = "src/main/resources/db/migration/$filename"
 

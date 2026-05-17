@@ -16,7 +16,7 @@ if [ $# -gt 1 ]; then
   exit 1
 fi
 
-TIMESTAMP=$(date +"%Y%m%d_%H%M")
+TIMESTAMP=$(date +"%Y%m%d%H%M")
 FILENAME="V${TIMESTAMP}__${1}.sql"
 FILEPATH="src/main/resources/db/migration/${FILENAME}"
 
