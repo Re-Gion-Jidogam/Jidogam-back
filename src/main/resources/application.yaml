@@ -21,9 +21,10 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
-    baseline-version: 20260429_1645
+    baseline-version: 202604291645
     validate-on-migrate: true
     out-of-order: true
+    validate-migration-naming: true
   mail:
     host: smtp.gmail.com
     port: 587
