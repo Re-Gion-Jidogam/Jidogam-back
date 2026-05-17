@@ -33,9 +33,9 @@ jobs:
           
             filename=$(basename "$file")
           
-            if ! [[ $filename =~ ^V[0-9]{8}_[0-9]{4}__[a-z0-9_]+\.sql$ ]]; then
+            if ! [[ $filename =~ ^V[0-9]{12}__[a-z0-9_]+\.sql$ ]]; then
               echo "❌ 잘못된 파일명: $filename"
-              echo "   형식: V{yyyyMMdd_HHmm}__{description}.sql"
+              echo "   형식: V{yyyyMMddHHmm}__{description}.sql"
               echo "   description은 소문자, 숫자, 언더스코어(_)만 허용"
               ((error_count++))
             fi
