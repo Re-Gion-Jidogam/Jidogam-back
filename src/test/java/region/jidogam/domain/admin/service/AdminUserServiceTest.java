@@ -252,7 +252,7 @@ class AdminUserServiceTest {
   class PublishesAdminActionEvent {
 
     @Test
-    @DisplayName("사용자 수정 시 USER_UPDATE 이벤트가 발행된다")
+    @DisplayName("사용자 수정 시 UPDATE 이벤트가 발행된다")
     void publishesUserUpdateEvent() {
       UUID userId = UUID.randomUUID();
       UUID adminId = UUID.randomUUID();
@@ -268,7 +268,7 @@ class AdminUserServiceTest {
 
       AdminActionEvent event = captor.getValue();
       assertThat(event.adminId()).isEqualTo(adminId);
-      assertThat(event.actionType()).isEqualTo(ActionType.USER_UPDATE);
+      assertThat(event.actionType()).isEqualTo(ActionType.UPDATE);
       assertThat(event.targetId()).isEqualTo(userId);
       assertThat(event.changedFields()).containsKey("nickname");
       assertThat(event.changedFields().get("nickname").oldValue()).isEqualTo("oldNick");
@@ -290,7 +290,7 @@ class AdminUserServiceTest {
     }
 
     @Test
-    @DisplayName("사용자 삭제 시 USER_DELETE 이벤트가 발행된다")
+    @DisplayName("사용자 삭제 시 DELETE 이벤트가 발행된다")
     void publishesUserDeleteEvent() {
       UUID userId = UUID.randomUUID();
       UUID adminId = UUID.randomUUID();
@@ -302,12 +302,12 @@ class AdminUserServiceTest {
       ArgumentCaptor<AdminActionEvent> captor = ArgumentCaptor.forClass(AdminActionEvent.class);
       verify(eventPublisher).publishEvent(captor.capture());
 
-      assertThat(captor.getValue().actionType()).isEqualTo(ActionType.USER_DELETE);
+      assertThat(captor.getValue().actionType()).isEqualTo(ActionType.DELETE);
       assertThat(captor.getValue().targetId()).isEqualTo(userId);
     }
 
     @Test
-    @DisplayName("사용자 복구 시 USER_RESTORE 이벤트가 발행된다")
+    @DisplayName("사용자 복구 시 RESTORE 이벤트가 발행된다")
     void publishesUserRestoreEvent() {
       UUID userId = UUID.randomUUID();
       UUID adminId = UUID.randomUUID();
@@ -320,7 +320,7 @@ class AdminUserServiceTest {
       ArgumentCaptor<AdminActionEvent> captor = ArgumentCaptor.forClass(AdminActionEvent.class);
       verify(eventPublisher).publishEvent(captor.capture());
 
-      assertThat(captor.getValue().actionType()).isEqualTo(ActionType.USER_RESTORE);
+      assertThat(captor.getValue().actionType()).isEqualTo(ActionType.RESTORE);
     }
 
     @Test

@@ -47,10 +47,11 @@ public class AdminActionHistory extends BaseEntity {
   private String description;
 
   public enum ActionType {
-    ADMIN_LOGIN,
-    USER_UPDATE,
-    USER_DELETE,
-    USER_RESTORE
+    LOGIN,
+    CREATE,
+    UPDATE,
+    DELETE,
+    RESTORE
   }
 
   public enum TargetType {

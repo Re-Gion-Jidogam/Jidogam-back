@@ -45,7 +45,7 @@ public class AdminAuthService {
     log.info("관리자 로그인: email = {}", request.email());
 
     eventPublisher.publishEvent(AdminActionEvent.of(
-        user.getId(), ActionType.ADMIN_LOGIN, TargetType.ADMIN, user.getId()
+        user.getId(), ActionType.LOGIN, TargetType.ADMIN, user.getId()
     ));
 
     return jwtProvider.generateAccessToken(user);

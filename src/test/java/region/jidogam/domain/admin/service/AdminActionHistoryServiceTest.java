@@ -39,7 +39,7 @@ class AdminActionHistoryServiceTest {
     );
 
     AdminActionEvent event = new AdminActionEvent(
-        adminId, ActionType.USER_UPDATE, TargetType.USER, targetId, changes, null
+        adminId, ActionType.UPDATE, TargetType.USER, targetId, changes, null
     );
 
     adminActionHistoryService.record(event);
@@ -49,7 +49,7 @@ class AdminActionHistoryServiceTest {
 
     AdminActionHistory saved = captor.getValue();
     assertThat(saved.getAdminId()).isEqualTo(adminId);
-    assertThat(saved.getActionType()).isEqualTo(ActionType.USER_UPDATE);
+    assertThat(saved.getActionType()).isEqualTo(ActionType.UPDATE);
     assertThat(saved.getTargetType()).isEqualTo(TargetType.USER);
     assertThat(saved.getTargetId()).isEqualTo(targetId);
     assertThat(saved.getChangedFields()).containsKey("nickname");

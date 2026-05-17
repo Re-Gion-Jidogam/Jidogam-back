@@ -76,7 +76,7 @@ public class AdminUserService {
 
     if (!changedFields.isEmpty()) {
       eventPublisher.publishEvent(AdminActionEvent.of(
-          currentAdminId, ActionType.USER_UPDATE, TargetType.USER, userId, changedFields
+          currentAdminId, ActionType.UPDATE, TargetType.USER, userId, changedFields
       ));
     }
 
@@ -101,7 +101,7 @@ public class AdminUserService {
     log.info("관리자에 의해 사용자 삭제: userId = {}, adminId = {}", userId, currentAdminId);
 
     eventPublisher.publishEvent(AdminActionEvent.of(
-        currentAdminId, ActionType.USER_DELETE, TargetType.USER, userId
+        currentAdminId, ActionType.DELETE, TargetType.USER, userId
     ));
   }
 
@@ -119,7 +119,7 @@ public class AdminUserService {
     log.info("관리자에 의해 사용자 복구: userId = {}, adminId = {}", userId, currentAdminId);
 
     eventPublisher.publishEvent(AdminActionEvent.of(
-        currentAdminId, ActionType.USER_RESTORE, TargetType.USER, userId
+        currentAdminId, ActionType.RESTORE, TargetType.USER, userId
     ));
   }
 
