@@ -18,7 +18,7 @@ import region.jidogam.common.entity.BaseEntity;
 import region.jidogam.domain.admin.dto.FieldChange;
 
 @Entity
-@Table(name = "admin_actions_history")
+@Table(name = "admin_actions_histories")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
