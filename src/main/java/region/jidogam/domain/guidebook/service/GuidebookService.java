@@ -297,6 +297,20 @@ public class GuidebookService {
   }
 
   @Transactional
+  public void softDelete(UUID id, UUID userId) {
+
+    Guidebook guidebook = getOrThrow(id);
+
+    checkAuthorOrThrow(guidebook, userId);
+
+    if (guidebook.getIsPublished()) {
+      throw GuidebookPublishedException.forDeletion(id);
+    }
+
+    guidebook.softDelete();
+  }
+
+  @Transactional
   public void delete(UUID id, UUID userId) {
 
     Guidebook guidebook = getOrThrow(id);
