@@ -16,7 +16,7 @@ public interface GuidebookPlaceRepository extends JpaRepository<GuidebookPlace, 
 
   int deleteByGuidebook_IdAndPlace_Id(UUID guidebookId, UUID placeId);
 
-  void deleteByGuidebook(Guidebook guidebook);
+  void deleteByGuidebook_Id(UUID guidebookId);
 
   boolean existsByGuidebookAndPlace(Guidebook guidebook, Place place);
 

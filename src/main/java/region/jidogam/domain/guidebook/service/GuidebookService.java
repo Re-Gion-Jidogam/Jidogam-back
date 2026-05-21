@@ -310,19 +310,14 @@ public class GuidebookService {
     guidebook.softDelete();
   }
 
+  /**
+   * 스케줄러에 의한 물리 삭제 예정
+   */
   @Transactional
-  public void delete(UUID id, UUID userId) {
-
-    Guidebook guidebook = getOrThrow(id);
-
-    checkAuthorOrThrow(guidebook, userId);
-
-    if (guidebook.getIsPublished()) {
-      throw GuidebookPublishedException.forDeletion(id);
-    }
-
-    guidebookPlaceRepository.deleteByGuidebook(guidebook);
-    guidebookRepository.delete(guidebook);
+  public void hardDelete(UUID id) {
+    guidebookAreaRatioRepository.deleteByGuidebook_Id(id);
+    guidebookPlaceRepository.deleteByGuidebook_Id(id);
+    guidebookRepository.deleteById(id);
   }
 
   @Transactional
