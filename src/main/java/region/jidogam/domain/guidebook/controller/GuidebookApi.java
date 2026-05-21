@@ -13,6 +13,7 @@ import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import region.jidogam.common.annotation.CurrentUserId;
@@ -22,6 +23,7 @@ import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookPlaceConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
 
@@ -165,6 +167,20 @@ public interface GuidebookApi {
   })
   ResponseEntity<Void> cancelParticipation(
       @Parameter(description = "가이드북 ID", required = true) @PathVariable UUID id,
+      @Parameter(hidden = true) @CurrentUserId UUID userId
+  );
+
+  @Operation(summary = "가이드북 리뷰 작성", description = "가이드북 리뷰를 작성합니다.")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "201", description = "리뷰 작성 성공"),
+      @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+      // 이거 조건에 만족하지 않는 경우로 수정
+      @ApiResponse(responseCode = "403", description = "참여하지 않은 가이드북이거나 리뷰 생성 조건 부족")
+  })
+  @PostMapping("/{id}/reviews")
+  ResponseEntity<Void> createReview(
+      @Parameter(description = "가이드북 ID", required = true) @PathVariable UUID id,
+      @Valid @RequestBody GuidebookReviewCreateRequest request,
       @Parameter(hidden = true) @CurrentUserId UUID userId
   );
 }

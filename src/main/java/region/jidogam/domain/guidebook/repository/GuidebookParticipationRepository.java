@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.util.Optional;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
 import region.jidogam.domain.guidebook.repository.querydsl.GuidebookParticipationRepositoryCustom;
@@ -15,6 +16,8 @@ public interface GuidebookParticipationRepository extends
     GuidebookParticipationRepositoryCustom {
 
   boolean existsByGuidebookAndUser(Guidebook guidebook, User user);
+
+  Optional<GuidebookParticipation> findByGuidebookAndUser(Guidebook guidebook, User user);
 
   int deleteByGuidebook_IdAndUser_Id(UUID guidebookId, UUID userId);
 

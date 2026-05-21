@@ -133,4 +133,9 @@ public class Guidebook extends BaseUpdatableEntity {
   public void updateExp(int exp) {
     this.exp = exp;
   }
+
+  public void addRating(int rating) {
+    this.ratingSum += rating;
+    this.ratingCount += 1;
+  }
 }

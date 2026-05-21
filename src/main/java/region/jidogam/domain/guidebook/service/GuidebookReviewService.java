@@ -1,0 +1,84 @@
+package region.jidogam.domain.guidebook.service;
+
+import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewCreateRequest;
+import region.jidogam.domain.guidebook.entity.Guidebook;
+import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
+import region.jidogam.domain.guidebook.entity.GuidebookReview;
+import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
+import region.jidogam.domain.guidebook.exception.GuidebookNotParticipatedException;
+import region.jidogam.domain.guidebook.exception.GuidebookNotPublishedException;
+import region.jidogam.domain.guidebook.exception.GuidebookReviewDuplicateException;
+import region.jidogam.domain.guidebook.exception.GuidebookReviewInsufficientVisitsException;
+import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
+import region.jidogam.domain.guidebook.repository.GuidebookRepository;
+import region.jidogam.domain.guidebook.repository.GuidebookReviewRepository;
+import region.jidogam.domain.user.entity.User;
+import region.jidogam.domain.user.exception.UserNotFoundException;
+import region.jidogam.domain.user.repository.UserRepository;
+
+@Service
+@RequiredArgsConstructor
+public class GuidebookReviewService {
+
+  private static final int MIN_VISITED_PLACE_COUNT_SMALL = 4;
+  private static final int MIN_VISITED_PLACE_COUNT_DEFAULT = 5;
+  private static final int SMALL_GUIDEBOOK_PLACE_THRESHOLD = 10;
+
+  private final GuidebookRepository guidebookRepository;
+  private final GuidebookReviewRepository guidebookReviewRepository;
+  private final GuidebookParticipationRepository guidebookParticipationRepository;
+  private final UserRepository userRepository;
+
+  @Transactional
+  public void create(UUID guidebookId, UUID userId, GuidebookReviewCreateRequest request) {
+    Guidebook guidebook = getGuidebookOrThrow(guidebookId);
+
+    if (!guidebook.getIsPublished()) {
+      throw GuidebookNotPublishedException.withId(guidebookId);
+    }
+
+    User user = getUserOrThrow(userId);
+
+    GuidebookParticipation participation = guidebookParticipationRepository
+        .findByGuidebookAndUser(guidebook, user)
+        .orElseThrow(() -> GuidebookNotParticipatedException.withId(guidebookId));
+
+    int minRequired = guidebook.getTotalPlaceCount() <= SMALL_GUIDEBOOK_PLACE_THRESHOLD
+        ? MIN_VISITED_PLACE_COUNT_SMALL
+        : MIN_VISITED_PLACE_COUNT_DEFAULT;
+
+    if (participation.getCompletedPlaceCount() < minRequired) {
+      throw new GuidebookReviewInsufficientVisitsException(
+          minRequired, participation.getCompletedPlaceCount());
+    }
+
+    if (guidebookReviewRepository.existsByGuidebook_IdAndAuthor_Id(guidebookId, userId)) {
+      throw GuidebookReviewDuplicateException.withId(guidebookId);
+    }
+
+    GuidebookReview review = GuidebookReview.builder()
+        .guidebook(guidebook)
+        .author(user)
+        .content(request.content())
+        .rating(request.rating().doubleValue())
+        .build();
+
+    guidebookReviewRepository.save(review);
+    guidebook.addRating(request.rating());
+  }
+
+  private Guidebook getGuidebookOrThrow(UUID guidebookId) {
+    return guidebookRepository.findById(guidebookId)
+        .orElseThrow(() -> GuidebookNotFoundException.withId(guidebookId));
+  }
+
+  private User getUserOrThrow(UUID userId) {
+    return userRepository.findById(userId)
+        .orElseThrow(() -> UserNotFoundException.withId(userId));
+  }
+
+}

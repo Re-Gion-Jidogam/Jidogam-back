@@ -23,8 +23,10 @@ import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookPlaceConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.service.GuidebookPlaceService;
+import region.jidogam.domain.guidebook.service.GuidebookReviewService;
 import region.jidogam.domain.guidebook.service.GuidebookService;
 import region.jidogam.domain.place.dto.PlaceResponse;
 
@@ -35,6 +37,7 @@ public class GuidebookController implements GuidebookApi {
 
   private final GuidebookService guidebookService;
   private final GuidebookPlaceService guidebookPlaceService;
+  private final GuidebookReviewService guidebookReviewService;
 
   @Override
   @GetMapping
@@ -156,5 +159,16 @@ public class GuidebookController implements GuidebookApi {
   ) {
     guidebookService.cancelParticipation(id, userId);
     return ResponseEntity.noContent().build();
+  }
+
+  @PostMapping("/{id}/reviews")
+  @Override
+  public ResponseEntity<Void> createReview(
+      @PathVariable UUID id,
+      @Valid @RequestBody GuidebookReviewCreateRequest request,
+      @CurrentUserId UUID userId
+  ) {
+    guidebookReviewService.create(id, userId, request);
+    return ResponseEntity.status(HttpStatus.CREATED).build();
   }
 }
