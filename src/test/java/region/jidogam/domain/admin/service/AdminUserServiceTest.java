@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,15 +15,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import region.jidogam.domain.admin.dto.AdminUserResponse;
 import region.jidogam.domain.admin.dto.AdminUserSearchRequest;
 import region.jidogam.domain.admin.dto.AdminUserUpdateRequest;
+import region.jidogam.domain.admin.entity.AdminActionHistory.ActionType;
+import region.jidogam.domain.admin.event.AdminActionEvent;
 import region.jidogam.domain.admin.repository.AdminUserRepository;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.entity.User.Role;
@@ -42,6 +47,9 @@ class AdminUserServiceTest {
 
   @Mock
   private AdminUserRepository adminUserRepository;
+
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
   private User createUser(String email, String nickname, Role role) {
     return User.builder()
@@ -228,13 +236,105 @@ class AdminUserServiceTest {
     @DisplayName("삭제된 사용자를 복구한다")
     void restoresDeletedUser() {
       UUID userId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       User user = createUser("test@test.com", "tester", Role.USER);
       user.softDelete();
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
-      adminUserService.restoreUser(userId);
+      adminUserService.restoreUser(userId, adminId);
 
       assertThat(user.isDeleted()).isFalse();
+    }
+  }
+
+  @Nested
+  @DisplayName("관리자 활동 기록 이벤트 발행")
+  class PublishesAdminActionEvent {
+
+    @Test
+    @DisplayName("사용자 수정 시 UPDATE 이벤트가 발행된다")
+    void publishesUserUpdateEvent() {
+      UUID userId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
+      User user = createUser("test@test.com", "oldNick", Role.USER);
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.existsByNickname("newNick")).thenReturn(false);
+
+      AdminUserUpdateRequest request = new AdminUserUpdateRequest("newNick", null);
+      adminUserService.updateUser(userId, request, adminId);
+
+      ArgumentCaptor<AdminActionEvent> captor = ArgumentCaptor.forClass(AdminActionEvent.class);
+      verify(eventPublisher).publishEvent(captor.capture());
+
+      AdminActionEvent event = captor.getValue();
+      assertThat(event.adminId()).isEqualTo(adminId);
+      assertThat(event.actionType()).isEqualTo(ActionType.UPDATE);
+      assertThat(event.targetId()).isEqualTo(userId);
+      assertThat(event.changedFields()).containsKey("nickname");
+      assertThat(event.changedFields().get("nickname").oldValue()).isEqualTo("oldNick");
+      assertThat(event.changedFields().get("nickname").newValue()).isEqualTo("newNick");
+    }
+
+    @Test
+    @DisplayName("변경 사항이 없으면 이벤트가 발행되지 않는다")
+    void doesNotPublishWhenNoChange() {
+      UUID userId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
+      User user = createUser("test@test.com", "tester", Role.USER);
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      AdminUserUpdateRequest request = new AdminUserUpdateRequest(null, null);
+      adminUserService.updateUser(userId, request, adminId);
+
+      verify(eventPublisher, never()).publishEvent(any(AdminActionEvent.class));
+    }
+
+    @Test
+    @DisplayName("사용자 삭제 시 DELETE 이벤트가 발행된다")
+    void publishesUserDeleteEvent() {
+      UUID userId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
+      User user = createUser("test@test.com", "tester", Role.USER);
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      adminUserService.deleteUser(userId, adminId);
+
+      ArgumentCaptor<AdminActionEvent> captor = ArgumentCaptor.forClass(AdminActionEvent.class);
+      verify(eventPublisher).publishEvent(captor.capture());
+
+      assertThat(captor.getValue().actionType()).isEqualTo(ActionType.DELETE);
+      assertThat(captor.getValue().targetId()).isEqualTo(userId);
+    }
+
+    @Test
+    @DisplayName("사용자 복구 시 RESTORE 이벤트가 발행된다")
+    void publishesUserRestoreEvent() {
+      UUID userId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
+      User user = createUser("test@test.com", "tester", Role.USER);
+      user.softDelete();
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      adminUserService.restoreUser(userId, adminId);
+
+      ArgumentCaptor<AdminActionEvent> captor = ArgumentCaptor.forClass(AdminActionEvent.class);
+      verify(eventPublisher).publishEvent(captor.capture());
+
+      assertThat(captor.getValue().actionType()).isEqualTo(ActionType.RESTORE);
+    }
+
+    @Test
+    @DisplayName("이미 삭제된 사용자 재삭제 시 이벤트가 발행되지 않는다")
+    void doesNotPublishWhenAlreadyDeleted() {
+      UUID userId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
+      User user = createUser("test@test.com", "tester", Role.USER);
+      user.softDelete();
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+      adminUserService.deleteUser(userId, adminId);
+
+      verify(eventPublisher, never()).publishEvent(any(AdminActionEvent.class));
     }
   }
 }

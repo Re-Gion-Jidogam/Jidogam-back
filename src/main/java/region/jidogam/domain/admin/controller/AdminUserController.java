@@ -84,8 +84,11 @@ public class AdminUserController {
   }
 
   @PostMapping("/{userId}/restore")
-  public String userRestore(@PathVariable UUID userId, RedirectAttributes redirectAttributes) {
-    adminUserService.restoreUser(userId);
+  public String userRestore(
+      @PathVariable UUID userId,
+      @CurrentUserId UUID currentAdminId,
+      RedirectAttributes redirectAttributes) {
+    adminUserService.restoreUser(userId, currentAdminId);
     redirectAttributes.addFlashAttribute("successMessage", "사용자가 복구되었습니다.");
     return "redirect:/jidogam-admin/users/" + userId;
   }
