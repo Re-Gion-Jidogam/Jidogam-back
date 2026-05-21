@@ -361,7 +361,7 @@ class GuidebookServiceTest {
   class Delete {
 
     @Test
-    @DisplayName("가이드북 삭제 성공")
+    @DisplayName("가이드북 소프트 삭제 성공")
     void successDelete() {
       // given
       UUID guidebookId = UUID.randomUUID();
@@ -372,15 +372,14 @@ class GuidebookServiceTest {
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
 
       // when
-      guidebookService.delete(guidebookId, userId);
+      guidebookService.softDelete(guidebookId, userId);
 
       // then
-      verify(guidebookPlaceRepository).deleteByGuidebook(guidebook);
-      verify(guidebookRepository).delete(guidebook);
+      assertThat(guidebook.getDeletedAt()).isNotNull();
     }
 
     @Test
-    @DisplayName("출판된 경우 삭제 실패 예외 발생")
+    @DisplayName("출판된 경우 소프트 삭제 실패 예외 발생")
     void failsByIsPublished() {
       // given
       UUID guidebookId = UUID.randomUUID();
@@ -393,7 +392,7 @@ class GuidebookServiceTest {
 
       // when & then
       assertThrows(GuidebookPublishedException.class,
-          () -> guidebookService.delete(guidebookId, userId));
+          () -> guidebookService.softDelete(guidebookId, userId));
     }
   }
 
