@@ -553,18 +553,13 @@ class GuidebookServiceTest {
       UUID guidebookId = UUID.randomUUID();
 
       User user = createUser(userId);
-      Guidebook guidebook = createGuidebook(guidebookId, userId);
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
       guidebook.publish();
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
       when(guidebookParticipantRepository.existsByGuidebookAndUser(guidebook, user))
           .thenReturn(false);
-
-      GuidebookParticipation guidebookParticipation = GuidebookParticipation.builder()
-          .guidebook(guidebook)
-          .user(user)
-          .build();
 
       // when
       guidebookService.addParticipant(guidebookId, userId);
@@ -582,7 +577,7 @@ class GuidebookServiceTest {
       UUID guidebookId = UUID.randomUUID();
 
       User user = createUser(userId);
-      Guidebook guidebook = createGuidebook(guidebookId, userId);
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -601,7 +596,7 @@ class GuidebookServiceTest {
       UUID guidebookId = UUID.randomUUID();
 
       User user = createUser(userId);
-      Guidebook guidebook = createGuidebook(guidebookId, userId);
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
       guidebook.publish();
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
