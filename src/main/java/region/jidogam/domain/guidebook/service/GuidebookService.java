@@ -272,7 +272,8 @@ public class GuidebookService {
 
     Optional.ofNullable(request.isPublish()).ifPresent(isPublish -> {
       if (isPublish) {
-        publish(guidebook);
+        User user = getUserOrThrow(userId);
+        publish(guidebook, user);
         guidebook.publish();
       } else {
         unpublish(guidebook);
@@ -378,17 +379,7 @@ public class GuidebookService {
       throw GuidebookAlreadyParticipatedException.withId(guidebook.getId());
     }
 
-    int completedCount = getVisitedPlaceCount(guidebook.getId(), userId);
-
-    GuidebookParticipation guidebookParticipation = GuidebookParticipation.builder()
-        .guidebook(guidebook)
-        .user(user)
-        .completedPlaceCount(completedCount)
-        .lastActivityAt(LocalDateTime.now())
-        .build();
-
-    guidebookParticipantRepository.save(guidebookParticipation);
-    guidebookRepository.updateParticipantCount(id, 1);
+    addParticipantInternal(guidebook, user);
   }
 
   @Transactional
@@ -439,7 +430,7 @@ public class GuidebookService {
   }
 
   // 이건 가이드북 수정과 별개로 분리하는게 가장 좋을 것 같음
-  private void publish(Guidebook guidebook) {
+  private void publish(Guidebook guidebook, User user) {
 
     if (guidebook.getTotalPlaceCount() < publishMinPlaceCount) {
       throw GuidebookPublishConditionException.insufficientPlaces(publishMinPlaceCount);
@@ -488,6 +479,7 @@ public class GuidebookService {
     guidebook.updateExp(totalExps);
 
     guidebookAreaRatioRepository.save(guidebookAreaRatio);
+    addParticipantInternal(guidebook, user);
   }
 
   private double calculateRatio(long placeCount, int totalCount) {
@@ -517,6 +509,20 @@ public class GuidebookService {
     }
     guidebook.invalidateAreaRatio();
     guidebookAreaRatioRepository.deleteByGuidebook_Id(guidebook.getId());
+  }
+
+  private void addParticipantInternal(Guidebook guidebook, User user) {
+    int completedCount = getVisitedPlaceCount(guidebook.getId(), user.getId());
+
+    GuidebookParticipation participation = GuidebookParticipation.builder()
+        .guidebook(guidebook)
+        .user(user)
+        .completedPlaceCount(completedCount)
+        .lastActivityAt(LocalDateTime.now())
+        .build();
+
+    guidebookParticipantRepository.save(participation);
+    guidebookRepository.updateParticipantCount(guidebook.getId(), 1);
   }
 
 }
