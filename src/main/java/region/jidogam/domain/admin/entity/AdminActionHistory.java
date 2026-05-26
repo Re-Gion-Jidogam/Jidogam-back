@@ -51,11 +51,13 @@ public class AdminActionHistory extends BaseEntity {
     CREATE,
     UPDATE,
     DELETE,
-    RESTORE
+    RESTORE,
+    HIDE
   }
 
   public enum TargetType {
     ADMIN,
-    USER
+    USER,
+    GUIDEBOOK
   }
 }

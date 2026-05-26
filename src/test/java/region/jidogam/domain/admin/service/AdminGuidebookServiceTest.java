@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -15,9 +16,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +28,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import region.jidogam.domain.admin.dto.AdminGuidebookResponse;
 import region.jidogam.domain.admin.dto.AdminGuidebookSearchRequest;
 import region.jidogam.domain.admin.dto.AdminGuidebookUpdateRequest;
+import region.jidogam.domain.admin.entity.AdminActionHistory.ActionType;
+import region.jidogam.domain.admin.entity.AdminActionHistory.TargetType;
+import region.jidogam.domain.admin.event.AdminActionEvent;
 import region.jidogam.domain.admin.repository.AdminGuidebookRepository;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
@@ -59,6 +65,9 @@ class AdminGuidebookServiceTest {
 
   @Mock
   private AdminGuidebookRepository adminGuidebookRepository;
+
+  @Mock
+  private ApplicationEventPublisher eventPublisher;
 
   private User createUser() {
     User user = User.builder()
@@ -166,12 +175,14 @@ class AdminGuidebookServiceTest {
     @DisplayName("제목과 설명을 수정한다")
     void updatesTitleAndDescription() {
       UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       Guidebook guidebook = createGuidebook(guidebookId);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
 
       AdminGuidebookUpdateRequest request = new AdminGuidebookUpdateRequest("새 제목", "새 설명");
 
-      AdminGuidebookResponse result = adminGuidebookService.updateGuidebook(guidebookId, request);
+      AdminGuidebookResponse result = adminGuidebookService.updateGuidebook(guidebookId, request,
+          adminId);
 
       assertThat(result.title()).isEqualTo("새 제목");
       assertThat(result.description()).isEqualTo("새 설명");
@@ -181,12 +192,14 @@ class AdminGuidebookServiceTest {
     @DisplayName("제목만 수정한다")
     void updatesTitleOnly() {
       UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       Guidebook guidebook = createGuidebook(guidebookId);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
 
       AdminGuidebookUpdateRequest request = new AdminGuidebookUpdateRequest("새 제목", null);
 
-      AdminGuidebookResponse result = adminGuidebookService.updateGuidebook(guidebookId, request);
+      AdminGuidebookResponse result = adminGuidebookService.updateGuidebook(guidebookId, request,
+          adminId);
 
       assertThat(result.title()).isEqualTo("새 제목");
       assertThat(result.description()).isEqualTo("테스트 설명");
@@ -196,11 +209,13 @@ class AdminGuidebookServiceTest {
     @DisplayName("존재하지 않는 가이드북 수정 시 예외가 발생한다")
     void throwsWhenGuidebookNotFound() {
       UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.empty());
 
       AdminGuidebookUpdateRequest request = new AdminGuidebookUpdateRequest("새 제목", null);
 
-      assertThatThrownBy(() -> adminGuidebookService.updateGuidebook(guidebookId, request))
+      assertThatThrownBy(
+          () -> adminGuidebookService.updateGuidebook(guidebookId, request, adminId))
           .isInstanceOf(GuidebookNotFoundException.class);
     }
   }
@@ -213,39 +228,40 @@ class AdminGuidebookServiceTest {
     @DisplayName("가이드북을 관리자 숨김 처리한다 (isPublished/지역 비율은 보존)")
     void forceHidesGuidebookByAdmin() {
       UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       Guidebook guidebook = createGuidebook(guidebookId, true);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
 
-      adminGuidebookService.unpublishGuidebook(guidebookId);
+      adminGuidebookService.unpublishGuidebook(guidebookId, adminId);
 
       assertThat(guidebook.getAdminHidden()).isTrue();
       assertThat(guidebook.getIsPublished()).isTrue();
       assertThat(guidebook.getPublishedDate()).isNotNull();
-      verify(guidebookAreaRatioRepository, org.mockito.Mockito.never())
-          .deleteByGuidebook_Id(any());
+      verify(guidebookAreaRatioRepository, never()).deleteByGuidebook_Id(any());
     }
 
     @Test
     @DisplayName("이미 관리자 숨김 상태면 아무것도 하지 않는다")
     void skipsWhenAlreadyHidden() {
       UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       Guidebook guidebook = createGuidebook(guidebookId, true);
       ReflectionTestUtils.setField(guidebook, "adminHidden", true);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
 
-      adminGuidebookService.unpublishGuidebook(guidebookId);
+      adminGuidebookService.unpublishGuidebook(guidebookId, adminId);
 
-      verify(guidebookAreaRatioRepository, org.mockito.Mockito.never())
-          .deleteByGuidebook_Id(any());
+      verify(guidebookAreaRatioRepository, never()).deleteByGuidebook_Id(any());
     }
 
     @Test
     @DisplayName("존재하지 않는 가이드북 숨김 시 예외가 발생한다")
     void throwsWhenGuidebookNotFound() {
       UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.empty());
 
-      assertThatThrownBy(() -> adminGuidebookService.unpublishGuidebook(guidebookId))
+      assertThatThrownBy(() -> adminGuidebookService.unpublishGuidebook(guidebookId, adminId))
           .isInstanceOf(GuidebookNotFoundException.class);
     }
   }
@@ -258,10 +274,11 @@ class AdminGuidebookServiceTest {
     @DisplayName("가이드북과 연관 데이터를 삭제한다")
     void deletesGuidebookAndRelatedData() {
       UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       Guidebook guidebook = createGuidebook(guidebookId);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
 
-      adminGuidebookService.deleteGuidebook(guidebookId);
+      adminGuidebookService.deleteGuidebook(guidebookId, adminId);
 
       verify(guidebookReviewRepository).deleteByGuidebook_Id(guidebookId);
       verify(guidebookParticipationRepository).deleteByGuidebook_Id(guidebookId);
@@ -274,10 +291,107 @@ class AdminGuidebookServiceTest {
     @DisplayName("존재하지 않는 가이드북 삭제 시 예외가 발생한다")
     void throwsWhenGuidebookNotFound() {
       UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.empty());
 
-      assertThatThrownBy(() -> adminGuidebookService.deleteGuidebook(guidebookId))
+      assertThatThrownBy(() -> adminGuidebookService.deleteGuidebook(guidebookId, adminId))
           .isInstanceOf(GuidebookNotFoundException.class);
+    }
+  }
+
+  @Nested
+  @DisplayName("관리자 활동 기록 이벤트 발행")
+  class PublishesAdminActionEvent {
+
+    @Test
+    @DisplayName("가이드북 수정 시 UPDATE 이벤트가 발행된다")
+    void publishesGuidebookUpdateEvent() {
+      UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
+      Guidebook guidebook = createGuidebook(guidebookId);
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      AdminGuidebookUpdateRequest request = new AdminGuidebookUpdateRequest("새 제목", "새 설명");
+      adminGuidebookService.updateGuidebook(guidebookId, request, adminId);
+
+      ArgumentCaptor<AdminActionEvent> captor = ArgumentCaptor.forClass(AdminActionEvent.class);
+      verify(eventPublisher).publishEvent(captor.capture());
+
+      AdminActionEvent event = captor.getValue();
+      assertThat(event.adminId()).isEqualTo(adminId);
+      assertThat(event.actionType()).isEqualTo(ActionType.UPDATE);
+      assertThat(event.targetType()).isEqualTo(TargetType.GUIDEBOOK);
+      assertThat(event.targetId()).isEqualTo(guidebookId);
+      assertThat(event.changedFields()).containsKeys("title", "description");
+      assertThat(event.changedFields().get("title").oldValue()).isEqualTo("테스트 가이드북");
+      assertThat(event.changedFields().get("title").newValue()).isEqualTo("새 제목");
+    }
+
+    @Test
+    @DisplayName("변경 사항이 없으면 수정 이벤트가 발행되지 않는다")
+    void doesNotPublishWhenNoUpdateChange() {
+      UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
+      Guidebook guidebook = createGuidebook(guidebookId);
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      AdminGuidebookUpdateRequest request = new AdminGuidebookUpdateRequest(null, null);
+      adminGuidebookService.updateGuidebook(guidebookId, request, adminId);
+
+      verify(eventPublisher, never()).publishEvent(any(AdminActionEvent.class));
+    }
+
+    @Test
+    @DisplayName("가이드북 숨김 시 HIDE 이벤트가 발행된다")
+    void publishesGuidebookHideEvent() {
+      UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
+      Guidebook guidebook = createGuidebook(guidebookId, true);
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      adminGuidebookService.unpublishGuidebook(guidebookId, adminId);
+
+      ArgumentCaptor<AdminActionEvent> captor = ArgumentCaptor.forClass(AdminActionEvent.class);
+      verify(eventPublisher).publishEvent(captor.capture());
+
+      AdminActionEvent event = captor.getValue();
+      assertThat(event.adminId()).isEqualTo(adminId);
+      assertThat(event.actionType()).isEqualTo(ActionType.HIDE);
+      assertThat(event.targetType()).isEqualTo(TargetType.GUIDEBOOK);
+      assertThat(event.targetId()).isEqualTo(guidebookId);
+    }
+
+    @Test
+    @DisplayName("이미 숨김 상태면 HIDE 이벤트가 발행되지 않는다")
+    void doesNotPublishWhenAlreadyHidden() {
+      UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
+      Guidebook guidebook = createGuidebook(guidebookId, true);
+      ReflectionTestUtils.setField(guidebook, "adminHidden", true);
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      adminGuidebookService.unpublishGuidebook(guidebookId, adminId);
+
+      verify(eventPublisher, never()).publishEvent(any(AdminActionEvent.class));
+    }
+
+    @Test
+    @DisplayName("가이드북 삭제 시 DELETE 이벤트가 발행된다")
+    void publishesGuidebookDeleteEvent() {
+      UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
+      Guidebook guidebook = createGuidebook(guidebookId);
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      adminGuidebookService.deleteGuidebook(guidebookId, adminId);
+
+      ArgumentCaptor<AdminActionEvent> captor = ArgumentCaptor.forClass(AdminActionEvent.class);
+      verify(eventPublisher).publishEvent(captor.capture());
+
+      AdminActionEvent event = captor.getValue();
+      assertThat(event.actionType()).isEqualTo(ActionType.DELETE);
+      assertThat(event.targetType()).isEqualTo(TargetType.GUIDEBOOK);
+      assertThat(event.targetId()).isEqualTo(guidebookId);
     }
   }
 }

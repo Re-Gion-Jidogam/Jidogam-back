@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import region.jidogam.common.annotation.CurrentUserId;
 import region.jidogam.domain.admin.dto.AdminGuidebookResponse;
 import region.jidogam.domain.admin.dto.AdminGuidebookSearchRequest;
 import region.jidogam.domain.admin.dto.AdminGuidebookUpdateRequest;
@@ -59,12 +60,13 @@ public class AdminGuidebookController {
   @PostMapping("/{guidebookId}/edit")
   public String guidebookUpdate(
       @PathVariable UUID guidebookId,
+      @CurrentUserId UUID currentAdminId,
       @RequestParam(value = "title", required = false) String title,
       @RequestParam(value = "description", required = false) String description,
       RedirectAttributes redirectAttributes) {
 
     AdminGuidebookUpdateRequest request = new AdminGuidebookUpdateRequest(title, description);
-    adminGuidebookService.updateGuidebook(guidebookId, request);
+    adminGuidebookService.updateGuidebook(guidebookId, request, currentAdminId);
     redirectAttributes.addFlashAttribute("successMessage", "가이드북이 수정되었습니다.");
     return "redirect:/jidogam-admin/guidebooks/" + guidebookId;
   }
@@ -72,8 +74,9 @@ public class AdminGuidebookController {
   @PostMapping("/{guidebookId}/unpublish")
   public String guidebookUnpublish(
       @PathVariable UUID guidebookId,
+      @CurrentUserId UUID currentAdminId,
       RedirectAttributes redirectAttributes) {
-    adminGuidebookService.unpublishGuidebook(guidebookId);
+    adminGuidebookService.unpublishGuidebook(guidebookId, currentAdminId);
     redirectAttributes.addFlashAttribute("successMessage", "가이드북이 미출판 상태로 변경되었습니다.");
     return "redirect:/jidogam-admin/guidebooks/" + guidebookId;
   }
@@ -81,8 +84,9 @@ public class AdminGuidebookController {
   @PostMapping("/{guidebookId}/delete")
   public String guidebookDelete(
       @PathVariable UUID guidebookId,
+      @CurrentUserId UUID currentAdminId,
       RedirectAttributes redirectAttributes) {
-    adminGuidebookService.deleteGuidebook(guidebookId);
+    adminGuidebookService.deleteGuidebook(guidebookId, currentAdminId);
     redirectAttributes.addFlashAttribute("successMessage", "가이드북이 삭제되었습니다.");
     return "redirect:/jidogam-admin/guidebooks";
   }
