@@ -100,7 +100,7 @@ public class GuidebookController implements GuidebookApi {
       @PathVariable UUID id,
       @CurrentUserId UUID userId
   ) {
-    guidebookService.delete(id, userId);
+    guidebookService.softDelete(id, userId);
     return ResponseEntity.noContent().build();
   }
 

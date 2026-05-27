@@ -20,11 +20,7 @@ import region.jidogam.domain.admin.event.AdminActionEvent;
 import region.jidogam.domain.admin.repository.AdminGuidebookRepository;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
-import region.jidogam.domain.guidebook.repository.GuidebookAreaRatioRepository;
-import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
-import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
-import region.jidogam.domain.guidebook.repository.GuidebookReviewRepository;
 
 @Slf4j
 @Service
@@ -32,10 +28,6 @@ import region.jidogam.domain.guidebook.repository.GuidebookReviewRepository;
 public class AdminGuidebookService {
 
   private final GuidebookRepository guidebookRepository;
-  private final GuidebookPlaceRepository guidebookPlaceRepository;
-  private final GuidebookParticipationRepository guidebookParticipationRepository;
-  private final GuidebookAreaRatioRepository guidebookAreaRatioRepository;
-  private final GuidebookReviewRepository guidebookReviewRepository;
   private final AdminGuidebookRepository adminGuidebookRepository;
   private final ApplicationEventPublisher eventPublisher;
 
@@ -108,17 +100,17 @@ public class AdminGuidebookService {
     ));
   }
 
-  // TODO: 소프트 삭제(deletedAt) 적용 - 사용자 측 삭제도 현재 물리 삭제이므로 함께 변경 (별도 작업)
   @Transactional
   public void deleteGuidebook(UUID guidebookId, UUID currentAdminId) {
     Guidebook guidebook = guidebookRepository.findById(guidebookId)
         .orElseThrow(() -> GuidebookNotFoundException.withId(guidebookId));
 
-    guidebookReviewRepository.deleteByGuidebook_Id(guidebookId);
-    guidebookParticipationRepository.deleteByGuidebook_Id(guidebookId);
-    guidebookPlaceRepository.deleteByGuidebook(guidebook);
-    guidebookAreaRatioRepository.deleteByGuidebook_Id(guidebookId);
-    guidebookRepository.delete(guidebook);
+    if (guidebook.getDeletedAt() != null) {
+      log.warn("이미 삭제된 가이드북입니다: guidebookId = {}", guidebookId);
+      return;
+    }
+
+    guidebook.softDelete();
 
     log.info("관리자에 의해 가이드북 삭제: guidebookId = {}, adminId = {}", guidebookId, currentAdminId);
 

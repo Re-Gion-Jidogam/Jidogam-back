@@ -34,11 +34,7 @@ import region.jidogam.domain.admin.event.AdminActionEvent;
 import region.jidogam.domain.admin.repository.AdminGuidebookRepository;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
-import region.jidogam.domain.guidebook.repository.GuidebookAreaRatioRepository;
-import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
-import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
-import region.jidogam.domain.guidebook.repository.GuidebookReviewRepository;
 import region.jidogam.domain.user.entity.User;
 
 @ExtendWith(MockitoExtension.class)
@@ -50,18 +46,6 @@ class AdminGuidebookServiceTest {
 
   @Mock
   private GuidebookRepository guidebookRepository;
-
-  @Mock
-  private GuidebookPlaceRepository guidebookPlaceRepository;
-
-  @Mock
-  private GuidebookParticipationRepository guidebookParticipationRepository;
-
-  @Mock
-  private GuidebookAreaRatioRepository guidebookAreaRatioRepository;
-
-  @Mock
-  private GuidebookReviewRepository guidebookReviewRepository;
 
   @Mock
   private AdminGuidebookRepository adminGuidebookRepository;
@@ -237,7 +221,6 @@ class AdminGuidebookServiceTest {
       assertThat(guidebook.getAdminHidden()).isTrue();
       assertThat(guidebook.getIsPublished()).isTrue();
       assertThat(guidebook.getPublishedDate()).isNotNull();
-      verify(guidebookAreaRatioRepository, never()).deleteByGuidebook_Id(any());
     }
 
     @Test
@@ -251,7 +234,7 @@ class AdminGuidebookServiceTest {
 
       adminGuidebookService.unpublishGuidebook(guidebookId, adminId);
 
-      verify(guidebookAreaRatioRepository, never()).deleteByGuidebook_Id(any());
+      assertThat(guidebook.getAdminHidden()).isTrue();
     }
 
     @Test
@@ -271,8 +254,8 @@ class AdminGuidebookServiceTest {
   class DeleteGuidebook {
 
     @Test
-    @DisplayName("가이드북과 연관 데이터를 삭제한다")
-    void deletesGuidebookAndRelatedData() {
+    @DisplayName("가이드북을 소프트 삭제한다 (deletedAt 설정)")
+    void softDeletesGuidebook() {
       UUID guidebookId = UUID.randomUUID();
       UUID adminId = UUID.randomUUID();
       Guidebook guidebook = createGuidebook(guidebookId);
@@ -280,11 +263,23 @@ class AdminGuidebookServiceTest {
 
       adminGuidebookService.deleteGuidebook(guidebookId, adminId);
 
-      verify(guidebookReviewRepository).deleteByGuidebook_Id(guidebookId);
-      verify(guidebookParticipationRepository).deleteByGuidebook_Id(guidebookId);
-      verify(guidebookPlaceRepository).deleteByGuidebook(guidebook);
-      verify(guidebookAreaRatioRepository).deleteByGuidebook_Id(guidebookId);
-      verify(guidebookRepository).delete(guidebook);
+      assertThat(guidebook.getDeletedAt()).isNotNull();
+      verify(guidebookRepository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("이미 삭제된 가이드북은 아무것도 하지 않는다")
+    void skipsWhenAlreadyDeleted() {
+      UUID guidebookId = UUID.randomUUID();
+      UUID adminId = UUID.randomUUID();
+      Guidebook guidebook = createGuidebook(guidebookId);
+      guidebook.softDelete();
+      LocalDateTime originalDeletedAt = guidebook.getDeletedAt();
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+
+      adminGuidebookService.deleteGuidebook(guidebookId, adminId);
+
+      assertThat(guidebook.getDeletedAt()).isEqualTo(originalDeletedAt);
     }
 
     @Test

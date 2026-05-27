@@ -56,4 +56,9 @@ public class GuidebookCondition {
     return isLocal != null ? guidebook.areaRatio.isPrimaryArea.eq(isLocal) : null;
   }
 
+  // 삭제 조건
+  public static BooleanExpression isNotDeleted() {
+    return guidebook.deletedAt.isNull();
+  }
+
 }

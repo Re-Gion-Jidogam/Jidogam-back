@@ -80,6 +80,9 @@ public class Guidebook extends BaseUpdatableEntity {
   @Builder.Default
   private Boolean adminHidden = false;
 
+  @Column
+  private LocalDateTime deletedAt;
+
   public void updateTitle(String title) {
     this.title = title;
   }
@@ -144,5 +147,13 @@ public class Guidebook extends BaseUpdatableEntity {
 
   public void updateExp(int exp) {
     this.exp = exp;
+  }
+
+  public void softDelete() {
+    this.deletedAt = LocalDateTime.now();
+  }
+
+  public void restore() {
+    this.deletedAt = null;
   }
 }
