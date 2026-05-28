@@ -75,8 +75,8 @@ public class GuidebookService {
   private final CursorCodecUtil cursorCodecUtil;
   private final ApplicationEventPublisher eventPublisher;
 
-  @Value("${jidogam.guidebook.reward.completion-rate}")
-  private double guidebookCompletionRate;
+  @Value("${jidogam.guidebook.publish.min-place-count}")
+  private int publishMinPlaceCount;
 
   @Transactional(readOnly = true)
   public List<GuidebookResponse> popularList(int limit) {
@@ -272,7 +272,8 @@ public class GuidebookService {
 
     Optional.ofNullable(request.isPublish()).ifPresent(isPublish -> {
       if (isPublish) {
-        publish(guidebook);
+        User user = getUserOrThrow(userId);
+        publish(guidebook, user);
         guidebook.publish();
       } else {
         unpublish(guidebook);
@@ -387,17 +388,7 @@ public class GuidebookService {
       throw GuidebookAlreadyParticipatedException.withId(guidebook.getId());
     }
 
-    int completedCount = getVisitedPlaceCount(guidebook.getId(), userId);
-
-    GuidebookParticipation guidebookParticipation = GuidebookParticipation.builder()
-        .guidebook(guidebook)
-        .user(user)
-        .completedPlaceCount(completedCount)
-        .lastActivityAt(LocalDateTime.now())
-        .build();
-
-    guidebookParticipantRepository.save(guidebookParticipation);
-    guidebookRepository.updateParticipantCount(id, 1);
+    addParticipantInternal(guidebook, user);
   }
 
   @Transactional
@@ -448,18 +439,17 @@ public class GuidebookService {
   }
 
   // 이건 가이드북 수정과 별개로 분리하는게 가장 좋을 것 같음
-  private void publish(Guidebook guidebook) {
+  private void publish(Guidebook guidebook, User user) {
+
+    if (guidebook.getTotalPlaceCount() < publishMinPlaceCount) {
+      throw GuidebookPublishConditionException.insufficientPlaces(publishMinPlaceCount);
+    }
 
     // 모든 가이드북 장소-지역 중 top3 지역 가져오기
     List<AreaRatioDto> top3Areas = guidebookPlaceRepository.findAreasByPlaceCountDesc(
         guidebook.getId(),
         PageRequest.of(0, 3)
     );
-
-    // 출판 시 장소가 없는 경우 예외 처리
-    if (top3Areas.isEmpty()) {
-      throw GuidebookPublishConditionException.noPlace();
-    }
 
     // 비율 계산하기
     List<AreaRatioDto> withRatios = top3Areas.stream()
@@ -498,6 +488,7 @@ public class GuidebookService {
     guidebook.updateExp(totalExps);
 
     guidebookAreaRatioRepository.save(guidebookAreaRatio);
+    addParticipantInternal(guidebook, user);
   }
 
   private double calculateRatio(long placeCount, int totalCount) {
@@ -527,6 +518,20 @@ public class GuidebookService {
     }
     guidebook.invalidateAreaRatio();
     guidebookAreaRatioRepository.deleteByGuidebook_Id(guidebook.getId());
+  }
+
+  private void addParticipantInternal(Guidebook guidebook, User user) {
+    int completedCount = getVisitedPlaceCount(guidebook.getId(), user.getId());
+
+    GuidebookParticipation participation = GuidebookParticipation.builder()
+        .guidebook(guidebook)
+        .user(user)
+        .completedPlaceCount(completedCount)
+        .lastActivityAt(LocalDateTime.now())
+        .build();
+
+    guidebookParticipantRepository.save(participation);
+    guidebookRepository.updateParticipantCount(guidebook.getId(), 1);
   }
 
 }
