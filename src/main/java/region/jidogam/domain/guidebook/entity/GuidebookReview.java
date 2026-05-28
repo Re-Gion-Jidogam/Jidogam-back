@@ -39,4 +39,12 @@ public class GuidebookReview extends BaseUpdatableEntity {
   @Column(nullable = false)
   @Builder.Default
   private Integer rating = 0;
+
+  public void updateRating(int rating) {
+    this.rating = rating;
+  }
+
+  public void updateContent(String content) {
+    this.content = content;
+  }
 }

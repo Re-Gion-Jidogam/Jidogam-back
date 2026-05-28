@@ -1,18 +1,22 @@
 package region.jidogam.domain.guidebook.service;
 
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewUpdateRequest;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
 import region.jidogam.domain.guidebook.entity.GuidebookReview;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotParticipatedException;
+import region.jidogam.domain.guidebook.exception.GuidebookReviewAuthorMismatchException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewDuplicateException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewInsufficientVisitsException;
+import region.jidogam.domain.guidebook.exception.GuidebookReviewNotFoundException;
 import region.jidogam.domain.guidebook.mapper.GuidebookReviewMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
@@ -69,6 +73,32 @@ public class GuidebookReviewService {
     GuidebookReview savedReview = guidebookReviewRepository.save(review);
     guidebookRepository.updateRating(guidebook.getId(), request.rating(), 1);
     return guidebookReviewMapper.toResponse(savedReview);
+  }
+
+  @Transactional
+  public GuidebookReviewResponse update(UUID reviewId, UUID userId,
+      GuidebookReviewUpdateRequest request) {
+
+    GuidebookReview review = guidebookReviewRepository.findById(reviewId)
+        .orElseThrow(() -> GuidebookReviewNotFoundException.withId(reviewId));
+
+    if (!review.getAuthor().getId().equals(userId)) {
+      throw GuidebookReviewAuthorMismatchException.withId(reviewId);
+    }
+
+    Optional.ofNullable(request.rating())
+        .ifPresent(newRating -> {
+          if (!newRating.equals(review.getRating())) {
+            guidebookRepository.updateRating(review.getGuidebook().getId(),
+                newRating - review.getRating(), 0);
+            review.updateRating(newRating);
+          }
+        });
+
+    Optional.ofNullable(request.content())
+        .ifPresent(review::updateContent);
+
+    return guidebookReviewMapper.toResponse(review);
   }
 
   private Guidebook getGuidebookOrThrow(UUID guidebookId) {

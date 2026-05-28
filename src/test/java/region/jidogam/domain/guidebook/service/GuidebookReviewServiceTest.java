@@ -2,6 +2,7 @@ package region.jidogam.domain.guidebook.service;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -21,13 +22,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewUpdateRequest;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
 import region.jidogam.domain.guidebook.entity.GuidebookReview;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotParticipatedException;
+import region.jidogam.domain.guidebook.exception.GuidebookReviewAuthorMismatchException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewDuplicateException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewInsufficientVisitsException;
+import region.jidogam.domain.guidebook.exception.GuidebookReviewNotFoundException;
 import region.jidogam.domain.guidebook.mapper.GuidebookReviewMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
@@ -222,6 +226,114 @@ class GuidebookReviewServiceTest {
     }
   }
 
+  @Nested
+  @DisplayName("리뷰 수정")
+  class Update {
+
+    @Test
+    @DisplayName("rating과 content 모두 수정 성공")
+    void success() {
+      // given
+      UUID reviewId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      GuidebookReviewUpdateRequest request = new GuidebookReviewUpdateRequest(5, "수정된 내용");
+
+      Guidebook guidebook = createGuidebook(guidebookId, 11);
+      User user = createUser(userId);
+      GuidebookReview review = createReview(reviewId, guidebook, user, 3, "기존 내용");
+
+      when(guidebookReviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
+      when(guidebookReviewMapper.toResponse(review)).thenReturn(mock(GuidebookReviewResponse.class));
+
+      // when
+      guidebookReviewService.update(reviewId, userId, request);
+
+      // then
+      verify(guidebookRepository).updateRating(guidebookId, 2, 0);
+      verify(guidebookReviewMapper).toResponse(review);
+    }
+
+    @Test
+    @DisplayName("content만 수정 시 guidebook ratingSum 변경 없음")
+    void successOnlyContent() {
+      // given
+      UUID reviewId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      GuidebookReviewUpdateRequest request = new GuidebookReviewUpdateRequest(null, "수정된 내용");
+
+      Guidebook guidebook = createGuidebook(UUID.randomUUID(), 11);
+      User user = createUser(userId);
+      GuidebookReview review = createReview(reviewId, guidebook, user, 4, "기존 내용");
+
+      when(guidebookReviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
+      when(guidebookReviewMapper.toResponse(review)).thenReturn(mock(GuidebookReviewResponse.class));
+
+      // when
+      guidebookReviewService.update(reviewId, userId, request);
+
+      // then
+      verify(guidebookRepository, never()).updateRating(any(), anyInt(), anyInt());
+    }
+
+    @Test
+    @DisplayName("기존과 동일한 rating 전송 시 guidebook ratingSum 변경 없음")
+    void successSameRating() {
+      // given
+      UUID reviewId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      GuidebookReviewUpdateRequest request = new GuidebookReviewUpdateRequest(4, null);
+
+      Guidebook guidebook = createGuidebook(UUID.randomUUID(), 11);
+      User user = createUser(userId);
+      GuidebookReview review = createReview(reviewId, guidebook, user, 4, "기존 내용");
+
+      when(guidebookReviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
+      when(guidebookReviewMapper.toResponse(review)).thenReturn(mock(GuidebookReviewResponse.class));
+
+      // when
+      guidebookReviewService.update(reviewId, userId, request);
+
+      // then
+      verify(guidebookRepository, never()).updateRating(any(), anyInt(), anyInt());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 리뷰이면 예외 발생")
+    void failsByNotFound() {
+      // given
+      UUID reviewId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      GuidebookReviewUpdateRequest request = new GuidebookReviewUpdateRequest(5, "수정된 내용");
+
+      when(guidebookReviewRepository.findById(reviewId)).thenReturn(Optional.empty());
+
+      // when & then
+      assertThrows(GuidebookReviewNotFoundException.class,
+          () -> guidebookReviewService.update(reviewId, userId, request));
+    }
+
+    @Test
+    @DisplayName("리뷰 작성자가 아니면 예외 발생")
+    void failsByAuthorMismatch() {
+      // given
+      UUID reviewId = UUID.randomUUID();
+      UUID authorId = UUID.randomUUID();
+      UUID anotherUserId = UUID.randomUUID();
+      GuidebookReviewUpdateRequest request = new GuidebookReviewUpdateRequest(5, "수정된 내용");
+
+      Guidebook guidebook = createGuidebook(UUID.randomUUID(), 11);
+      User author = createUser(authorId);
+      GuidebookReview review = createReview(reviewId, guidebook, author, 3, "기존 내용");
+
+      when(guidebookReviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
+
+      // when & then
+      assertThrows(GuidebookReviewAuthorMismatchException.class,
+          () -> guidebookReviewService.update(reviewId, anotherUserId, request));
+    }
+  }
+
   /***
    * 이하 편의 메서드
    */
@@ -252,5 +364,17 @@ class GuidebookReviewServiceTest {
         .user(user)
         .completedPlaceCount(completedPlaceCount)
         .build();
+  }
+
+  private GuidebookReview createReview(UUID reviewId, Guidebook guidebook, User author,
+      int rating, String content) {
+    GuidebookReview review = GuidebookReview.builder()
+        .guidebook(guidebook)
+        .author(author)
+        .rating(rating)
+        .content(content)
+        .build();
+    ReflectionTestUtils.setField(review, "id", reviewId);
+    return review;
   }
 }
