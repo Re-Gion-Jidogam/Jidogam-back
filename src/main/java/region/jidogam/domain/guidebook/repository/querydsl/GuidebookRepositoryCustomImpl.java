@@ -49,6 +49,7 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
 
     BooleanBuilder where = new BooleanBuilder();
 
+    where.and(GuidebookCondition.isNotDeleted());
     where.and(GuidebookCondition.isPublished());
     where.and(GuidebookCondition.titleContains(keyword));
     where.and(GuidebookCondition.isLocalGuidebook(isLocal));
@@ -72,6 +73,7 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
     return queryFactory.selectFrom(guidebook)
         .leftJoin(guidebook.author, user)
         .where(
+            GuidebookCondition.isNotDeleted(),
             guidebook.author.id.eq(authorId),
             GuidebookCondition.titleContains(keyword),
             GuidebookCursorCondition.buildUserGuidebookCursor(cursor, sortBy, direction),
@@ -89,6 +91,7 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
         .from(guidebook)
         .where(
             guidebook.author.id.eq(authorId),
+            GuidebookCondition.isNotDeleted(),
             GuidebookCondition.titleContains(keyword),
             isOwner ? null : GuidebookCondition.isPublished()
         )
@@ -101,6 +104,7 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
   public long countPublishedGuidebooksByKeyword(String keyword, Boolean isLocal) {
     BooleanBuilder where = new BooleanBuilder();
 
+    where.and(GuidebookCondition.isNotDeleted());
     where.and(GuidebookCondition.isPublished());
     where.and(GuidebookCondition.titleContains(keyword));
     where.and(GuidebookCondition.isLocalGuidebook(isLocal));
@@ -140,6 +144,7 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
     BooleanBuilder where = new BooleanBuilder();
 
     where.and(guidebookPlace.place.id.eq(placeId));
+    where.and(GuidebookCondition.isNotDeleted());
     where.and(GuidebookCondition.isPublished());
     where.and(GuidebookCondition.titleContains(keyword));
     where.and(GuidebookCondition.isLocalGuidebook(isLocal));
@@ -159,7 +164,9 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
         .select(guidebook.count())
         .from(guidebook)
         .join(guidebookPlace).on(guidebookPlace.guidebook.eq(guidebook))
-        .where(guidebookPlace.place.id.eq(placeId),
+        .where(
+            guidebookPlace.place.id.eq(placeId),
+            GuidebookCondition.isNotDeleted(),
             GuidebookCondition.isPublished(),
             GuidebookCondition.titleContains(keyword),
             GuidebookCondition.isLocalGuidebook(isLocal))

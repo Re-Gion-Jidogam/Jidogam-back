@@ -299,16 +299,18 @@ class GuidebookServiceTest {
 
     // 출판 시 엣지 조건 확인
     @Test
-    @DisplayName("장소가 없는 가이드북 출판 시 예외 발생")
-    void failsByNoPlaces() {
+    @DisplayName("최소 장소 수 이하인 경우 가이드북 출판 시도 시 예외 발생")
+    void failsByInsufficientPlaceCount() {
       // given
       UUID guidebookId = UUID.randomUUID();
       UUID userId = UUID.randomUUID();
 
-      Guidebook guidebook = createGuidebook(userId, guidebookId);
+      Guidebook guidebook = createGuidebook(userId, guidebookId, 1);
+      User user = createUser(userId);
+      ReflectionTestUtils.setField(guidebookService, "publishMinPlaceCount", 5);
+
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
-      when(guidebookPlaceRepository.findAreasByPlaceCountDesc(any(), any()))
-          .thenReturn(List.of());
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
       // when & then
       assertThrows(GuidebookPublishConditionException.class,
@@ -333,12 +335,14 @@ class GuidebookServiceTest {
       UUID userId = UUID.randomUUID();
 
       Guidebook guidebook = createGuidebook(userId, guidebookId, totalCount);
+      User user = createUser(userId);
       List<AreaRatioDto> areas = List.of(
           new AreaRatioDto(mock(Area.class), firstPlaceCount, 0.0),
           new AreaRatioDto(mock(Area.class), totalCount - firstPlaceCount, 0.0)
       );
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
       when(guidebookPlaceRepository.findAreasByPlaceCountDesc(guidebookId, PageRequest.of(0, 3)))
           .thenReturn(areas);
       when(expService.calculateGuidebookCompletionExp(anyInt()))
@@ -361,7 +365,7 @@ class GuidebookServiceTest {
   class Delete {
 
     @Test
-    @DisplayName("가이드북 삭제 성공")
+    @DisplayName("가이드북 소프트 삭제 성공")
     void successDelete() {
       // given
       UUID guidebookId = UUID.randomUUID();
@@ -372,15 +376,14 @@ class GuidebookServiceTest {
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
 
       // when
-      guidebookService.delete(guidebookId, userId);
+      guidebookService.softDelete(guidebookId, userId);
 
       // then
-      verify(guidebookPlaceRepository).deleteByGuidebook(guidebook);
-      verify(guidebookRepository).delete(guidebook);
+      assertThat(guidebook.getDeletedAt()).isNotNull();
     }
 
     @Test
-    @DisplayName("출판된 경우 삭제 실패 예외 발생")
+    @DisplayName("출판된 경우 소프트 삭제 실패 예외 발생")
     void failsByIsPublished() {
       // given
       UUID guidebookId = UUID.randomUUID();
@@ -393,7 +396,7 @@ class GuidebookServiceTest {
 
       // when & then
       assertThrows(GuidebookPublishedException.class,
-          () -> guidebookService.delete(guidebookId, userId));
+          () -> guidebookService.softDelete(guidebookId, userId));
     }
   }
 
@@ -553,18 +556,13 @@ class GuidebookServiceTest {
       UUID guidebookId = UUID.randomUUID();
 
       User user = createUser(userId);
-      Guidebook guidebook = createGuidebook(guidebookId, userId);
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
       guidebook.publish();
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
       when(guidebookParticipantRepository.existsByGuidebookAndUser(guidebook, user))
           .thenReturn(false);
-
-      GuidebookParticipation guidebookParticipation = GuidebookParticipation.builder()
-          .guidebook(guidebook)
-          .user(user)
-          .build();
 
       // when
       guidebookService.addParticipant(guidebookId, userId);
@@ -582,7 +580,7 @@ class GuidebookServiceTest {
       UUID guidebookId = UUID.randomUUID();
 
       User user = createUser(userId);
-      Guidebook guidebook = createGuidebook(guidebookId, userId);
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -601,7 +599,7 @@ class GuidebookServiceTest {
       UUID guidebookId = UUID.randomUUID();
 
       User user = createUser(userId);
-      Guidebook guidebook = createGuidebook(guidebookId, userId);
+      Guidebook guidebook = createGuidebook(userId, guidebookId);
       guidebook.publish();
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));

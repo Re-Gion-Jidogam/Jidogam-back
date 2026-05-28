@@ -10,6 +10,8 @@ import region.jidogam.domain.guidebook.repository.querydsl.GuidebookRepositoryCu
 public interface GuidebookRepository extends JpaRepository<Guidebook, UUID>,
     GuidebookRepositoryCustom {
 
+  void deleteById(UUID id);
+
   @Modifying
   @Query("""
       UPDATE Guidebook g

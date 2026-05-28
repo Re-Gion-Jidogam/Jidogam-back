@@ -6,7 +6,8 @@ public class GuidebookPublishConditionException extends GuidebookException {
     super(GuidebookErrorCode.GUIDEBOOK_NOT_PUBLISHABLE, message);
   }
 
-  public static GuidebookPublishConditionException noPlace() {
-    return new GuidebookPublishConditionException("빈 가이드북은 출판할 수 없습니다.");
+  public static GuidebookPublishConditionException insufficientPlaces(int min) {
+    return new GuidebookPublishConditionException(
+        "가이드북은 최소 " + min + "개 이상의 장소가 있어야 출판할 수 있습니다.");
   }
 }
