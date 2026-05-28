@@ -29,6 +29,7 @@ import region.jidogam.domain.guidebook.entity.GuidebookReview;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotParticipatedException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewAuthorMismatchException;
+import region.jidogam.domain.guidebook.exception.GuidebookReviewDeletedDuplicateException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewDuplicateException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewInsufficientVisitsException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewNotFoundException;
@@ -77,8 +78,8 @@ class GuidebookReviewServiceTest {
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
       when(guidebookParticipationRepository.findByGuidebookAndUser(guidebook, user))
           .thenReturn(Optional.of(participation));
-      when(guidebookReviewRepository.existsByGuidebook_IdAndAuthor_Id(guidebookId, userId))
-          .thenReturn(false);
+      when(guidebookReviewRepository.findByGuidebook_IdAndAuthor_Id(guidebookId, userId))
+          .thenReturn(Optional.empty());
       when(guidebookReviewRepository.save(any(GuidebookReview.class))).thenReturn(savedReview);
       when(guidebookReviewMapper.toResponse(savedReview)).thenReturn(mock(GuidebookReviewResponse.class));
 
@@ -107,8 +108,8 @@ class GuidebookReviewServiceTest {
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
       when(guidebookParticipationRepository.findByGuidebookAndUser(guidebook, user))
           .thenReturn(Optional.of(participation));
-      when(guidebookReviewRepository.existsByGuidebook_IdAndAuthor_Id(guidebookId, userId))
-          .thenReturn(false);
+      when(guidebookReviewRepository.findByGuidebook_IdAndAuthor_Id(guidebookId, userId))
+          .thenReturn(Optional.empty());
       when(guidebookReviewRepository.save(any(GuidebookReview.class))).thenReturn(savedReview);
       when(guidebookReviewMapper.toResponse(savedReview)).thenReturn(mock(GuidebookReviewResponse.class));
 
@@ -210,16 +211,45 @@ class GuidebookReviewServiceTest {
       Guidebook guidebook = createGuidebook(guidebookId, 11);
       User user = createUser(userId);
       GuidebookParticipation participation = createParticipation(guidebook, user, 5);
+      GuidebookReview existingReview = createReview(UUID.randomUUID(), guidebook, user, 4, "기존 내용");
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
       when(guidebookParticipationRepository.findByGuidebookAndUser(guidebook, user))
           .thenReturn(Optional.of(participation));
-      when(guidebookReviewRepository.existsByGuidebook_IdAndAuthor_Id(guidebookId, userId))
-          .thenReturn(true);
+      when(guidebookReviewRepository.findByGuidebook_IdAndAuthor_Id(guidebookId, userId))
+          .thenReturn(Optional.of(existingReview));
 
       // when & then
       assertThrows(GuidebookReviewDuplicateException.class,
+          () -> guidebookReviewService.create(guidebookId, userId, request));
+
+      verify(guidebookReviewRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("삭제된 리뷰가 있는 경우 별도 예외 발생")
+    void failsByDeletedReview() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+      GuidebookReviewCreateRequest request = new GuidebookReviewCreateRequest(4, "내용");
+
+      Guidebook guidebook = createGuidebook(guidebookId, 11);
+      User user = createUser(userId);
+      GuidebookParticipation participation = createParticipation(guidebook, user, 5);
+      GuidebookReview deletedReview = createReview(UUID.randomUUID(), guidebook, user, 4, "삭제된 내용");
+      deletedReview.softDelete();
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(guidebookParticipationRepository.findByGuidebookAndUser(guidebook, user))
+          .thenReturn(Optional.of(participation));
+      when(guidebookReviewRepository.findByGuidebook_IdAndAuthor_Id(guidebookId, userId))
+          .thenReturn(Optional.of(deletedReview));
+
+      // when & then
+      assertThrows(GuidebookReviewDeletedDuplicateException.class,
           () -> guidebookReviewService.create(guidebookId, userId, request));
 
       verify(guidebookReviewRepository, never()).save(any());
@@ -331,6 +361,65 @@ class GuidebookReviewServiceTest {
       // when & then
       assertThrows(GuidebookReviewAuthorMismatchException.class,
           () -> guidebookReviewService.update(reviewId, anotherUserId, request));
+    }
+  }
+
+  @Nested
+  @DisplayName("리뷰 삭제")
+  class Delete {
+
+    @Test
+    @DisplayName("삭제 성공 시 guidebook ratingSum과 ratingCount 감소")
+    void success() {
+      // given
+      UUID reviewId = UUID.randomUUID();
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      Guidebook guidebook = createGuidebook(guidebookId, 11);
+      User user = createUser(userId);
+      GuidebookReview review = createReview(reviewId, guidebook, user, 4, "내용");
+
+      when(guidebookReviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
+
+      // when
+      guidebookReviewService.delete(reviewId, userId);
+
+      // then
+      verify(guidebookRepository).updateRating(guidebookId, -4, -1);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 리뷰이면 예외 발생")
+    void failsByNotFound() {
+      // given
+      UUID reviewId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      when(guidebookReviewRepository.findById(reviewId)).thenReturn(Optional.empty());
+
+      // when & then
+      assertThrows(GuidebookReviewNotFoundException.class,
+          () -> guidebookReviewService.delete(reviewId, userId));
+    }
+
+    @Test
+    @DisplayName("리뷰 작성자가 아니면 예외 발생")
+    void failsByAuthorMismatch() {
+      // given
+      UUID reviewId = UUID.randomUUID();
+      UUID authorId = UUID.randomUUID();
+      UUID anotherUserId = UUID.randomUUID();
+
+      Guidebook guidebook = createGuidebook(UUID.randomUUID(), 11);
+      User author = createUser(authorId);
+      GuidebookReview review = createReview(reviewId, guidebook, author, 3, "내용");
+
+      when(guidebookReviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
+
+      // when & then
+      assertThrows(GuidebookReviewAuthorMismatchException.class,
+          () -> guidebookReviewService.delete(reviewId, anotherUserId));
     }
   }
 

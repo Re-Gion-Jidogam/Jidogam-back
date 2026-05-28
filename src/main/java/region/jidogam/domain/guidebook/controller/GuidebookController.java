@@ -185,4 +185,15 @@ public class GuidebookController implements GuidebookApi {
     GuidebookReviewResponse response = guidebookReviewService.update(reviewId, userId, request);
     return ResponseEntity.ok(response);
   }
+
+  @DeleteMapping("/{id}/reviews/{reviewId}")
+  @Override
+  public ResponseEntity<Void> deleteReview(
+      @PathVariable UUID id,
+      @PathVariable UUID reviewId,
+      @CurrentUserId UUID userId
+  ) {
+    guidebookReviewService.delete(reviewId, userId);
+    return ResponseEntity.noContent().build();
+  }
 }

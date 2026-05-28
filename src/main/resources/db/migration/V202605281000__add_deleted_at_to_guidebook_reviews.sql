@@ -1,0 +1,2 @@
+ALTER TABLE guidebook_reviews
+    ADD COLUMN deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;

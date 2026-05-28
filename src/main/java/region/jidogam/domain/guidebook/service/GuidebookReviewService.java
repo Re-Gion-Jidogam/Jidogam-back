@@ -14,6 +14,7 @@ import region.jidogam.domain.guidebook.entity.GuidebookReview;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotParticipatedException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewAuthorMismatchException;
+import region.jidogam.domain.guidebook.exception.GuidebookReviewDeletedDuplicateException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewDuplicateException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewInsufficientVisitsException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewNotFoundException;
@@ -59,9 +60,13 @@ public class GuidebookReviewService {
           minRequired, participation.getCompletedPlaceCount());
     }
 
-    if (guidebookReviewRepository.existsByGuidebook_IdAndAuthor_Id(guidebookId, userId)) {
-      throw GuidebookReviewDuplicateException.withId(guidebookId);
-    }
+    guidebookReviewRepository.findByGuidebook_IdAndAuthor_Id(guidebookId, userId)
+        .ifPresent(existing -> {
+          if (existing.getDeletedAt() != null) {
+            throw GuidebookReviewDeletedDuplicateException.withId(guidebookId);
+          }
+          throw GuidebookReviewDuplicateException.withId(guidebookId);
+        });
 
     GuidebookReview review = GuidebookReview.builder()
         .guidebook(guidebook)
@@ -79,8 +84,7 @@ public class GuidebookReviewService {
   public GuidebookReviewResponse update(UUID reviewId, UUID userId,
       GuidebookReviewUpdateRequest request) {
 
-    GuidebookReview review = guidebookReviewRepository.findById(reviewId)
-        .orElseThrow(() -> GuidebookReviewNotFoundException.withId(reviewId));
+    GuidebookReview review = getOrThrow(reviewId);
 
     if (!review.getAuthor().getId().equals(userId)) {
       throw GuidebookReviewAuthorMismatchException.withId(reviewId);
@@ -101,6 +105,19 @@ public class GuidebookReviewService {
     return guidebookReviewMapper.toResponse(review);
   }
 
+  @Transactional
+  public void delete(UUID reviewId, UUID userId) {
+
+    GuidebookReview review = getOrThrow(reviewId);
+
+    if (!review.getAuthor().getId().equals(userId)) {
+      throw GuidebookReviewAuthorMismatchException.withId(reviewId);
+    }
+
+    guidebookRepository.updateRating(review.getGuidebook().getId(), -review.getRating(), -1);
+    review.softDelete();
+  }
+
   private Guidebook getGuidebookOrThrow(UUID guidebookId) {
     return guidebookRepository.findById(guidebookId)
         .orElseThrow(() -> GuidebookNotFoundException.withId(guidebookId));
@@ -109,6 +126,12 @@ public class GuidebookReviewService {
   private User getUserOrThrow(UUID userId) {
     return userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
+  }
+
+
+  private GuidebookReview getOrThrow(UUID id) {
+    return guidebookReviewRepository.findById(id)
+        .orElseThrow(() -> GuidebookReviewNotFoundException.withId(id));
   }
 
 }

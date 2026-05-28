@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -179,7 +180,7 @@ public interface GuidebookApi {
       @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
       @ApiResponse(responseCode = "403", description = "리뷰 생성 조건 부족"),
       @ApiResponse(responseCode = "404", description = "가이드북을 찾을 수 없음"),
-      @ApiResponse(responseCode = "409", description = "이미 리뷰를 작성함")
+      @ApiResponse(responseCode = "409", description = "이미 리뷰를 작성함 / 삭제한 리뷰가 있어 재작성 불가")
   })
   @PostMapping("/{id}/reviews")
   ResponseEntity<GuidebookReviewResponse> createReview(
@@ -200,6 +201,20 @@ public interface GuidebookApi {
       @Parameter(description = "가이드북 ID", required = true) @PathVariable UUID id,
       @Parameter(description = "리뷰 ID", required = true) @PathVariable UUID reviewId,
       @Valid @RequestBody GuidebookReviewUpdateRequest request,
+      @Parameter(hidden = true) @CurrentUserId UUID userId
+  );
+
+  @Operation(summary = "가이드북 리뷰 삭제", description = "가이드북 리뷰를 삭제합니다.")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "204", description = "리뷰 삭제 성공"),
+      @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+      @ApiResponse(responseCode = "403", description = "리뷰 작성자가 아님"),
+      @ApiResponse(responseCode = "404", description = "리뷰를 찾을 수 없음")
+  })
+  @DeleteMapping("/{id}/reviews/{reviewId}")
+  ResponseEntity<Void> deleteReview(
+      @Parameter(description = "가이드북 ID", required = true) @PathVariable UUID id,
+      @Parameter(description = "리뷰 ID", required = true) @PathVariable UUID reviewId,
       @Parameter(hidden = true) @CurrentUserId UUID userId
   );
 }

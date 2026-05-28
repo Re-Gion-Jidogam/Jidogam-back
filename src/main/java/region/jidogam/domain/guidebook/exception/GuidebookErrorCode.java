@@ -27,7 +27,9 @@ public enum GuidebookErrorCode implements ErrorCode {
   GUIDEBOOK_REVIEW_INSUFFICIENT_VISITS(HttpStatus.FORBIDDEN, "GUIDE_BOOK_014",
       "방문한 장소가 부족하여 리뷰를 작성할 수 없습니다."),
   GUIDEBOOK_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "GUIDE_BOOK_015", "존재하지 않는 리뷰입니다."),
-  GUIDEBOOK_REVIEW_AUTHOR_MISMATCH(HttpStatus.FORBIDDEN, "GUIDE_BOOK_016", "리뷰 작성자가 아닙니다.");
+  GUIDEBOOK_REVIEW_AUTHOR_MISMATCH(HttpStatus.FORBIDDEN, "GUIDE_BOOK_016", "리뷰 작성자가 아닙니다."),
+  GUIDEBOOK_REVIEW_DELETED_DUPLICATE(HttpStatus.CONFLICT, "GUIDE_BOOK_017",
+      "삭제한 리뷰가 있어 재작성이 불가합니다.");
 
   private HttpStatus status;
   private String code;
