@@ -38,6 +38,5 @@ public class GuidebookReview extends BaseUpdatableEntity {
 
   @Column(nullable = false)
   @Builder.Default
-  private Double rating = 0.0;
-
+  private Integer rating = 0;
 }

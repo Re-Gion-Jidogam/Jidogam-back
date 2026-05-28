@@ -18,15 +18,17 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewCreateRequest;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewResponse;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
 import region.jidogam.domain.guidebook.entity.GuidebookReview;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotParticipatedException;
-import region.jidogam.domain.guidebook.exception.GuidebookNotPublishedException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewDuplicateException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewInsufficientVisitsException;
+import region.jidogam.domain.guidebook.mapper.GuidebookReviewMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookReviewRepository;
@@ -45,6 +47,8 @@ class GuidebookReviewServiceTest {
   private GuidebookParticipationRepository guidebookParticipationRepository;
   @Mock
   private UserRepository userRepository;
+  @Mock
+  private GuidebookReviewMapper guidebookReviewMapper;
   @InjectMocks
   private GuidebookReviewService guidebookReviewService;
 
@@ -60,29 +64,26 @@ class GuidebookReviewServiceTest {
       UUID userId = UUID.randomUUID();
       GuidebookReviewCreateRequest request = new GuidebookReviewCreateRequest(4, "좋은 가이드북입니다.");
 
-      Guidebook guidebook = mock(Guidebook.class);
-      User user = mock(User.class);
-      GuidebookParticipation participation = mock(GuidebookParticipation.class);
+      Guidebook guidebook = createGuidebook(guidebookId, 11);
+      User user = createUser(userId);
+      GuidebookParticipation participation = createParticipation(guidebook, user, 5);
+      GuidebookReview savedReview = mock(GuidebookReview.class);
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
-      when(guidebook.getIsPublished()).thenReturn(true);
-      when(guidebook.getTotalPlaceCount()).thenReturn(11);
-
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
       when(guidebookParticipationRepository.findByGuidebookAndUser(guidebook, user))
           .thenReturn(Optional.of(participation));
-      when(participation.getCompletedPlaceCount()).thenReturn(5);
-
       when(guidebookReviewRepository.existsByGuidebook_IdAndAuthor_Id(guidebookId, userId))
           .thenReturn(false);
+      when(guidebookReviewRepository.save(any(GuidebookReview.class))).thenReturn(savedReview);
+      when(guidebookReviewMapper.toResponse(savedReview)).thenReturn(mock(GuidebookReviewResponse.class));
 
       // when
       guidebookReviewService.create(guidebookId, userId, request);
 
       // then
       verify(guidebookReviewRepository).save(any(GuidebookReview.class));
-      verify(guidebook).addRating(request.rating());
+      verify(guidebookRepository).updateRating(guidebookId, request.rating(), 1);
     }
 
     @Test
@@ -93,29 +94,26 @@ class GuidebookReviewServiceTest {
       UUID userId = UUID.randomUUID();
       GuidebookReviewCreateRequest request = new GuidebookReviewCreateRequest(5, "소규모 가이드북 리뷰입니다.");
 
-      Guidebook guidebook = mock(Guidebook.class);
-      User user = mock(User.class);
-      GuidebookParticipation participation = mock(GuidebookParticipation.class);
+      Guidebook guidebook = createGuidebook(guidebookId, 10);
+      User user = createUser(userId);
+      GuidebookParticipation participation = createParticipation(guidebook, user, 4);
+      GuidebookReview savedReview = mock(GuidebookReview.class);
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
-      when(guidebook.getIsPublished()).thenReturn(true);
-      when(guidebook.getTotalPlaceCount()).thenReturn(10);
-
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
       when(guidebookParticipationRepository.findByGuidebookAndUser(guidebook, user))
           .thenReturn(Optional.of(participation));
-      when(participation.getCompletedPlaceCount()).thenReturn(4);
-
       when(guidebookReviewRepository.existsByGuidebook_IdAndAuthor_Id(guidebookId, userId))
           .thenReturn(false);
+      when(guidebookReviewRepository.save(any(GuidebookReview.class))).thenReturn(savedReview);
+      when(guidebookReviewMapper.toResponse(savedReview)).thenReturn(mock(GuidebookReviewResponse.class));
 
       // when
       guidebookReviewService.create(guidebookId, userId, request);
 
       // then
       verify(guidebookReviewRepository).save(any(GuidebookReview.class));
-      verify(guidebook).addRating(request.rating());
+      verify(guidebookRepository).updateRating(guidebookId, request.rating(), 1);
     }
 
     @Test
@@ -134,23 +132,6 @@ class GuidebookReviewServiceTest {
     }
 
     @Test
-    @DisplayName("출판되지 않은 가이드북이면 예외 발생")
-    void failsByNotPublished() {
-      // given
-      UUID guidebookId = UUID.randomUUID();
-      UUID userId = UUID.randomUUID();
-      GuidebookReviewCreateRequest request = new GuidebookReviewCreateRequest(4, "내용");
-
-      Guidebook guidebook = mock(Guidebook.class);
-      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
-      when(guidebook.getIsPublished()).thenReturn(false);
-
-      // when & then
-      assertThrows(GuidebookNotPublishedException.class,
-          () -> guidebookReviewService.create(guidebookId, userId, request));
-    }
-
-    @Test
     @DisplayName("존재하지 않는 사용자이면 예외 발생")
     void failsByUserNotFound() {
       // given
@@ -158,9 +139,8 @@ class GuidebookReviewServiceTest {
       UUID userId = UUID.randomUUID();
       GuidebookReviewCreateRequest request = new GuidebookReviewCreateRequest(4, "내용");
 
-      Guidebook guidebook = mock(Guidebook.class);
+      Guidebook guidebook = createGuidebook(guidebookId, 11);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
-      when(guidebook.getIsPublished()).thenReturn(true);
       when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
       // when & then
@@ -176,11 +156,10 @@ class GuidebookReviewServiceTest {
       UUID userId = UUID.randomUUID();
       GuidebookReviewCreateRequest request = new GuidebookReviewCreateRequest(4, "내용");
 
-      Guidebook guidebook = mock(Guidebook.class);
-      User user = mock(User.class);
+      Guidebook guidebook = createGuidebook(guidebookId, 11);
+      User user = createUser(userId);
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
-      when(guidebook.getIsPublished()).thenReturn(true);
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
       when(guidebookParticipationRepository.findByGuidebookAndUser(guidebook, user))
           .thenReturn(Optional.empty());
@@ -202,19 +181,14 @@ class GuidebookReviewServiceTest {
       UUID userId = UUID.randomUUID();
       GuidebookReviewCreateRequest request = new GuidebookReviewCreateRequest(4, "내용");
 
-      Guidebook guidebook = mock(Guidebook.class);
-      User user = mock(User.class);
-      GuidebookParticipation participation = mock(GuidebookParticipation.class);
+      Guidebook guidebook = createGuidebook(guidebookId, totalPlaceCount);
+      User user = createUser(userId);
+      GuidebookParticipation participation = createParticipation(guidebook, user, completedPlaceCount);
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
-      when(guidebook.getIsPublished()).thenReturn(true);
-      when(guidebook.getTotalPlaceCount()).thenReturn(totalPlaceCount);
-
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
       when(guidebookParticipationRepository.findByGuidebookAndUser(guidebook, user))
           .thenReturn(Optional.of(participation));
-      when(participation.getCompletedPlaceCount()).thenReturn(completedPlaceCount);
 
       // when & then
       assertThrows(GuidebookReviewInsufficientVisitsException.class,
@@ -229,20 +203,14 @@ class GuidebookReviewServiceTest {
       UUID userId = UUID.randomUUID();
       GuidebookReviewCreateRequest request = new GuidebookReviewCreateRequest(4, "내용");
 
-      Guidebook guidebook = mock(Guidebook.class);
-      User user = mock(User.class);
-      GuidebookParticipation participation = mock(GuidebookParticipation.class);
+      Guidebook guidebook = createGuidebook(guidebookId, 11);
+      User user = createUser(userId);
+      GuidebookParticipation participation = createParticipation(guidebook, user, 5);
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
-      when(guidebook.getIsPublished()).thenReturn(true);
-      when(guidebook.getTotalPlaceCount()).thenReturn(11);
-
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-
       when(guidebookParticipationRepository.findByGuidebookAndUser(guidebook, user))
           .thenReturn(Optional.of(participation));
-      when(participation.getCompletedPlaceCount()).thenReturn(5);
-
       when(guidebookReviewRepository.existsByGuidebook_IdAndAuthor_Id(guidebookId, userId))
           .thenReturn(true);
 
@@ -252,5 +220,37 @@ class GuidebookReviewServiceTest {
 
       verify(guidebookReviewRepository, never()).save(any());
     }
+  }
+
+  /***
+   * 이하 편의 메서드
+   */
+  private User createUser(UUID userId) {
+    User user = User.builder()
+        .nickname("테스트유저")
+        .password("password")
+        .email("test@test.com")
+        .build();
+    ReflectionTestUtils.setField(user, "id", userId);
+    return user;
+  }
+
+  private Guidebook createGuidebook(UUID guidebookId, int totalPlaceCount) {
+    Guidebook guidebook = Guidebook.builder()
+        .title("테스트 가이드북")
+        .totalPlaceCount(totalPlaceCount)
+        .author(createUser(UUID.randomUUID()))
+        .build();
+    ReflectionTestUtils.setField(guidebook, "id", guidebookId);
+    return guidebook;
+  }
+
+  private GuidebookParticipation createParticipation(Guidebook guidebook, User user,
+      int completedPlaceCount) {
+    return GuidebookParticipation.builder()
+        .guidebook(guidebook)
+        .user(user)
+        .completedPlaceCount(completedPlaceCount)
+        .build();
   }
 }

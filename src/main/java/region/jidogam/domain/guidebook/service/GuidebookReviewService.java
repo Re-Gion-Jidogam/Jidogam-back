@@ -5,14 +5,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewCreateRequest;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewResponse;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
 import region.jidogam.domain.guidebook.entity.GuidebookReview;
 import region.jidogam.domain.guidebook.exception.GuidebookNotFoundException;
 import region.jidogam.domain.guidebook.exception.GuidebookNotParticipatedException;
-import region.jidogam.domain.guidebook.exception.GuidebookNotPublishedException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewDuplicateException;
 import region.jidogam.domain.guidebook.exception.GuidebookReviewInsufficientVisitsException;
+import region.jidogam.domain.guidebook.mapper.GuidebookReviewMapper;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookReviewRepository;
@@ -32,15 +33,13 @@ public class GuidebookReviewService {
   private final GuidebookReviewRepository guidebookReviewRepository;
   private final GuidebookParticipationRepository guidebookParticipationRepository;
   private final UserRepository userRepository;
+  private final GuidebookReviewMapper guidebookReviewMapper;
 
   @Transactional
-  public void create(UUID guidebookId, UUID userId, GuidebookReviewCreateRequest request) {
+  public GuidebookReviewResponse create(UUID guidebookId, UUID userId,
+      GuidebookReviewCreateRequest request) {
+
     Guidebook guidebook = getGuidebookOrThrow(guidebookId);
-
-    if (!guidebook.getIsPublished()) {
-      throw GuidebookNotPublishedException.withId(guidebookId);
-    }
-
     User user = getUserOrThrow(userId);
 
     GuidebookParticipation participation = guidebookParticipationRepository
@@ -64,11 +63,12 @@ public class GuidebookReviewService {
         .guidebook(guidebook)
         .author(user)
         .content(request.content())
-        .rating(request.rating().doubleValue())
+        .rating(request.rating())
         .build();
 
-    guidebookReviewRepository.save(review);
-    guidebook.addRating(request.rating());
+    GuidebookReview savedReview = guidebookReviewRepository.save(review);
+    guidebookRepository.updateRating(guidebook.getId(), request.rating(), 1);
+    return guidebookReviewMapper.toResponse(savedReview);
   }
 
   private Guidebook getGuidebookOrThrow(UUID guidebookId) {

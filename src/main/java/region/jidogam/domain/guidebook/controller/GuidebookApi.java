@@ -174,8 +174,9 @@ public interface GuidebookApi {
   @ApiResponses(value = {
       @ApiResponse(responseCode = "201", description = "리뷰 작성 성공"),
       @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
-      // 이거 조건에 만족하지 않는 경우로 수정
-      @ApiResponse(responseCode = "403", description = "참여하지 않은 가이드북이거나 리뷰 생성 조건 부족")
+      @ApiResponse(responseCode = "403", description = "리뷰 생성 조건 부족"),
+      @ApiResponse(responseCode = "404", description = "가이드북을 찾을 수 없음"),
+      @ApiResponse(responseCode = "409", description = "이미 리뷰를 작성함")
   })
   @PostMapping("/{id}/reviews")
   ResponseEntity<Void> createReview(
