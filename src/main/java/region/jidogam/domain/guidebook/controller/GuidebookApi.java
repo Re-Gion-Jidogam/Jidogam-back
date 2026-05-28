@@ -24,6 +24,7 @@ import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookPlaceConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewCreateRequest;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
 
@@ -179,7 +180,7 @@ public interface GuidebookApi {
       @ApiResponse(responseCode = "409", description = "이미 리뷰를 작성함")
   })
   @PostMapping("/{id}/reviews")
-  ResponseEntity<Void> createReview(
+  ResponseEntity<GuidebookReviewResponse> createReview(
       @Parameter(description = "가이드북 ID", required = true) @PathVariable UUID id,
       @Valid @RequestBody GuidebookReviewCreateRequest request,
       @Parameter(hidden = true) @CurrentUserId UUID userId

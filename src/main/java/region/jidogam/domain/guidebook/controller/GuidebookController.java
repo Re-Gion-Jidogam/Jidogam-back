@@ -24,6 +24,7 @@ import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookPlaceConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewCreateRequest;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.service.GuidebookPlaceService;
 import region.jidogam.domain.guidebook.service.GuidebookReviewService;
@@ -163,12 +164,12 @@ public class GuidebookController implements GuidebookApi {
 
   @PostMapping("/{id}/reviews")
   @Override
-  public ResponseEntity<Void> createReview(
+  public ResponseEntity<GuidebookReviewResponse> createReview(
       @PathVariable UUID id,
       @Valid @RequestBody GuidebookReviewCreateRequest request,
       @CurrentUserId UUID userId
   ) {
-    guidebookReviewService.create(id, userId, request);
-    return ResponseEntity.status(HttpStatus.CREATED).build();
+    GuidebookReviewResponse response = guidebookReviewService.create(id, userId, request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 }
