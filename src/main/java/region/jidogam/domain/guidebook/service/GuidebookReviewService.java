@@ -1,11 +1,17 @@
 package region.jidogam.domain.guidebook.service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import region.jidogam.common.dto.SortDirection;
+import region.jidogam.common.dto.response.CursorPageResponseDto;
+import region.jidogam.common.util.CursorCodecUtil;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewCreateRequest;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewCursor;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewUpdateRequest;
 import region.jidogam.domain.guidebook.entity.Guidebook;
@@ -39,6 +45,47 @@ public class GuidebookReviewService {
   private final GuidebookParticipationRepository guidebookParticipationRepository;
   private final UserRepository userRepository;
   private final GuidebookReviewMapper guidebookReviewMapper;
+  private final CursorCodecUtil cursorCodecUtil;
+
+  @Transactional(readOnly = true)
+  public CursorPageResponseDto<GuidebookReviewResponse> getReviews(UUID guidebookId,
+      GuidebookReviewConditionRequest request) {
+
+    getGuidebookOrThrow(guidebookId);
+
+    SortDirection direction = request.sortDirection();
+    GuidebookReviewCursor cursor = cursorCodecUtil.decodeGuidebookReviewCursor(request.cursor());
+    int limit = request.limit();
+
+    List<GuidebookReview> reviews = guidebookReviewRepository
+        .searchByGuidebookId(guidebookId, cursor, direction, limit + 1);
+
+    boolean hasNext = reviews.size() > limit;
+    if (hasNext) {
+      reviews.remove(limit);
+    }
+
+    List<GuidebookReviewResponse> responses = reviews.stream()
+        .map(guidebookReviewMapper::toResponse)
+        .toList();
+
+    String nextCursor = null;
+    if (hasNext) {
+      nextCursor = cursorCodecUtil.encodeNextCursor(responses.get(responses.size() - 1));
+    }
+
+    long totalCount = guidebookReviewRepository.countByGuidebookId(guidebookId);
+
+    return CursorPageResponseDto.<GuidebookReviewResponse>builder()
+        .data(responses)
+        .nextCursor(nextCursor)
+        .size(responses.size())
+        .hasNext(hasNext)
+        .sortBy(request.sortBy().getValue())
+        .sortDirection(direction)
+        .totalCount(totalCount)
+        .build();
+  }
 
   @Transactional
   public GuidebookReviewResponse create(UUID guidebookId, UUID userId,

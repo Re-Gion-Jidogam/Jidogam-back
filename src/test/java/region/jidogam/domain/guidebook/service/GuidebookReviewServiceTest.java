@@ -1,5 +1,6 @@
 package region.jidogam.domain.guidebook.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -8,6 +9,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -20,8 +23,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import region.jidogam.common.dto.SortDirection;
+import region.jidogam.common.dto.response.CursorPageResponseDto;
+import region.jidogam.common.util.CursorCodecUtil;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewSortBy;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewUpdateRequest;
 import region.jidogam.domain.guidebook.entity.Guidebook;
 import region.jidogam.domain.guidebook.entity.GuidebookParticipation;
@@ -54,8 +62,100 @@ class GuidebookReviewServiceTest {
   private UserRepository userRepository;
   @Mock
   private GuidebookReviewMapper guidebookReviewMapper;
+  @Mock
+  private CursorCodecUtil cursorCodecUtil;
   @InjectMocks
   private GuidebookReviewService guidebookReviewService;
+
+  @Nested
+  @DisplayName("리뷰 목록 조회")
+  class GetReviews {
+
+    @Test
+    @DisplayName("다음 페이지 없을 때 성공")
+    void success() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      GuidebookReviewConditionRequest request = new GuidebookReviewConditionRequest(
+          GuidebookReviewSortBy.CREATED_AT, SortDirection.DESC, null, 5);
+
+      Guidebook guidebook = createGuidebook(guidebookId, 11);
+      List<GuidebookReview> reviews = List.of(
+          createReview(UUID.randomUUID(), guidebook, createUser(UUID.randomUUID()), 4, "리뷰1"),
+          createReview(UUID.randomUUID(), guidebook, createUser(UUID.randomUUID()), 3, "리뷰2")
+      );
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(cursorCodecUtil.decodeGuidebookReviewCursor(null)).thenReturn(null);
+      when(guidebookReviewRepository.searchByGuidebookId(guidebookId, null, SortDirection.DESC, 6))
+          .thenReturn(new ArrayList<>(reviews));
+      when(guidebookReviewRepository.countByGuidebookId(guidebookId)).thenReturn(2L);
+      reviews.forEach(r -> when(guidebookReviewMapper.toResponse(r))
+          .thenReturn(mock(GuidebookReviewResponse.class)));
+
+      // when
+      CursorPageResponseDto<GuidebookReviewResponse> result =
+          guidebookReviewService.getReviews(guidebookId, request);
+
+      // then
+      assertThat(result.hasNext()).isFalse();
+      assertThat(result.nextCursor()).isNull();
+      assertThat(result.data()).hasSize(2);
+      assertThat(result.totalCount()).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("다음 페이지 있을 때 nextCursor 반환")
+    void successWithHasNext() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      int limit = 2;
+      GuidebookReviewConditionRequest request = new GuidebookReviewConditionRequest(
+          GuidebookReviewSortBy.CREATED_AT, SortDirection.DESC, null, limit);
+
+      Guidebook guidebook = createGuidebook(guidebookId, 11);
+      List<GuidebookReview> reviews = new ArrayList<>(List.of(
+          createReview(UUID.randomUUID(), guidebook, createUser(UUID.randomUUID()), 5, "리뷰1"),
+          createReview(UUID.randomUUID(), guidebook, createUser(UUID.randomUUID()), 4, "리뷰2"),
+          createReview(UUID.randomUUID(), guidebook, createUser(UUID.randomUUID()), 3, "리뷰3")
+      ));
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(cursorCodecUtil.decodeGuidebookReviewCursor(null)).thenReturn(null);
+      when(guidebookReviewRepository.searchByGuidebookId(guidebookId, null, SortDirection.DESC,
+          limit + 1))
+          .thenReturn(reviews);
+      when(guidebookReviewRepository.countByGuidebookId(guidebookId)).thenReturn(10L);
+      reviews.stream().limit(limit).forEach(r -> when(guidebookReviewMapper.toResponse(r))
+          .thenReturn(mock(GuidebookReviewResponse.class)));
+      when(cursorCodecUtil.encodeNextCursor(any(GuidebookReviewResponse.class)))
+          .thenReturn("nextCursorValue");
+
+      // when
+      CursorPageResponseDto<GuidebookReviewResponse> result =
+          guidebookReviewService.getReviews(guidebookId, request);
+
+      // then
+      assertThat(result.hasNext()).isTrue();
+      assertThat(result.nextCursor()).isEqualTo("nextCursorValue");
+      assertThat(result.data()).hasSize(limit);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 가이드북이면 예외 발생")
+    void failsByGuidebookNotFound() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      GuidebookReviewConditionRequest request = new GuidebookReviewConditionRequest(
+          GuidebookReviewSortBy.CREATED_AT, SortDirection.DESC, null, 5);
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.empty());
+
+      // when & then
+      assertThrows(GuidebookNotFoundException.class,
+          () -> guidebookReviewService.getReviews(guidebookId, request));
+    }
+  }
 
   @Nested
   @DisplayName("리뷰 생성")
@@ -81,7 +181,8 @@ class GuidebookReviewServiceTest {
       when(guidebookReviewRepository.findByGuidebook_IdAndAuthor_Id(guidebookId, userId))
           .thenReturn(Optional.empty());
       when(guidebookReviewRepository.save(any(GuidebookReview.class))).thenReturn(savedReview);
-      when(guidebookReviewMapper.toResponse(savedReview)).thenReturn(mock(GuidebookReviewResponse.class));
+      when(guidebookReviewMapper.toResponse(savedReview)).thenReturn(
+          mock(GuidebookReviewResponse.class));
 
       // when
       guidebookReviewService.create(guidebookId, userId, request);
@@ -111,7 +212,8 @@ class GuidebookReviewServiceTest {
       when(guidebookReviewRepository.findByGuidebook_IdAndAuthor_Id(guidebookId, userId))
           .thenReturn(Optional.empty());
       when(guidebookReviewRepository.save(any(GuidebookReview.class))).thenReturn(savedReview);
-      when(guidebookReviewMapper.toResponse(savedReview)).thenReturn(mock(GuidebookReviewResponse.class));
+      when(guidebookReviewMapper.toResponse(savedReview)).thenReturn(
+          mock(GuidebookReviewResponse.class));
 
       // when
       guidebookReviewService.create(guidebookId, userId, request);
@@ -188,7 +290,8 @@ class GuidebookReviewServiceTest {
 
       Guidebook guidebook = createGuidebook(guidebookId, totalPlaceCount);
       User user = createUser(userId);
-      GuidebookParticipation participation = createParticipation(guidebook, user, completedPlaceCount);
+      GuidebookParticipation participation = createParticipation(guidebook, user,
+          completedPlaceCount);
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
@@ -274,7 +377,8 @@ class GuidebookReviewServiceTest {
       GuidebookReview review = createReview(reviewId, guidebook, user, 3, "기존 내용");
 
       when(guidebookReviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
-      when(guidebookReviewMapper.toResponse(review)).thenReturn(mock(GuidebookReviewResponse.class));
+      when(guidebookReviewMapper.toResponse(review)).thenReturn(
+          mock(GuidebookReviewResponse.class));
 
       // when
       guidebookReviewService.update(reviewId, userId, request);
@@ -297,7 +401,8 @@ class GuidebookReviewServiceTest {
       GuidebookReview review = createReview(reviewId, guidebook, user, 4, "기존 내용");
 
       when(guidebookReviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
-      when(guidebookReviewMapper.toResponse(review)).thenReturn(mock(GuidebookReviewResponse.class));
+      when(guidebookReviewMapper.toResponse(review)).thenReturn(
+          mock(GuidebookReviewResponse.class));
 
       // when
       guidebookReviewService.update(reviewId, userId, request);
@@ -319,7 +424,8 @@ class GuidebookReviewServiceTest {
       GuidebookReview review = createReview(reviewId, guidebook, user, 4, "기존 내용");
 
       when(guidebookReviewRepository.findById(reviewId)).thenReturn(Optional.of(review));
-      when(guidebookReviewMapper.toResponse(review)).thenReturn(mock(GuidebookReviewResponse.class));
+      when(guidebookReviewMapper.toResponse(review)).thenReturn(
+          mock(GuidebookReviewResponse.class));
 
       // when
       guidebookReviewService.update(reviewId, userId, request);

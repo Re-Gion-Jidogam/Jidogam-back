@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -25,6 +26,7 @@ import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookPlaceConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookReviewUpdateRequest;
@@ -172,6 +174,17 @@ public interface GuidebookApi {
   ResponseEntity<Void> cancelParticipation(
       @Parameter(description = "가이드북 ID", required = true) @PathVariable UUID id,
       @Parameter(hidden = true) @CurrentUserId UUID userId
+  );
+
+  @Operation(summary = "가이드북 리뷰 목록 조회", description = "가이드북 리뷰 목록을 조회합니다.")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "리뷰 목록 조회 성공"),
+      @ApiResponse(responseCode = "404", description = "가이드북을 찾을 수 없음")
+  })
+  @GetMapping("/{id}/reviews")
+  ResponseEntity<CursorPageResponseDto<GuidebookReviewResponse>> getReviews(
+      @Parameter(description = "가이드북 ID", required = true) @PathVariable UUID id,
+      @Valid @ModelAttribute GuidebookReviewConditionRequest request
   );
 
   @Operation(summary = "가이드북 리뷰 작성", description = "가이드북 리뷰를 작성합니다.")

@@ -11,14 +11,16 @@ import region.jidogam.common.dto.Cursor;
 import region.jidogam.common.exception.InvalidCursorException;
 import region.jidogam.domain.guidebook.dto.GuidebookCursor;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewCursor;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewResponse;
 import region.jidogam.domain.guidebook.dto.GuidebookSortBy;
 import region.jidogam.domain.place.dto.PlaceCursor;
 import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.place.dto.PlaceSortBy;
 import region.jidogam.domain.stamp.dto.StampCursor;
 import region.jidogam.domain.stamp.dto.StampSortBy;
-import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
 import region.jidogam.domain.user.dto.GuidebookParticipationCursor;
+import region.jidogam.domain.user.dto.GuidebookParticipationResponse;
 import region.jidogam.domain.user.dto.GuidebookParticipationSortBy;
 import region.jidogam.domain.user.dto.UserGuideBookSortBy;
 import region.jidogam.domain.user.dto.UserGuidebookCursor;
@@ -53,6 +55,11 @@ public class CursorCodecUtil {
   public GuidebookParticipationCursor decodeParticipantGuidebookCursor(String encodedCursor) {
     Cursor cursor = decodeCursor(encodedCursor);
     return GuidebookParticipationCursor.from(cursor);
+  }
+
+  public GuidebookReviewCursor decodeGuidebookReviewCursor(String encodedCursor) {
+    Cursor cursor = decodeCursor(encodedCursor);
+    return GuidebookReviewCursor.from(cursor);
   }
 
   /**
@@ -167,6 +174,17 @@ public class CursorCodecUtil {
       case LAST_ACTIVITY_AT -> lastValue = lastItem.lastActivityAt().toString();
       default -> throw new IllegalArgumentException("지원하지 않는 정렬:" + sortBy);
     }
+    return encodeNextCursor(new Cursor(lastValue, lastId.toString()));
+  }
+
+  /**
+   * 가이드북 리뷰 커서 페이지네이션의 마지막 데이터를 인코딩하여 반환하는 메서드
+   *
+   * @param lastItem GuidebookReviewResponse 타입의 아이템
+   */
+  public String encodeNextCursor(GuidebookReviewResponse lastItem) {
+    UUID lastId = lastItem.rid();
+    String lastValue = lastItem.createdAt().toString();
     return encodeNextCursor(new Cursor(lastValue, lastId.toString()));
   }
 
