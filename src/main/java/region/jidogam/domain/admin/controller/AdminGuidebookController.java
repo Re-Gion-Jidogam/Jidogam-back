@@ -71,13 +71,13 @@ public class AdminGuidebookController {
     return "redirect:/jidogam-admin/guidebooks/" + guidebookId;
   }
 
-  @PostMapping("/{guidebookId}/unpublish")
-  public String guidebookUnpublish(
+  @PostMapping("/{guidebookId}/hide")
+  public String guidebookHide(
       @PathVariable UUID guidebookId,
       @CurrentUserId UUID currentAdminId,
       RedirectAttributes redirectAttributes) {
-    adminGuidebookService.unpublishGuidebook(guidebookId, currentAdminId);
-    redirectAttributes.addFlashAttribute("successMessage", "가이드북이 미출판 상태로 변경되었습니다.");
+    adminGuidebookService.hideGuidebook(guidebookId, currentAdminId);
+    redirectAttributes.addFlashAttribute("successMessage", "가이드북이 숨김 처리되었습니다.");
     return "redirect:/jidogam-admin/guidebooks/" + guidebookId;
   }
 

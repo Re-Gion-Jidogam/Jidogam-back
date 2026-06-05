@@ -81,7 +81,7 @@ public class AdminGuidebookService {
   }
 
   @Transactional
-  public void unpublishGuidebook(UUID guidebookId, UUID currentAdminId) {
+  public void hideGuidebook(UUID guidebookId, UUID currentAdminId) {
     Guidebook guidebook = guidebookRepository.findById(guidebookId)
         .orElseThrow(() -> GuidebookNotFoundException.withId(guidebookId));
 

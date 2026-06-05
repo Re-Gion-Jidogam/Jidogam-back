@@ -103,10 +103,10 @@
         <div class="action-buttons">
           <a th:href="@{/jidogam-admin/guidebooks/{id}/edit(id=${guidebook.id()})}" class="btn-edit">수정</a>
           <form th:if="${guidebook.isPublished()}"
-                th:action="@{/jidogam-admin/guidebooks/{id}/unpublish(id=${guidebook.id()})}"
+                th:action="@{/jidogam-admin/guidebooks/{id}/hide(id=${guidebook.id()})}"
                 method="post" style="display:inline;"
-                onsubmit="return confirm('이 가이드북을 미출판 상태로 변경하시겠습니까? 참여자가 있어도 강제로 미출판됩니다.');">
-            <button type="submit" class="btn-unpublish">출판 취소</button>
+                onsubmit="return confirm('이 가이드북을 숨김 처리하시겠습니까? 참여자가 있어도 강제로 숨겨집니다.');">
+            <button type="submit" class="btn-unpublish">숨김 처리</button>
           </form>
           <form th:action="@{/jidogam-admin/guidebooks/{id}/delete(id=${guidebook.id()})}"
                 method="post" style="display:inline;"

@@ -205,8 +205,8 @@ class AdminGuidebookServiceTest {
   }
 
   @Nested
-  @DisplayName("unpublishGuidebook")
-  class UnpublishGuidebook {
+  @DisplayName("hideGuidebook")
+  class HideGuidebook {
 
     @Test
     @DisplayName("가이드북을 관리자 숨김 처리한다 (isPublished/지역 비율은 보존)")
@@ -216,7 +216,7 @@ class AdminGuidebookServiceTest {
       Guidebook guidebook = createGuidebook(guidebookId, true);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
 
-      adminGuidebookService.unpublishGuidebook(guidebookId, adminId);
+      adminGuidebookService.hideGuidebook(guidebookId, adminId);
 
       assertThat(guidebook.getAdminHidden()).isTrue();
       assertThat(guidebook.getIsPublished()).isTrue();
@@ -232,7 +232,7 @@ class AdminGuidebookServiceTest {
       ReflectionTestUtils.setField(guidebook, "adminHidden", true);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
 
-      adminGuidebookService.unpublishGuidebook(guidebookId, adminId);
+      adminGuidebookService.hideGuidebook(guidebookId, adminId);
 
       assertThat(guidebook.getAdminHidden()).isTrue();
     }
@@ -244,7 +244,7 @@ class AdminGuidebookServiceTest {
       UUID adminId = UUID.randomUUID();
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.empty());
 
-      assertThatThrownBy(() -> adminGuidebookService.unpublishGuidebook(guidebookId, adminId))
+      assertThatThrownBy(() -> adminGuidebookService.hideGuidebook(guidebookId, adminId))
           .isInstanceOf(GuidebookNotFoundException.class);
     }
   }
@@ -344,7 +344,7 @@ class AdminGuidebookServiceTest {
       Guidebook guidebook = createGuidebook(guidebookId, true);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
 
-      adminGuidebookService.unpublishGuidebook(guidebookId, adminId);
+      adminGuidebookService.hideGuidebook(guidebookId, adminId);
 
       ArgumentCaptor<AdminActionEvent> captor = ArgumentCaptor.forClass(AdminActionEvent.class);
       verify(eventPublisher).publishEvent(captor.capture());
@@ -365,7 +365,7 @@ class AdminGuidebookServiceTest {
       ReflectionTestUtils.setField(guidebook, "adminHidden", true);
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
 
-      adminGuidebookService.unpublishGuidebook(guidebookId, adminId);
+      adminGuidebookService.hideGuidebook(guidebookId, adminId);
 
       verify(eventPublisher, never()).publishEvent(any(AdminActionEvent.class));
     }
