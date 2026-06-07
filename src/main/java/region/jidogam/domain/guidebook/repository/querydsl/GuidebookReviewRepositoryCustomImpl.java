@@ -3,7 +3,6 @@ package region.jidogam.domain.guidebook.repository.querydsl;
 import static region.jidogam.domain.guidebook.entity.QGuidebookReview.guidebookReview;
 import static region.jidogam.domain.user.entity.QUser.user;
 
-import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import java.util.UUID;
@@ -32,9 +31,9 @@ public class GuidebookReviewRepositoryCustomImpl implements GuidebookReviewRepos
         .where(
             guidebookReview.guidebook.id.eq(guidebookId),
             guidebookReview.deletedAt.isNull(),
-            buildCursorCondition(cursor, direction)
+            GuidebookReviewCursorCondition.buildDateCursor(cursor, direction)
         )
-        .orderBy(buildOrder(direction))
+        .orderBy(GuidebookReviewOrderBuilder.forReview(direction))
         .limit(limit)
         .fetch();
   }
@@ -52,34 +51,4 @@ public class GuidebookReviewRepositoryCustomImpl implements GuidebookReviewRepos
     return count != null ? count : 0L;
   }
 
-  private com.querydsl.core.types.dsl.BooleanExpression buildCursorCondition(
-      GuidebookReviewCursor cursor, SortDirection direction) {
-
-    if (cursor == null || cursor.createdAt() == null || cursor.lastId() == null) {
-      return null;
-    }
-
-    if (direction == SortDirection.ASC) {
-      return guidebookReview.createdAt.gt(cursor.createdAt())
-          .or(guidebookReview.createdAt.eq(cursor.createdAt())
-              .and(guidebookReview.id.gt(cursor.lastId())));
-    }
-
-    return guidebookReview.createdAt.lt(cursor.createdAt())
-        .or(guidebookReview.createdAt.eq(cursor.createdAt())
-            .and(guidebookReview.id.lt(cursor.lastId())));
-  }
-
-  private OrderSpecifier<?>[] buildOrder(SortDirection direction) {
-    if (direction == SortDirection.ASC) {
-      return new OrderSpecifier[]{
-          guidebookReview.createdAt.asc(),
-          guidebookReview.id.asc()
-      };
-    }
-    return new OrderSpecifier[]{
-        guidebookReview.createdAt.desc(),
-        guidebookReview.id.desc()
-    };
-  }
 }
