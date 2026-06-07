@@ -127,6 +127,22 @@ public class GuidebookReviewService {
     return guidebookReviewMapper.toResponse(savedReview);
   }
 
+  @Transactional(readOnly = true)
+  public GuidebookReviewResponse getById(UUID guidebookId, UUID reviewId) {
+
+    Guidebook guidebook = getGuidebookOrThrow(guidebookId);
+    if (guidebook.getDeletedAt() != null) {
+      throw GuidebookNotFoundException.withId(guidebookId);
+    }
+
+    GuidebookReview review = getOrThrow(reviewId);
+    if (review.getDeletedAt() != null) {
+      throw GuidebookReviewNotFoundException.withId(reviewId);
+    }
+
+    return guidebookReviewMapper.toResponse(review);
+  }
+
   @Transactional
   public GuidebookReviewResponse update(UUID reviewId, UUID userId,
       GuidebookReviewUpdateRequest request) {

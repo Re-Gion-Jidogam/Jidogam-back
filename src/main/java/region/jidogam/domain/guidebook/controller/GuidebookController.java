@@ -175,6 +175,16 @@ public class GuidebookController implements GuidebookApi {
     return ResponseEntity.ok(response);
   }
 
+  @GetMapping("/{id}/reviews/{reviewId}")
+  @Override
+  public ResponseEntity<GuidebookReviewResponse> getReviewById(
+      @PathVariable UUID id,
+      @PathVariable UUID reviewId
+  ) {
+    GuidebookReviewResponse response = guidebookReviewService.getById(id, reviewId);
+    return ResponseEntity.ok(response);
+  }
+
   @PostMapping("/{id}/reviews")
   @Override
   public ResponseEntity<GuidebookReviewResponse> createReview(
