@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>가이드북 수정 - 지도감 관리자</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside th:replace="~{admin/fragments/layout :: sidebar}" th:with="menu='guidebooks'"></aside>
+
+    <div class="main-content">
+      <header th:replace="~{admin/fragments/layout :: topbar}"></header>
+
+      <main class="content-area">
+        <div class="page-header">
+          <h2>가이드북 수정</h2>
+          <a th:href="@{/jidogam-admin/guidebooks/{id}(id=${guidebook.id()})}" class="btn-back">&larr; 상세로</a>
+        </div>
+
+        <div class="form-card">
+          <form th:action="@{/jidogam-admin/guidebooks/{id}/edit(id=${guidebook.id()})}" method="post">
+            <div class="form-group">
+              <label>작성자</label>
+              <input type="text" th:value="${guidebook.authorNickname() + ' (' + guidebook.authorEmail() + ')'}" disabled class="form-input">
+            </div>
+            <div class="form-group">
+              <label>출판 상태</label>
+              <input type="text" th:value="${guidebook.isPublished() ? '출판됨' : '미출판'}" disabled class="form-input">
+            </div>
+            <div class="form-group">
+              <label>장소 수</label>
+              <input type="text" th:value="${guidebook.totalPlaceCount()}" disabled class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="title">제목</label>
+              <input type="text" id="title" name="title" th:value="${guidebook.title()}" class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="description">설명</label>
+              <textarea id="description" name="description" class="form-input" rows="4"
+                        th:text="${guidebook.description()}"></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-save">저장</button>
+              <a th:href="@{/jidogam-admin/guidebooks/{id}(id=${guidebook.id()})}" class="btn-cancel">취소</a>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

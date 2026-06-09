@@ -26,6 +26,7 @@ CREATE TABLE guidebooks
     color             VARCHAR(50),
     is_published      BOOLEAN                  NOT NULL,
     published_date    TIMESTAMP WITH TIME ZONE,
+    admin_hidden      BOOLEAN                  NOT NULL DEFAULT FALSE,
     exp               INTEGER                  NOT NULL,
     rating_sum        BIGINT                   NOT NULL,
     rating_count      INTEGER                  NOT NULL,

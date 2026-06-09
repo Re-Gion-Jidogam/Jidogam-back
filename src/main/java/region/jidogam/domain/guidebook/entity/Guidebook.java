@@ -76,6 +76,10 @@ public class Guidebook extends BaseUpdatableEntity {
   @Column
   private LocalDateTime publishedDate;
 
+  @Column(nullable = false)
+  @Builder.Default
+  private Boolean adminHidden = false;
+
   @Column
   private LocalDateTime deletedAt;
 
@@ -119,6 +123,14 @@ public class Guidebook extends BaseUpdatableEntity {
   public void unpublish() {
     this.isPublished = false;
     this.publishedDate = null;
+  }
+
+  public void hideByAdmin() {
+    this.adminHidden = true;
+  }
+
+  public void unhideByAdmin() {
+    this.adminHidden = false;
   }
 
   public double calculateAverageScore() {
