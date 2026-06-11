@@ -7,6 +7,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,6 +39,24 @@ public class GuidebookReview extends BaseUpdatableEntity {
 
   @Column(nullable = false)
   @Builder.Default
-  private Double rating = 0.0;
+  private Integer rating = 0;
 
+  @Column
+  private LocalDateTime deletedAt;
+
+  public void updateRating(int rating) {
+    this.rating = rating;
+  }
+
+  public void updateContent(String content) {
+    this.content = content;
+  }
+
+  public void softDelete() {
+    this.deletedAt = LocalDateTime.now();
+  }
+
+  public void restore() {
+    this.deletedAt = null;
+  }
 }

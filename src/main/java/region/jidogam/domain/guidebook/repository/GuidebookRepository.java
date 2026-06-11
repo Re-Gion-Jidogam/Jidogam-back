@@ -21,4 +21,13 @@ public interface GuidebookRepository extends JpaRepository<Guidebook, UUID>,
       """)
   void updateParticipantCount(UUID guidebookId, int delta);
 
+  @Modifying
+  @Query("""
+      UPDATE Guidebook g
+      SET g.ratingSum = g.ratingSum + :ratingDelta,
+          g.ratingCount = g.ratingCount + :countDelta
+      WHERE g.id = :guidebookId
+      AND g.ratingCount + :countDelta >= 0
+      """)
+  int updateRating(UUID guidebookId, int ratingDelta, int countDelta);
 }

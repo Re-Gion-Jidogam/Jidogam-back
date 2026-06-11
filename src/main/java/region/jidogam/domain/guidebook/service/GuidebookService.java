@@ -44,6 +44,7 @@ import region.jidogam.domain.guidebook.repository.GuidebookAreaRatioRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
+import region.jidogam.domain.guidebook.repository.GuidebookReviewRepository;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
@@ -68,6 +69,7 @@ public class GuidebookService {
   private final GuidebookPlaceRepository guidebookPlaceRepository;
   private final GuidebookParticipationRepository guidebookParticipantRepository;
   private final GuidebookAreaRatioRepository guidebookAreaRatioRepository;
+  private final GuidebookReviewRepository guidebookReviewRepository;
   private final StampRepository stampRepository;
   private final PlaceRepository placeRepository;
   private final PlaceService placeService;
@@ -316,6 +318,7 @@ public class GuidebookService {
    */
   @Transactional
   public void hardDelete(UUID id) {
+    guidebookReviewRepository.deleteByGuidebook_Id(id);
     guidebookAreaRatioRepository.deleteByGuidebook_Id(id);
     guidebookPlaceRepository.deleteByGuidebook_Id(id);
     guidebookRepository.deleteById(id);

@@ -30,6 +30,7 @@ public final class PublicApiEndpoints {
   public static final String GUIDEBOOK_LIST = "/api/guidebooks";
   public static final String POPULAR_GUIDEBOOK_LIST = "/api/guidebooks/popular";
   public static final String GUIDEBOOK_PLACE_LIST = "/api/guidebooks/*/places";
+  public static final String GUIDEBOOK_REVIEW_LIST = "/api/guidebooks/*/reviews";
   public static final String NEARBY_PLACE_LIST = "/api/places/nearby";
 
   // 관리자 페이지 (정적 리소스)
@@ -65,6 +66,7 @@ public final class PublicApiEndpoints {
         POPULAR_GUIDEBOOK_LIST,
         NEARBY_PLACE_LIST,
         GUIDEBOOK_PLACE_LIST,
+        GUIDEBOOK_REVIEW_LIST,
         ADMIN_PAGES,
         STATIC_CSS,
         FAVICON

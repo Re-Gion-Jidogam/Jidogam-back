@@ -23,8 +23,13 @@ import region.jidogam.domain.guidebook.dto.GuidebookConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookCreateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookPlaceConditionRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewConditionRequest;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewCreateRequest;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewResponse;
+import region.jidogam.domain.guidebook.dto.GuidebookReviewUpdateRequest;
 import region.jidogam.domain.guidebook.dto.GuidebookUpdateRequest;
 import region.jidogam.domain.guidebook.service.GuidebookPlaceService;
+import region.jidogam.domain.guidebook.service.GuidebookReviewService;
 import region.jidogam.domain.guidebook.service.GuidebookService;
 import region.jidogam.domain.place.dto.PlaceResponse;
 
@@ -35,6 +40,7 @@ public class GuidebookController implements GuidebookApi {
 
   private final GuidebookService guidebookService;
   private final GuidebookPlaceService guidebookPlaceService;
+  private final GuidebookReviewService guidebookReviewService;
 
   @Override
   @GetMapping
@@ -155,6 +161,61 @@ public class GuidebookController implements GuidebookApi {
       @CurrentUserId UUID userId
   ) {
     guidebookService.cancelParticipation(id, userId);
+    return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/{id}/reviews")
+  @Override
+  public ResponseEntity<CursorPageResponseDto<GuidebookReviewResponse>> getReviews(
+      @PathVariable UUID id,
+      @Valid @ModelAttribute GuidebookReviewConditionRequest request
+  ) {
+    CursorPageResponseDto<GuidebookReviewResponse> response =
+        guidebookReviewService.getReviews(id, request);
+    return ResponseEntity.ok(response);
+  }
+
+  @GetMapping("/{id}/reviews/{reviewId}")
+  @Override
+  public ResponseEntity<GuidebookReviewResponse> getReviewById(
+      @PathVariable UUID id,
+      @PathVariable UUID reviewId
+  ) {
+    GuidebookReviewResponse response = guidebookReviewService.getById(id, reviewId);
+    return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/{id}/reviews")
+  @Override
+  public ResponseEntity<GuidebookReviewResponse> createReview(
+      @PathVariable UUID id,
+      @Valid @RequestBody GuidebookReviewCreateRequest request,
+      @CurrentUserId UUID userId
+  ) {
+    GuidebookReviewResponse response = guidebookReviewService.create(id, userId, request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+  }
+
+  @PatchMapping("/{id}/reviews/{reviewId}")
+  @Override
+  public ResponseEntity<GuidebookReviewResponse> updateReview(
+      @PathVariable UUID id,
+      @PathVariable UUID reviewId,
+      @Valid @RequestBody GuidebookReviewUpdateRequest request,
+      @CurrentUserId UUID userId
+  ) {
+    GuidebookReviewResponse response = guidebookReviewService.update(reviewId, userId, request);
+    return ResponseEntity.ok(response);
+  }
+
+  @DeleteMapping("/{id}/reviews/{reviewId}")
+  @Override
+  public ResponseEntity<Void> deleteReview(
+      @PathVariable UUID id,
+      @PathVariable UUID reviewId,
+      @CurrentUserId UUID userId
+  ) {
+    guidebookReviewService.delete(reviewId, userId);
     return ResponseEntity.noContent().build();
   }
 }

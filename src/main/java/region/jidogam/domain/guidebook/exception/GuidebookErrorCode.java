@@ -21,7 +21,15 @@ public enum GuidebookErrorCode implements ErrorCode {
   GUIDEBOOK_PARTICIPATE_EARNED_EXP(HttpStatus.INTERNAL_SERVER_ERROR, "GUIDE_BOOK_010",
       "경험치 데이터가 유효하지 않습니다."),
   GUIDEBOOK_PARTICIPATE_PLACE_COUNT(HttpStatus.INTERNAL_SERVER_ERROR, "GUIDE_BOOK_011",
-      "완료된 장소 수가 이미 0입니다.");
+      "완료된 장소 수가 이미 0입니다."),
+  GUIDEBOOK_NOT_PARTICIPATED(HttpStatus.FORBIDDEN, "GUIDE_BOOK_012", "참여하지 않은 가이드북입니다."),
+  GUIDEBOOK_REVIEW_DUPLICATE(HttpStatus.CONFLICT, "GUIDE_BOOK_013", "이미 리뷰를 작성한 가이드북입니다."),
+  GUIDEBOOK_REVIEW_INSUFFICIENT_VISITS(HttpStatus.FORBIDDEN, "GUIDE_BOOK_014",
+      "방문한 장소가 부족하여 리뷰를 작성할 수 없습니다."),
+  GUIDEBOOK_REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "GUIDE_BOOK_015", "존재하지 않는 리뷰입니다."),
+  GUIDEBOOK_REVIEW_AUTHOR_MISMATCH(HttpStatus.FORBIDDEN, "GUIDE_BOOK_016", "리뷰 작성자가 아닙니다."),
+  GUIDEBOOK_REVIEW_DELETED_DUPLICATE(HttpStatus.CONFLICT, "GUIDE_BOOK_017",
+      "삭제한 리뷰가 있어 재작성이 불가합니다.");
 
   private HttpStatus status;
   private String code;
