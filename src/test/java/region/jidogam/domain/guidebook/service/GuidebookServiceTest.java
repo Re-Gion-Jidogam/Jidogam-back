@@ -60,6 +60,7 @@ import region.jidogam.domain.guidebook.repository.GuidebookAreaRatioRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
+import region.jidogam.domain.guidebook.repository.GuidebookReviewRepository;
 import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.repository.PlaceRepository;
@@ -83,6 +84,8 @@ class GuidebookServiceTest {
   private GuidebookParticipationRepository guidebookParticipantRepository;
   @Mock
   private GuidebookAreaRatioRepository guidebookAreaRatioRepository;
+  @Mock
+  private GuidebookReviewRepository guidebookReviewRepository;
   @Mock
   private StampRepository stampRepository;
   @Mock
@@ -112,6 +115,7 @@ class GuidebookServiceTest {
         guidebookPlaceRepository,
         guidebookParticipantRepository,
         guidebookAreaRatioRepository,
+        guidebookReviewRepository,
         stampRepository,
         placeRepository,
         placeService,

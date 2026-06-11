@@ -69,13 +69,13 @@ public class GuidebookService {
   private final GuidebookPlaceRepository guidebookPlaceRepository;
   private final GuidebookParticipationRepository guidebookParticipantRepository;
   private final GuidebookAreaRatioRepository guidebookAreaRatioRepository;
+  private final GuidebookReviewRepository guidebookReviewRepository;
   private final StampRepository stampRepository;
   private final PlaceRepository placeRepository;
   private final PlaceService placeService;
   private final GuidebookMapper guidebookMapper;
   private final CursorCodecUtil cursorCodecUtil;
   private final ApplicationEventPublisher eventPublisher;
-  private final GuidebookReviewRepository guidebookReviewRepository;
 
   @Value("${jidogam.guidebook.publish.min-place-count}")
   private int publishMinPlaceCount;
