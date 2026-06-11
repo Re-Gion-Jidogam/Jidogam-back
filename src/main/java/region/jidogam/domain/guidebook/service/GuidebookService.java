@@ -44,6 +44,7 @@ import region.jidogam.domain.guidebook.repository.GuidebookAreaRatioRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookParticipationRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
+import region.jidogam.domain.guidebook.repository.GuidebookReviewRepository;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.repository.PlaceRepository;
 import region.jidogam.domain.place.service.PlaceService;
@@ -74,6 +75,7 @@ public class GuidebookService {
   private final GuidebookMapper guidebookMapper;
   private final CursorCodecUtil cursorCodecUtil;
   private final ApplicationEventPublisher eventPublisher;
+  private final GuidebookReviewRepository guidebookReviewRepository;
 
   @Value("${jidogam.guidebook.publish.min-place-count}")
   private int publishMinPlaceCount;
@@ -316,6 +318,7 @@ public class GuidebookService {
    */
   @Transactional
   public void hardDelete(UUID id) {
+    guidebookReviewRepository.deleteByGuidebook_Id(id);
     guidebookAreaRatioRepository.deleteByGuidebook_Id(id);
     guidebookPlaceRepository.deleteByGuidebook_Id(id);
     guidebookRepository.deleteById(id);

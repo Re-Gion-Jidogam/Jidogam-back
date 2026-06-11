@@ -9,5 +9,7 @@ import region.jidogam.domain.guidebook.repository.querydsl.GuidebookReviewReposi
 public interface GuidebookReviewRepository extends JpaRepository<GuidebookReview, UUID>,
     GuidebookReviewRepositoryCustom {
 
+  void deleteByGuidebook_Id(UUID guidebookId);
+
   Optional<GuidebookReview> findByGuidebook_IdAndAuthor_Id(UUID guidebookId, UUID authorId);
 }
