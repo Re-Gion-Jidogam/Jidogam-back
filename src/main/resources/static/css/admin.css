@@ -319,6 +319,9 @@ body {
 }
 
 .btn-search {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 10px 20px;
   background: var(--primary300);
   color: var(--gray0);
@@ -327,6 +330,7 @@ body {
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
+  line-height: 1.4;
   cursor: pointer;
   transition: background 0.2s;
 }
@@ -336,6 +340,9 @@ body {
 }
 
 .btn-reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 10px 20px;
   background: var(--gray0);
   color: var(--gray700);
@@ -344,6 +351,7 @@ body {
   font-size: 14px;
   font-weight: 500;
   font-family: inherit;
+  line-height: 1.4;
   text-decoration: none;
   transition: all 0.2s;
 }
@@ -560,6 +568,9 @@ body {
 }
 
 .btn-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 10px 24px;
   background: var(--primary300);
   color: var(--gray0);
@@ -568,6 +579,7 @@ body {
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
+  line-height: 1.4;
   text-decoration: none;
   cursor: pointer;
   transition: background 0.2s;
@@ -578,6 +590,9 @@ body {
 }
 
 .btn-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 10px 24px;
   background: var(--gray0);
   color: var(--red300);
@@ -586,12 +601,35 @@ body {
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
+  line-height: 1.4;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-delete:hover {
   background: var(--red50);
+}
+
+.btn-unpublish {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 24px;
+  background: var(--gray0);
+  color: var(--gray700);
+  border: 1px solid var(--gray400);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-unpublish:hover {
+  background: var(--gray100);
+  border-color: var(--gray500);
 }
 
 .btn-restore {
