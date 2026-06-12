@@ -368,7 +368,10 @@ public class UserService {
     // GuidebookParticipant -> GuidebookParticipantResponse 변환
     List<GuidebookParticipationResponse> responses = participants.stream()
         .map(participant -> GuidebookParticipationResponse.builder()
-            .guidebookResponse(guidebookMapper.toResponse(participant.getGuidebook()))
+            .guidebookResponse(
+                Boolean.TRUE.equals(participant.getGuidebook().getAdminHidden())
+                    ? guidebookMapper.toHiddenResponse(participant.getGuidebook())
+                    : guidebookMapper.toResponse(participant.getGuidebook()))
             .lastActivityAt(participant.getLastActivityAt())
             .isCompleted(participant.getIsCompleted())
             .build())

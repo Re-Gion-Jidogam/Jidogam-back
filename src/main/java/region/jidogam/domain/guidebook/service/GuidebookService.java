@@ -260,7 +260,7 @@ public class GuidebookService {
 
     if (Boolean.TRUE.equals(guidebook.getAdminHidden())
         && !guidebook.getAuthor().getId().equals(userId)) {
-      throw GuidebookNotFoundException.withId(id);
+      return guidebookMapper.toHiddenResponse(guidebook);
     }
 
     int visitedPlaceCount = getVisitedPlaceCount(guidebook.getId(), userId);
