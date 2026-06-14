@@ -7,21 +7,22 @@ import lombok.Builder;
 @Builder
 public record GuidebookResponse(
     UUID gid,
+    Boolean isHidden,
     String title,
     String description,
     String thumbnailUrl,
     String mapImageUrl,
     String emoji,
     String color,
-    int exp,
+    Integer exp,
     LocalDateTime createdAt,
     LocalDateTime updatedAt,
     LocalDateTime publishedDate,
-    double score,
-    int participantCount,
-    int totalPlaceCount,
-    int visitedPlaceCount,
-    int reviewCount,
+    Double score,
+    Integer participantCount,
+    Integer totalPlaceCount,
+    Integer visitedPlaceCount,
+    Integer reviewCount,
     AuthorDto author,
     AreaRatioDto areaRatio
 ) {

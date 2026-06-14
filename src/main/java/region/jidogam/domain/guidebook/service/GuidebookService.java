@@ -260,6 +260,11 @@ public class GuidebookService {
 
     Guidebook guidebook = getOrThrow(id);
 
+    if (Boolean.TRUE.equals(guidebook.getAdminHidden())
+        && !guidebook.getAuthor().getId().equals(userId)) {
+      return guidebookMapper.toHiddenResponse(guidebook);
+    }
+
     int visitedPlaceCount = getVisitedPlaceCount(guidebook.getId(), userId);
 
     return guidebookMapper.toResponse(guidebook, visitedPlaceCount);

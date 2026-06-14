@@ -51,6 +51,7 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
 
     where.and(GuidebookCondition.isNotDeleted());
     where.and(GuidebookCondition.isPublished());
+    where.and(GuidebookCondition.isNotHidden());
     where.and(GuidebookCondition.titleContains(keyword));
     where.and(GuidebookCondition.isLocalGuidebook(isLocal));
     where.and(GuidebookCursorCondition.buildGuidebookCursor(cursor, sortBy, direction));
@@ -77,7 +78,8 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
             guidebook.author.id.eq(authorId),
             GuidebookCondition.titleContains(keyword),
             GuidebookCursorCondition.buildUserGuidebookCursor(cursor, sortBy, direction),
-            isOwner ? null : GuidebookCondition.isPublished()
+            isOwner ? null : GuidebookCondition.isPublished(),
+            isOwner ? null : GuidebookCondition.isNotHidden()
         )
         .orderBy(GuidebookOrderBuilder.forUserGuidebook(sortBy, direction))
         .limit(limit)
@@ -93,7 +95,8 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
             guidebook.author.id.eq(authorId),
             GuidebookCondition.isNotDeleted(),
             GuidebookCondition.titleContains(keyword),
-            isOwner ? null : GuidebookCondition.isPublished()
+            isOwner ? null : GuidebookCondition.isPublished(),
+            isOwner ? null : GuidebookCondition.isNotHidden()
         )
         .fetchOne();
 
@@ -106,6 +109,7 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
 
     where.and(GuidebookCondition.isNotDeleted());
     where.and(GuidebookCondition.isPublished());
+    where.and(GuidebookCondition.isNotHidden());
     where.and(GuidebookCondition.titleContains(keyword));
     where.and(GuidebookCondition.isLocalGuidebook(isLocal));
 
@@ -146,6 +150,7 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
     where.and(guidebookPlace.place.id.eq(placeId));
     where.and(GuidebookCondition.isNotDeleted());
     where.and(GuidebookCondition.isPublished());
+    where.and(GuidebookCondition.isNotHidden());
     where.and(GuidebookCondition.titleContains(keyword));
     where.and(GuidebookCondition.isLocalGuidebook(isLocal));
     where.and(GuidebookCursorCondition.buildGuidebookCursor(cursor, sortBy, direction));
@@ -168,6 +173,7 @@ public class GuidebookRepositoryCustomImpl implements GuidebookRepositoryCustom 
             guidebookPlace.place.id.eq(placeId),
             GuidebookCondition.isNotDeleted(),
             GuidebookCondition.isPublished(),
+            GuidebookCondition.isNotHidden(),
             GuidebookCondition.titleContains(keyword),
             GuidebookCondition.isLocalGuidebook(isLocal))
         .fetchOne();

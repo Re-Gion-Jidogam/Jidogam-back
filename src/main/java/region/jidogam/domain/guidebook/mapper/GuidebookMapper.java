@@ -26,6 +26,7 @@ public class GuidebookMapper {
   public GuidebookResponse toResponse(Guidebook guidebook, int visitedPlaceCount) {
     return GuidebookResponse.builder()
         .gid(guidebook.getId())
+        .isHidden(Boolean.TRUE.equals(guidebook.getAdminHidden()))
         .title(guidebook.getTitle())
         .description(guidebook.getDescription())
         .thumbnailUrl(fileStorage.generateGetUrl(guidebook.getThumbnailUrl()))
@@ -43,6 +44,13 @@ public class GuidebookMapper {
         .reviewCount(guidebook.getRatingCount())
         .author(toAuthorDto(guidebook.getAuthor()))
         .areaRatio(toAreaRatioDto(guidebook.getAreaRatio()))
+        .build();
+  }
+
+  public GuidebookResponse toHiddenResponse(Guidebook guidebook) {
+    return GuidebookResponse.builder()
+        .gid(guidebook.getId())
+        .isHidden(true)
         .build();
   }
 

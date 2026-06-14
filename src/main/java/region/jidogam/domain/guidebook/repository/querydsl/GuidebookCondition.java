@@ -33,6 +33,11 @@ public class GuidebookCondition {
     return guidebook.isPublished.eq(true);
   }
 
+  // 관리자 숨김 조건
+  public static BooleanExpression isNotHidden() {
+    return guidebook.adminHidden.eq(false);
+  }
+
   // 구독자 조건
   public static BooleanExpression participantCountLoe(Integer count) {
     return count != null ? guidebook.participantCount.loe(count) : null;
