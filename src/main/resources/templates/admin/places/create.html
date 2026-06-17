@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>장소 추가 - 지도감 관리자</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside th:replace="~{admin/fragments/layout :: sidebar}" th:with="menu='places'"></aside>
+
+    <div class="main-content">
+      <header th:replace="~{admin/fragments/layout :: topbar}"></header>
+
+      <main class="content-area">
+        <div class="page-header">
+          <h2>장소 추가</h2>
+          <a th:href="@{/jidogam-admin/places}" class="btn-back">&larr; 목록으로</a>
+        </div>
+
+        <div class="form-card">
+          <form th:action="@{/jidogam-admin/places/new}" method="post">
+            <div class="form-group">
+              <label for="kakaoId">카카오 장소 ID</label>
+              <input type="text" id="kakaoId" name="kakaoId" required class="form-input"
+                     placeholder="예: 26338954">
+            </div>
+            <div class="form-group">
+              <label for="name">장소명</label>
+              <input type="text" id="name" name="name" required class="form-input"
+                     placeholder="예: 임시마트">
+            </div>
+            <div class="form-group">
+              <label for="address">주소</label>
+              <input type="text" id="address" name="address" required class="form-input"
+                     placeholder="예: 전북 익산시 망산길 11-17">
+            </div>
+            <div class="form-group">
+              <label for="category">카테고리</label>
+              <input type="text" id="category" name="category" class="form-input"
+                     placeholder="예: 마트 (선택)">
+            </div>
+            <div class="form-group">
+              <label for="y">위도 (y)</label>
+              <input type="number" id="y" name="y" step="any" min="-90" max="90" required
+                     class="form-input" placeholder="예: 35.976749396987046">
+            </div>
+            <div class="form-group">
+              <label for="x">경도 (x)</label>
+              <input type="number" id="x" name="x" step="any" min="-180" max="180" required
+                     class="form-input" placeholder="예: 126.99599512792346">
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-save">추가</button>
+              <a th:href="@{/jidogam-admin/places}" class="btn-cancel">취소</a>
+            </div>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

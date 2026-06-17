@@ -7,6 +7,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -57,6 +58,9 @@ public class Place extends BaseEntity {
   @Builder.Default
   private Integer stampCount = 0;
 
+  @Column
+  private LocalDateTime deletedAt;
+
   public void updateName(String name) {
     this.name = name;
   }
@@ -80,5 +84,17 @@ public class Place extends BaseEntity {
 
   public void updateExp(int exp) {
     this.exp = exp;
+  }
+
+  public void softDelete() {
+    this.deletedAt = LocalDateTime.now();
+  }
+
+  public void restore() {
+    this.deletedAt = null;
+  }
+
+  public boolean isDeleted() {
+    return this.deletedAt != null;
   }
 }

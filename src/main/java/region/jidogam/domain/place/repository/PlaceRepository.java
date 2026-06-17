@@ -18,7 +18,7 @@ public interface PlaceRepository extends JpaRepository<Place, UUID>, PlaceReposi
 
   List<Place> findAllByKakaoIdIn(List<String> kakaoIds);
 
-  List<Place> findAllByOrderByStampCountDesc(Pageable pageable);
+  List<Place> findAllByDeletedAtIsNullOrderByStampCountDesc(Pageable pageable);
 
   /**
    * 특정 좌표로부터 일정 거리 내의 장소를 거리순으로 조회
@@ -44,6 +44,7 @@ public interface PlaceRepository extends JpaRepository<Place, UUID>, PlaceReposi
         FROM places p
         WHERE p.y BETWEEN :latMin AND :latMax
           AND p.x BETWEEN :lonMin AND :lonMax
+          AND p.deleted_at IS NULL
       ) AS places_with_distance
       WHERE distance <= :maxDistance
       ORDER BY distance
@@ -66,6 +67,7 @@ public interface PlaceRepository extends JpaRepository<Place, UUID>, PlaceReposi
         JOIN places p ON gp.place_id = p.id
         LEFT JOIN stamps s ON s.place_id = p.id AND s.user_id = :userId
         WHERE gp.guidebook_id = :guidebookId
+          AND p.deleted_at IS NULL
           AND (
             :filter = 'none'
             OR (:filter = 'visited' AND s.id IS NOT NULL)
@@ -122,6 +124,7 @@ public interface PlaceRepository extends JpaRepository<Place, UUID>, PlaceReposi
         FROM guidebook_places gp
         JOIN places p ON gp.place_id = p.id
         WHERE gp.guidebook_id = :guidebookId
+          AND p.deleted_at IS NULL
       )
       SELECT *
       FROM with_distance

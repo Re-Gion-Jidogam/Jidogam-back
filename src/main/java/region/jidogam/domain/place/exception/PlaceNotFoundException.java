@@ -11,4 +11,8 @@ public class PlaceNotFoundException extends PlaceException {
   public static PlaceNotFoundException withId(UUID id) {
     return new PlaceNotFoundException(id + " 장소는 존재하지 않습니다.");
   }
+
+  public static PlaceNotFoundException withKakaoId(String kakaoId) {
+    return new PlaceNotFoundException("kakaoId가 " + kakaoId + "인 장소는 존재하지 않습니다.");
+  }
 }

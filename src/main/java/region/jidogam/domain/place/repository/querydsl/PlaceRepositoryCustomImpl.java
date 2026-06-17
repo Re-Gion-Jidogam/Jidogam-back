@@ -38,7 +38,10 @@ public class PlaceRepositoryCustomImpl implements PlaceRepositoryCustom {
     JPAQuery<Place> query = queryFactory
         .selectFrom(place)
         .join(guidebookPlace).on(guidebookPlace.place.eq(place))
-        .where(guidebookPlace.guidebook.id.eq(guidebookId));
+        .where(
+            guidebookPlace.guidebook.id.eq(guidebookId),
+            place.deletedAt.isNull()
+        );
 
     BooleanBuilder where = new BooleanBuilder();
 

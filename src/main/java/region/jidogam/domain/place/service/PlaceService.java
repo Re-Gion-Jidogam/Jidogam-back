@@ -67,7 +67,7 @@ public class PlaceService {
   @Transactional(readOnly = true)
   public List<PlaceResponse> popularList(PlacePopularRequest request) {
 
-    List<Place> topNPlaces = placeRepository.findAllByOrderByStampCountDesc(
+    List<Place> topNPlaces = placeRepository.findAllByDeletedAtIsNullOrderByStampCountDesc(
         PageRequest.of(0, request.limit()));
 
     return topNPlaces.stream()
@@ -234,6 +234,10 @@ public class PlaceService {
       Place place = placeRepository.findById(id)
           .orElseThrow(() -> PlaceNotFoundException.withId(id));
 
+      if (place.isDeleted()) {
+        throw PlaceNotFoundException.withId(id);
+      }
+
       if (!place.getKakaoId().equals(request.id())) {
         throw PlaceMismatchException.idMismatch(id, request.id());
       }
@@ -244,6 +248,9 @@ public class PlaceService {
 
     return placeRepository.findByKakaoId(request.id())
         .map(place -> {
+          if (place.isDeleted()) {
+            throw PlaceNotFoundException.withKakaoId(request.id());
+          }
           changeTrackingService.detectUpdateAndRecord(place, request);
           return place;
         })

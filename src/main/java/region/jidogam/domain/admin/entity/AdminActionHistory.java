@@ -58,6 +58,7 @@ public class AdminActionHistory extends BaseEntity {
   public enum TargetType {
     ADMIN,
     USER,
-    GUIDEBOOK
+    GUIDEBOOK,
+    PLACE
   }
 }

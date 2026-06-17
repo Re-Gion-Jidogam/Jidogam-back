@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>장소 관리 - 지도감 관리자</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside th:replace="~{admin/fragments/layout :: sidebar}" th:with="menu='places'"></aside>
+
+    <div class="main-content">
+      <header th:replace="~{admin/fragments/layout :: topbar}"></header>
+
+      <main class="content-area">
+        <div class="page-header">
+          <h2>장소 관리</h2>
+          <a th:href="@{/jidogam-admin/places/new}" class="btn-edit">+ 장소 추가</a>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="filter-bar">
+          <form th:action="@{/jidogam-admin/places}" method="get" class="filter-form">
+            <input type="text" name="keyword" th:value="${keyword}"
+                   placeholder="장소명, 주소 또는 카카오 ID 검색" class="filter-input">
+            <select name="deleted" class="filter-select">
+              <option value="">전체 상태</option>
+              <option value="false" th:selected="${deleted != null && !deleted}">활성</option>
+              <option value="true" th:selected="${deleted != null && deleted}">삭제됨</option>
+            </select>
+            <button type="submit" class="btn-search">검색</button>
+            <a th:href="@{/jidogam-admin/places}" class="btn-reset">초기화</a>
+          </form>
+        </div>
+
+        <!-- Place Table -->
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>장소명</th>
+                <th>주소</th>
+                <th>카테고리</th>
+                <th>지역</th>
+                <th>포인트</th>
+                <th>스탬프 수</th>
+                <th>상태</th>
+                <th>등록일</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="place : ${places.content}" th:classappend="${place.deleted()} ? 'row-deleted'">
+                <td th:text="${place.name()}"></td>
+                <td th:text="${place.address()}"></td>
+                <td th:text="${place.category() != null ? place.category() : '-'}"></td>
+                <td th:text="${place.areaName()}"></td>
+                <td th:text="${place.exp()}"></td>
+                <td th:text="${place.stampCount()}"></td>
+                <td>
+                  <span th:if="${!place.deleted()}" class="status-active">활성</span>
+                  <span th:if="${place.deleted()}" class="status-deleted">삭제됨</span>
+                </td>
+                <td th:text="${#temporals.format(place.createdAt(), 'yyyy-MM-dd HH:mm')}"></td>
+                <td>
+                  <a th:href="@{/jidogam-admin/places/{id}(id=${place.id()})}" class="btn-detail">상세</a>
+                </td>
+              </tr>
+              <tr th:if="${places.content.isEmpty()}">
+                <td colspan="9" class="empty-message">장소가 없습니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" th:if="${places.totalPages > 1}">
+          <a th:if="${places.number > 0}"
+             th:href="@{/jidogam-admin/places(keyword=${keyword}, deleted=${deleted}, page=${places.number - 1}, size=${places.size})}"
+             class="page-link">&laquo; 이전</a>
+
+          <th:block th:each="i : ${#numbers.sequence(0, places.totalPages - 1)}">
+            <a th:if="${i == places.number}" class="page-link active" th:text="${i + 1}"></a>
+            <a th:if="${i != places.number}"
+               th:href="@{/jidogam-admin/places(keyword=${keyword}, deleted=${deleted}, page=${i}, size=${places.size})}"
+               class="page-link" th:text="${i + 1}"></a>
+          </th:block>
+
+          <a th:if="${places.number < places.totalPages - 1}"
+             th:href="@{/jidogam-admin/places(keyword=${keyword}, deleted=${deleted}, page=${places.number + 1}, size=${places.size})}"
+             class="page-link">다음 &raquo;</a>
+        </div>
+
+        <div class="pagination-info">
+          <span th:text="'총 ' + ${places.totalElements} + '개'"></span>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

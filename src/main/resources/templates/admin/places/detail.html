@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>장소 상세 - 지도감 관리자</title>
+  <link rel="stylesheet" th:href="@{/css/admin.css}">
+</head>
+<body>
+  <div class="admin-layout">
+    <aside th:replace="~{admin/fragments/layout :: sidebar}" th:with="menu='places'"></aside>
+
+    <div class="main-content">
+      <header th:replace="~{admin/fragments/layout :: topbar}"></header>
+
+      <main class="content-area">
+        <div class="page-header">
+          <h2>장소 상세</h2>
+          <a th:href="@{/jidogam-admin/places}" class="btn-back">&larr; 목록으로</a>
+        </div>
+
+        <!-- Success Message -->
+        <div th:if="${successMessage}" class="message-info" th:text="${successMessage}"></div>
+
+        <div class="detail-card">
+          <div class="detail-row">
+            <div class="detail-label">ID</div>
+            <div class="detail-value" th:text="${place.id()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">카카오 장소 ID</div>
+            <div class="detail-value" th:text="${place.kakaoId()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">장소명</div>
+            <div class="detail-value" th:text="${place.name()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">주소</div>
+            <div class="detail-value" th:text="${place.address()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">카테고리</div>
+            <div class="detail-value" th:text="${place.category() != null ? place.category() : '-'}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">지역</div>
+            <div class="detail-value" th:text="${place.areaName()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">좌표 (경도, 위도)</div>
+            <div class="detail-value" th:text="${place.x()} + ', ' + ${place.y()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">포인트</div>
+            <div class="detail-value" th:text="${place.exp()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">가이드북 수</div>
+            <div class="detail-value" th:text="${place.guidebookCount()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">스탬프 수</div>
+            <div class="detail-value" th:text="${place.stampCount()}"></div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">상태</div>
+            <div class="detail-value">
+              <span th:if="${!place.deleted()}" class="status-active">활성</span>
+              <span th:if="${place.deleted()}" class="status-deleted">삭제됨</span>
+            </div>
+          </div>
+          <div class="detail-row">
+            <div class="detail-label">등록일</div>
+            <div class="detail-value" th:text="${#temporals.format(place.createdAt(), 'yyyy-MM-dd HH:mm:ss')}"></div>
+          </div>
+          <div class="detail-row" th:if="${place.deleted()}">
+            <div class="detail-label">삭제일</div>
+            <div class="detail-value" th:text="${#temporals.format(place.deletedAt(), 'yyyy-MM-dd HH:mm:ss')}"></div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <a th:href="@{/jidogam-admin/places/{id}/edit(id=${place.id()})}" class="btn-edit">포인트 수정</a>
+          <form th:if="${!place.deleted()}" th:action="@{/jidogam-admin/places/{id}/delete(id=${place.id()})}"
+                method="post" style="display:inline;"
+                onsubmit="return confirm('정말 이 장소를 삭제하시겠습니까?');">
+            <button type="submit" class="btn-delete">삭제</button>
+          </form>
+          <form th:if="${place.deleted()}" th:action="@{/jidogam-admin/places/{id}/restore(id=${place.id()})}"
+                method="post" style="display:inline;"
+                onsubmit="return confirm('이 장소를 복구하시겠습니까?');">
+            <button type="submit" class="btn-restore">복구</button>
+          </form>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>
