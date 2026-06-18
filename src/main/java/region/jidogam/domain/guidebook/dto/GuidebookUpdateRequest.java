@@ -19,10 +19,8 @@ public record GuidebookUpdateRequest(
     String color,
 
     @Schema(description = "가이드북 썸네일 key 값")
-    String thumbnail,
+    String thumbnail
 
-    @Schema(description = "가이드북 출판 여부")
-    Boolean isPublish
 ) {
 
 }

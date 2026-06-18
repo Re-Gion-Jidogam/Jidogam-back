@@ -115,6 +115,10 @@ public class Guidebook extends BaseUpdatableEntity {
     this.totalPlaceCount -= 1;
   }
 
+  public void setParticipantCount(int count) {
+    this.participantCount = count;
+  }
+
   public void publish() {
     this.isPublished = true;
     this.publishedDate = LocalDateTime.now();
