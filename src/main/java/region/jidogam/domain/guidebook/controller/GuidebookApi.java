@@ -112,6 +112,33 @@ public interface GuidebookApi {
       @Parameter(hidden = true) @CurrentUserId UUID userId
   );
 
+  @Operation(summary = "가이드북 출판", description = "가이드북을 출판합니다.")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "출판 성공",
+          content = @Content(schema = @Schema(implementation = GuidebookResponse.class))),
+      @ApiResponse(responseCode = "400", description = "출판 조건을 충족하지 못함"),
+      @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+      @ApiResponse(responseCode = "403", description = "권한 없음"),
+      @ApiResponse(responseCode = "404", description = "가이드북을 찾을 수 없음")
+  })
+  ResponseEntity<GuidebookResponse> publish(
+      @Parameter(description = "가이드북 ID", required = true) @PathVariable UUID id,
+      @Parameter(hidden = true) @CurrentUserId UUID userId
+  );
+
+  @Operation(summary = "가이드북 출판 취소", description = "가이드북 출판을 취소합니다.")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "204", description = "출판 취소 성공"),
+      @ApiResponse(responseCode = "400", description = "참여자가 존재하여 출판 취소 불가"),
+      @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+      @ApiResponse(responseCode = "403", description = "권한 없음"),
+      @ApiResponse(responseCode = "404", description = "가이드북을 찾을 수 없음")
+  })
+  ResponseEntity<Void> unpublish(
+      @Parameter(description = "가이드북 ID", required = true) @PathVariable UUID id,
+      @Parameter(hidden = true) @CurrentUserId UUID userId
+  );
+
   @Operation(summary = "가이드북 장소 목록 조회", description = "가이드북에 포함된 장소 목록을 조회합니다.")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "장소 목록 조회 성공"),

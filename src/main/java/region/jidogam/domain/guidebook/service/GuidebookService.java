@@ -277,16 +277,6 @@ public class GuidebookService {
 
     checkAuthorOrThrow(guidebook, userId);
 
-    Optional.ofNullable(request.isPublish()).ifPresent(isPublish -> {
-      if (isPublish) {
-        User user = getUserOrThrow(userId);
-        publish(guidebook, user);
-        guidebook.publish();
-      } else {
-        unpublish(guidebook);
-        guidebook.unpublish();
-      }
-    });
     Optional.ofNullable(request.thumbnail()).ifPresent(newImage -> {
       String oldImageKey = guidebook.getThumbnailUrl();
       guidebook.updateThumbnailUrl(newImage);
@@ -303,6 +293,55 @@ public class GuidebookService {
 
     return guidebookMapper.toResponse(guidebook, visitedPlaceCount);
   }
+
+  @Transactional
+  public GuidebookResponse publish(UUID id, UUID userId) {
+
+    Guidebook guidebook = getOrThrow(id);
+
+    checkAuthorOrThrow(guidebook, userId);
+
+    if (guidebook.getTotalPlaceCount() < publishMinPlaceCount) {
+      throw GuidebookPublishConditionException.insufficientPlaces(publishMinPlaceCount);
+    }
+
+    calculateAndSaveAreaRatio(guidebook);
+    applyTotalExp(guidebook);
+
+    User user = getUserOrThrow(userId);
+    int visitedPlaceCount = getVisitedPlaceCount(guidebook.getId(), userId);
+
+    GuidebookParticipation participation = GuidebookParticipation.builder()
+        .guidebook(guidebook)
+        .user(user)
+        .completedPlaceCount(visitedPlaceCount)
+        .lastActivityAt(LocalDateTime.now())
+        .build();
+    guidebookParticipantRepository.save(participation);
+    guidebook.setParticipantCount(1);
+
+    guidebook.publish();
+
+    return guidebookMapper.toResponse(guidebook, visitedPlaceCount);
+  }
+
+  @Transactional
+  public void unpublish(UUID id, UUID userId) {
+
+    Guidebook guidebook = getOrThrow(id);
+
+    checkAuthorOrThrow(guidebook, userId);
+
+    if (guidebook.getParticipantCount() > 0) {
+      throw GuidebookUnpublishViolationException.withId(guidebook.getId());
+    }
+
+    guidebook.invalidateAreaRatio();
+    guidebookAreaRatioRepository.deleteByGuidebook_Id(guidebook.getId());
+
+    guidebook.unpublish();
+  }
+
 
   @Transactional
   public void softDelete(UUID id, UUID userId) {
@@ -396,7 +435,17 @@ public class GuidebookService {
       throw GuidebookAlreadyParticipatedException.withId(guidebook.getId());
     }
 
-    addParticipantInternal(guidebook, user);
+    int completedCount = getVisitedPlaceCount(guidebook.getId(), userId);
+
+    GuidebookParticipation participation = GuidebookParticipation.builder()
+        .guidebook(guidebook)
+        .user(user)
+        .completedPlaceCount(completedCount)
+        .lastActivityAt(LocalDateTime.now())
+        .build();
+
+    guidebookParticipantRepository.save(participation);
+    guidebookRepository.updateParticipantCount(guidebook.getId(), 1);
   }
 
   @Transactional
@@ -446,12 +495,7 @@ public class GuidebookService {
     }
   }
 
-  // 이건 가이드북 수정과 별개로 분리하는게 가장 좋을 것 같음
-  private void publish(Guidebook guidebook, User user) {
-
-    if (guidebook.getTotalPlaceCount() < publishMinPlaceCount) {
-      throw GuidebookPublishConditionException.insufficientPlaces(publishMinPlaceCount);
-    }
+  private void calculateAndSaveAreaRatio(Guidebook guidebook) {
 
     // 모든 가이드북 장소-지역 중 top3 지역 가져오기
     List<AreaRatioDto> top3Areas = guidebookPlaceRepository.findAreasByPlaceCountDesc(
@@ -468,17 +512,16 @@ public class GuidebookService {
         ))
         .toList();
 
+    AreaRatioDto first = withRatios.get(0);
+
     // 장소 개수와 1위 지역의 비율에 따라 local 가이드북 확인
-    Boolean isLocalGuidebook = isLocalGuidebook(
-        withRatios.get(0).ratio(),
-        guidebook.getTotalPlaceCount()
-    );
+    boolean isLocal = isLocalGuidebook(first.ratio(), guidebook.getTotalPlaceCount());
 
     GuidebookAreaRatio guidebookAreaRatio = GuidebookAreaRatio.builder()
         .guidebook(guidebook)
-        .firstArea(withRatios.get(0).area())
-        .firstAreaRatio(withRatios.get(0).ratio())
-        .isPrimaryArea(isLocalGuidebook)
+        .firstArea(first.area())
+        .firstAreaRatio(first.ratio())
+        .isPrimaryArea(isLocal)
         .build();
 
     if (withRatios.size() > 1) {
@@ -488,15 +531,15 @@ public class GuidebookService {
       guidebookAreaRatio.setThirdArea(withRatios.get(2).area(), withRatios.get(2).ratio());
     }
 
-    // 가이드북 장소 전체 포인트 저장
+    guidebookAreaRatioRepository.save(guidebookAreaRatio);
+  }
+
+  private void applyTotalExp(Guidebook guidebook) {
     List<Place> places = guidebookPlaceRepository.findPlaceByGuidebookId(guidebook.getId());
-    int totalExps = places.stream()
+    int totalExp = places.stream()
         .mapToInt(Place::getExp)
         .sum();
-    guidebook.updateExp(totalExps);
-
-    guidebookAreaRatioRepository.save(guidebookAreaRatio);
-    addParticipantInternal(guidebook, user);
+    guidebook.updateExp(totalExp);
   }
 
   private double calculateRatio(long placeCount, int totalCount) {
@@ -518,28 +561,6 @@ public class GuidebookService {
     }
     // 30개 이상: 50% 이상
     return topRatio >= LARGE_GUIDEBOOK_LOCAL_RATIO;
-  }
-
-  private void unpublish(Guidebook guidebook) {
-    if (guidebook.getParticipantCount() > 0) {
-      throw GuidebookUnpublishViolationException.withId(guidebook.getId());
-    }
-    guidebook.invalidateAreaRatio();
-    guidebookAreaRatioRepository.deleteByGuidebook_Id(guidebook.getId());
-  }
-
-  private void addParticipantInternal(Guidebook guidebook, User user) {
-    int completedCount = getVisitedPlaceCount(guidebook.getId(), user.getId());
-
-    GuidebookParticipation participation = GuidebookParticipation.builder()
-        .guidebook(guidebook)
-        .user(user)
-        .completedPlaceCount(completedCount)
-        .lastActivityAt(LocalDateTime.now())
-        .build();
-
-    guidebookParticipantRepository.save(participation);
-    guidebookRepository.updateParticipantCount(guidebook.getId(), 1);
   }
 
 }

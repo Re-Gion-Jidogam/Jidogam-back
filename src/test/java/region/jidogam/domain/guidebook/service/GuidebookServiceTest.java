@@ -260,7 +260,6 @@ class GuidebookServiceTest {
           "설명 수정",
           null,
           null,
-          null,
           null
       );
 
@@ -272,65 +271,66 @@ class GuidebookServiceTest {
       assertThat(response.description()).isEqualTo("설명 수정");
     }
 
+  }
+
+  @Nested
+  @DisplayName("가이드북 출판")
+  class Publish {
+
     @Test
-    @DisplayName("가이드북에 이미 참여자가 존재하는 경우, 출판 취소 불가능 예외 발생")
-    void failsByParticipantsExist() {
+    @DisplayName("출판 성공 - 소유자 참여 등록 및 출판 상태 변경")
+    void success() {
       // given
       UUID guidebookId = UUID.randomUUID();
       UUID userId = UUID.randomUUID();
 
-      Guidebook mockGuidebook = mock(Guidebook.class);
-      User mockUser = mock(User.class);
+      Guidebook guidebook = createGuidebook(userId, guidebookId, 10);
+      User user = createUser(userId);
 
-      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
-      when(mockGuidebook.getAuthor()).thenReturn(mockUser);
-      when(mockUser.getId()).thenReturn(userId);
-      when(mockGuidebook.getParticipantCount()).thenReturn(1);
+      ReflectionTestUtils.setField(guidebookService, "publishMinPlaceCount", 5);
 
-      GuidebookUpdateRequest request = new GuidebookUpdateRequest(
-          null,
-          null,
-          null,
-          null,
-          null,
-          false
-      );
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
+      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(guidebookPlaceRepository.findAreasByPlaceCountDesc(guidebookId, PageRequest.of(0, 3)))
+          .thenReturn(List.of(new AreaRatioDto(mock(Area.class), 8L, 0.0)));
+      when(guidebookPlaceRepository.findPlaceByGuidebookId(guidebookId)).thenReturn(List.of());
+      when(expService.calculateGuidebookCompletionExp(anyInt()))
+          .thenAnswer(invocation -> invocation.getArgument(0));
 
-      // when & then
-      assertThrows(GuidebookUnpublishViolationException.class,
-          () -> guidebookService.update(guidebookId, userId, request));
+      // when
+      guidebookService.publish(guidebookId, userId);
+
+      // then
+      verify(guidebookParticipantRepository).save(any(GuidebookParticipation.class));
+      assertThat(guidebook.getParticipantCount()).isEqualTo(1);
+      assertThat(guidebook.getIsPublished()).isTrue();
     }
 
-    // 출판 시 엣지 조건 확인
     @Test
-    @DisplayName("최소 장소 수 이하인 경우 가이드북 출판 시도 시 예외 발생")
+    @DisplayName("최소 장소 수 이하인 경우 출판 시도 시 예외 발생")
     void failsByInsufficientPlaceCount() {
       // given
       UUID guidebookId = UUID.randomUUID();
       UUID userId = UUID.randomUUID();
 
       Guidebook guidebook = createGuidebook(userId, guidebookId, 1);
-      User user = createUser(userId);
       ReflectionTestUtils.setField(guidebookService, "publishMinPlaceCount", 5);
 
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
-      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
 
       // when & then
       assertThrows(GuidebookPublishConditionException.class,
-          () -> guidebookService.update(guidebookId, userId,
-              new GuidebookUpdateRequest(null, null, null, null, null, true)));
+          () -> guidebookService.publish(guidebookId, userId));
     }
 
     @ParameterizedTest
     @CsvSource({
-        // totalCount, firstPlaceCount, isLocal
-        "9, 7, true",     // 9개 중 7개 = 77.78% → Local (70% 이상)
-        "9, 6, false",    // 9개 중 6개 = 66.67% → Not Local (70% 미만)
-        "10, 6, true",    // 10개 중 6개 = 60.0% → Local (60% 이상)
-        "10, 5, false",   // 10개 중 5개 = 50.0% → Not Local (60% 미만)
-        "30, 15, true",   // 30개 중 15개 = 50.0% → Local (50% 이상)
-        "30, 14, false"   // 30개 중 14개 = 46.67% → Not Local (50% 미만)
+        "9, 7, true",
+        "9, 6, false",
+        "10, 6, true",
+        "10, 5, false",
+        "30, 15, true",
+        "30, 14, false"
     })
     @DisplayName("장소 개수와 1위 지역 비율에 따른 Local 가이드북 판단")
     void determineLocalGuidebook(int totalCount, long firstPlaceCount, boolean expectedLocal) {
@@ -345,23 +345,72 @@ class GuidebookServiceTest {
           new AreaRatioDto(mock(Area.class), totalCount - firstPlaceCount, 0.0)
       );
 
+      ReflectionTestUtils.setField(guidebookService, "publishMinPlaceCount", 5);
+
       when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(guidebook));
       when(userRepository.findById(userId)).thenReturn(Optional.of(user));
       when(guidebookPlaceRepository.findAreasByPlaceCountDesc(guidebookId, PageRequest.of(0, 3)))
           .thenReturn(areas);
+      when(guidebookPlaceRepository.findPlaceByGuidebookId(guidebookId)).thenReturn(List.of());
       when(expService.calculateGuidebookCompletionExp(anyInt()))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
       // when
-      guidebookService.update(guidebookId, userId,
-          new GuidebookUpdateRequest(null, null, null, null, null, true));
+      guidebookService.publish(guidebookId, userId);
 
       // then
       verify(guidebookAreaRatioRepository).save(argThat(ratio ->
           ratio.getIsPrimaryArea() == expectedLocal
       ));
     }
+  }
 
+  @Nested
+  @DisplayName("가이드북 출판 취소")
+  class Unpublish {
+
+    @Test
+    @DisplayName("출판 취소 성공")
+    void success() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      Guidebook mockGuidebook = mock(Guidebook.class);
+      User mockUser = mock(User.class);
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
+      when(mockGuidebook.getAuthor()).thenReturn(mockUser);
+      when(mockUser.getId()).thenReturn(userId);
+      when(mockGuidebook.getParticipantCount()).thenReturn(0);
+      when(mockGuidebook.getId()).thenReturn(guidebookId);
+
+      // when
+      guidebookService.unpublish(guidebookId, userId);
+
+      // then
+      verify(mockGuidebook).unpublish();
+    }
+
+    @Test
+    @DisplayName("참여자가 존재하는 경우 출판 취소 시 예외 발생")
+    void failsByParticipantsExist() {
+      // given
+      UUID guidebookId = UUID.randomUUID();
+      UUID userId = UUID.randomUUID();
+
+      Guidebook mockGuidebook = mock(Guidebook.class);
+      User mockUser = mock(User.class);
+
+      when(guidebookRepository.findById(guidebookId)).thenReturn(Optional.of(mockGuidebook));
+      when(mockGuidebook.getAuthor()).thenReturn(mockUser);
+      when(mockUser.getId()).thenReturn(userId);
+      when(mockGuidebook.getParticipantCount()).thenReturn(1);
+
+      // when & then
+      assertThrows(GuidebookUnpublishViolationException.class,
+          () -> guidebookService.unpublish(guidebookId, userId));
+    }
   }
 
   @Nested

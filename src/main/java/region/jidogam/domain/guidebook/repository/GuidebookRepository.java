@@ -19,7 +19,7 @@ public interface GuidebookRepository extends JpaRepository<Guidebook, UUID>,
       WHERE g.id = :guidebookId
       AND g.participantCount + :delta >= 0
       """)
-  void updateParticipantCount(UUID guidebookId, int delta);
+  int updateParticipantCount(UUID guidebookId, int delta);
 
   @Modifying
   @Query("""

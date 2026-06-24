@@ -111,6 +111,26 @@ public class GuidebookController implements GuidebookApi {
   }
 
   @Override
+  @PostMapping("/{id}/publish")
+  public ResponseEntity<GuidebookResponse> publish(
+      @PathVariable UUID id,
+      @CurrentUserId UUID userId
+  ) {
+    GuidebookResponse response = guidebookService.publish(id, userId);
+    return ResponseEntity.ok(response);
+  }
+
+  @Override
+  @PatchMapping("/{id}/unpublish")
+  public ResponseEntity<Void> unpublish(
+      @PathVariable UUID id,
+      @CurrentUserId UUID userId
+  ) {
+    guidebookService.unpublish(id, userId);
+    return ResponseEntity.noContent().build();
+  }
+
+  @Override
   @GetMapping("/{id}/places")
   public ResponseEntity<CursorPageResponseDto<PlaceResponse>> getPlaces(
       @PathVariable UUID id,
