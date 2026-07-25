@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import region.jidogam.domain.area.dto.AreaLegacyCodeRegisterRequest;
+import region.jidogam.domain.area.dto.AreaLegacyCodeRegisterRequest.LegacyCodeMapping;
 import region.jidogam.domain.area.dto.AreaWeightUpdateRequest;
 import region.jidogam.domain.area.dto.AreaWeightUpdateRequest.RegionPopulation;
 import region.jidogam.domain.area.dto.Sido;
@@ -17,9 +19,11 @@ import region.jidogam.domain.area.dto.Sigungu;
 import region.jidogam.domain.area.entity.AdministrativeLevel;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.entity.Area.PopulationDeclineCategory;
+import region.jidogam.domain.area.entity.AreaLegacyCode;
 import region.jidogam.domain.area.exception.AreaNotFoundException;
 import region.jidogam.domain.area.exception.InvalidWeightException;
 import region.jidogam.domain.area.parser.AddressParser;
+import region.jidogam.domain.area.repository.AreaLegacyCodeRepository;
 import region.jidogam.domain.area.repository.AreaRepository;
 
 @Slf4j
@@ -28,6 +32,7 @@ import region.jidogam.domain.area.repository.AreaRepository;
 public class AreaService {
 
   private final AreaRepository areaRepository;
+  private final AreaLegacyCodeRepository areaLegacyCodeRepository;
   private final AddressParser addressParser;
 
   @Value("${jidogam.area.weights.normal}")
@@ -79,6 +84,34 @@ public class AreaService {
 
     areaRepository.saveAll(areas);
     log.debug("{} 지역 시군구 저장 완료 (total: {})", sido.getName(), sigungus.size());
+  }
+
+  @Transactional
+  public void registerLegacyCodes(AreaLegacyCodeRegisterRequest request) {
+
+    List<AreaLegacyCode> legacyCodes = request.legacyCodes().stream()
+        .filter(
+            mapping -> !areaLegacyCodeRepository.existsByLegacyCode(mapping.legacyCode())) // 중복 체크
+        .map(this::toAreaLegacyCode)
+        .toList();
+
+    areaLegacyCodeRepository.saveAll(legacyCodes);
+    log.debug("레거시 지역 코드 등록 완료 (total: {})", legacyCodes.size());
+  }
+
+  private AreaLegacyCode toAreaLegacyCode(LegacyCodeMapping mapping) {
+
+    Area area = areaRepository.findByCode(mapping.areaCode())
+        .orElseThrow(() -> AreaNotFoundException.withCode(mapping.areaCode()));
+
+    log.info("레거시 코드 등록: {}({}) -> {}({})", mapping.legacyCode(), mapping.legacyName(),
+        area.getCode(), area.getName());
+
+    return AreaLegacyCode.builder()
+        .legacyCode(mapping.legacyCode())
+        .legacyName(mapping.legacyName())
+        .area(area)
+        .build();
   }
 
   // 캐시 필요
