@@ -7,7 +7,9 @@ import region.jidogam.domain.area.entity.Area;
 
 public interface AreaRepository extends JpaRepository<Area, UUID> {
 
-  boolean existsBySigunguCode(String sigunguCode);
+  boolean existsByParentIsNullAndCode(String code);
 
-  Optional<Area> findBySidoAndSigungu(String sido, String sigungu);
+  boolean existsByParent_IdAndCode(UUID parentId, String code);
+
+  Optional<Area> findByCode(String code);
 }

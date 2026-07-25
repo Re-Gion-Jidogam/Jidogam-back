@@ -34,7 +34,7 @@ import region.jidogam.common.dto.SortDirection;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.common.util.CursorCodecUtil;
 import region.jidogam.domain.area.entity.Area;
-import region.jidogam.domain.area.entity.Area.AreaType;
+import region.jidogam.domain.area.entity.Area.PopulationDeclineCategory;
 import region.jidogam.domain.auth.entity.EmailAuthCode;
 import region.jidogam.domain.auth.exception.EmailAuthNotFoundException;
 import region.jidogam.domain.auth.repository.EmailAuthCodeRepository;
@@ -1158,7 +1158,7 @@ class UserServiceTest {
           .sigungu("강남구")
           .sigunguCode("1168000000")
           .weight(1.0)
-          .type(AreaType.NORMAL)
+          .populationDeclineCategory(PopulationDeclineCategory.NORMAL)
           .build();
 
       testPlace1 = Place.builder()

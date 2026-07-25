@@ -111,8 +111,7 @@ management:
 
 api:
   area:
-    service-id: ${AREA_SERVICE_ID}
-    secret-key: ${AREA_SECRET_KEY}
+    api-key: ${DATA_GO_API_KEY}
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
