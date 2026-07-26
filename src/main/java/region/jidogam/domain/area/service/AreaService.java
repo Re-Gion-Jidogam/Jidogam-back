@@ -21,6 +21,7 @@ import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.entity.Area.PopulationDeclineCategory;
 import region.jidogam.domain.area.entity.AreaLegacyCode;
 import region.jidogam.domain.area.exception.AreaNotFoundException;
+import region.jidogam.domain.area.exception.InvalidAreaCodeException;
 import region.jidogam.domain.area.exception.InvalidWeightException;
 import region.jidogam.domain.area.repository.AreaLegacyCodeRepository;
 import region.jidogam.domain.area.repository.AreaRepository;
@@ -29,6 +30,9 @@ import region.jidogam.domain.area.repository.AreaRepository;
 @Service
 @RequiredArgsConstructor
 public class AreaService {
+
+  private static final int SIDO_CODE_LENGTH = 2;
+  private static final int SIGUNGU_CODE_LENGTH = 5;
 
   private final AreaRepository areaRepository;
   private final AreaLegacyCodeRepository areaLegacyCodeRepository;
@@ -44,6 +48,8 @@ public class AreaService {
 
   @Transactional
   public Map<String, Area> saveSido(List<Sido> sidos) {
+
+    sidos.forEach(this::validateSidoCode);
 
     List<Area> newAreas = sidos.stream()
         .filter(sido -> !areaRepository.existsByParentIsNullAndCode(sido.code()))
@@ -65,6 +71,8 @@ public class AreaService {
 
   @Transactional
   public void saveSigungu(Area sido, List<Sigungu> sigungus) {
+
+    sigungus.forEach(this::validateSigunguCode);
 
     List<Area> areas = sigungus.stream()
         .filter(sigungu -> !areaRepository.existsByParent_IdAndCode(sido.getId(),
@@ -189,5 +197,17 @@ public class AreaService {
               return legacy.getArea();
             }))
         .orElseThrow(() -> AreaNotFoundException.withCode(code));
+  }
+
+  private void validateSidoCode(Sido sido) {
+    if (sido.code().length() != SIDO_CODE_LENGTH) {
+      throw InvalidAreaCodeException.withSidoCode(sido.code());
+    }
+  }
+
+  private void validateSigunguCode(Sigungu sigungu) {
+    if (sigungu.code().length() != SIGUNGU_CODE_LENGTH) {
+      throw InvalidAreaCodeException.withSigunguCode(sigungu.code());
+    }
   }
 }

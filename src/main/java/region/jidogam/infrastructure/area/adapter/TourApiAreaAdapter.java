@@ -23,6 +23,7 @@ public class TourApiAreaAdapter implements AreaPort {
 
   private static final int RETRY_LIMIT = 3;
   private static final String SUCCESS_CODE = "0000";
+  private static final int SIDO_CODE_LENGTH = 2;
   private static final int FULL_SIGUNGU_CODE_LENGTH = 5;
 
   private final RestClient restClient;
@@ -50,8 +51,20 @@ public class TourApiAreaAdapter implements AreaPort {
     );
 
     return ldongCodes.stream()
-        .map(ldongCode -> new Sido(ldongCode.name(), ldongCode.code()))
+        .map(ldongCode -> new Sido(ldongCode.name(), toSidoCode(ldongCode.code())))
         .toList();
+  }
+
+  /**
+   * 세종특별자치시처럼 시군구 구분 없이 완전한 시군구 코드(5자리)로 내려오는 경우가 있어,
+   * 시도 코드는 항상 앞 2자리로 정규화한다.
+   */
+  private String toSidoCode(String ldongCode) {
+    if (ldongCode.length() > SIDO_CODE_LENGTH) {
+      log.info("시도 코드가 예상보다 긴 경우 (세종 등 예외 케이스): code={}", ldongCode);
+      return ldongCode.substring(0, SIDO_CODE_LENGTH);
+    }
+    return ldongCode;
   }
 
   /**
