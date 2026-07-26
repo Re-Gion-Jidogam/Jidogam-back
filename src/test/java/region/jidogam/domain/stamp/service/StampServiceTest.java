@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,11 +29,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.entity.Area.PopulationDeclineCategory;
 import region.jidogam.domain.guidebook.service.GuidebookParticipationService;
-import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.exception.PlaceNotFoundException;
 import region.jidogam.domain.place.repository.PlaceRepository;
-import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.dto.PlaceStampRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.exception.StampCooldownException;
@@ -58,9 +55,6 @@ class StampServiceTest {
   private PlaceRepository placeRepository;
 
   @Mock
-  private PlaceService placeService;
-
-  @Mock
   private UserService userService;
 
   @Mock
@@ -76,7 +70,6 @@ class StampServiceTest {
   private User user;
   private UUID placeId;
   private Place place;
-  private PlaceCreateRequest placeCreateRequest;
   private Area area;
 
   @BeforeEach
@@ -92,15 +85,6 @@ class StampServiceTest {
         .profileImageUrl(null)
         .build();
 
-    placeCreateRequest = new PlaceCreateRequest(
-        null,
-        "임시마트",
-        "전북 익산시 망산길 11-17",
-        null,
-        BigDecimal.valueOf(35.976749396987046),
-        BigDecimal.valueOf(126.99599512792346)
-    );
-
     area = Area.builder()
         .sigunguCode("1234")
         .sido("전라북도특별자치도")
@@ -110,11 +94,12 @@ class StampServiceTest {
         .build();
 
     place = Place.builder()
-        .name(placeCreateRequest.placeName())
-        .address(placeCreateRequest.addressName())
-        .x(placeCreateRequest.x())
-        .y(placeCreateRequest.y())
-        .category(placeCreateRequest.category())
+        .name("임시마트")
+        .jibunAddress("전북 익산시 망산길 11-17")
+        .roadAddress("전북 익산시 망산길 11-17")
+        .fetchedAt(LocalDateTime.now())
+        .x(BigDecimal.valueOf(126.99599512792346))
+        .y(BigDecimal.valueOf(35.976749396987046))
         .area(area)
         .exp(10)
         .build();
@@ -126,58 +111,27 @@ class StampServiceTest {
   }
 
   @Test
-  @DisplayName("이미 존재하는 장소인 경우 도장 찍기 성공")
-  void alreadyExistsPlaceStampSuccess() {
+  @DisplayName("도장 찍기 성공")
+  void stampPlaceSuccess() {
     // given
     setClock();
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
         .thenReturn(Optional.empty());
-    when(placeService.getOrCreatePlace(placeId, placeCreateRequest)).thenReturn(place);
-    when(stampRepository.existsByUser_IdAndPlace_Id(userId, place.getId()))
+    when(placeRepository.findById(placeId)).thenReturn(Optional.of(place));
+    when(stampRepository.existsByUser_IdAndPlace_Id(userId, placeId))
         .thenReturn(false);
     doNothing().when(userService).increaseUserExp(any(User.class), anyInt());
     doNothing().when(guidebookParticipationService)
         .updateProgressByStamp(any(User.class), any(Place.class));
 
-    PlaceStampRequest request = new PlaceStampRequest(placeId, placeCreateRequest);
+    PlaceStampRequest request = new PlaceStampRequest(placeId);
 
     // when
     stampService.stampPlace(request, userId);
 
     // then
-    verify(placeService, never()).createPlace(request.place());
-
     // save가 호출될 때 인자를 캡처, 캡처된 Stamp 객체의 내용을 검증
-    ArgumentCaptor<Stamp> stampCaptor = ArgumentCaptor.forClass(Stamp.class);
-    verify(stampRepository).save(stampCaptor.capture());
-
-    Stamp savedStamp = stampCaptor.getValue();
-    assertThat(savedStamp.getUser()).isEqualTo(user);
-    assertThat(savedStamp.getPlace()).isEqualTo(place);
-
-    verify(placeRepository).updateStampCount(placeId, 1);
-  }
-
-  @Test
-  @DisplayName("새로운 장소인 경우 도장 찍기 성공")
-  void newPlaceStampSuccess() {
-    // given
-    setClock();
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-    when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
-        .thenReturn(Optional.empty());
-    when(placeService.getOrCreatePlace(null, placeCreateRequest)).thenReturn(place);
-    doNothing().when(userService).increaseUserExp(any(User.class), anyInt());
-    doNothing().when(guidebookParticipationService)
-        .updateProgressByStamp(any(User.class), any(Place.class));
-
-    PlaceStampRequest request = new PlaceStampRequest(null, placeCreateRequest);
-
-    // when
-    stampService.stampPlace(request, userId);
-
-    // then
     ArgumentCaptor<Stamp> stampCaptor = ArgumentCaptor.forClass(Stamp.class);
     verify(stampRepository).save(stampCaptor.capture());
 
@@ -196,9 +150,8 @@ class StampServiceTest {
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
         .thenReturn(Optional.empty());
-    when(placeService.getOrCreatePlace(placeId, placeCreateRequest)).thenThrow(
-        PlaceNotFoundException.class);
-    PlaceStampRequest request = new PlaceStampRequest(placeId, placeCreateRequest);
+    when(placeRepository.findById(placeId)).thenReturn(Optional.empty());
+    PlaceStampRequest request = new PlaceStampRequest(placeId);
 
     // when & then
     assertThrows(PlaceNotFoundException.class,
@@ -213,11 +166,11 @@ class StampServiceTest {
     when(userRepository.findById(userId)).thenReturn(Optional.of(user));
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
         .thenReturn(Optional.empty());
-    when(placeService.getOrCreatePlace(placeId, placeCreateRequest)).thenReturn(place);
+    when(placeRepository.findById(placeId)).thenReturn(Optional.of(place));
     when(stampRepository.existsByUser_IdAndPlace_Id(userId, placeId))
         .thenReturn(true);
 
-    PlaceStampRequest request = new PlaceStampRequest(placeId, placeCreateRequest);
+    PlaceStampRequest request = new PlaceStampRequest(placeId);
 
     // when & then
     assertThrows(StampDuplicateException.class,
@@ -245,7 +198,7 @@ class StampServiceTest {
       when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
           .thenReturn(Optional.of(stamp));
 
-      PlaceStampRequest request = new PlaceStampRequest(null, placeCreateRequest);
+      PlaceStampRequest request = new PlaceStampRequest(placeId);
 
       // when & then
       assertThrows(StampCooldownException.class, () -> stampService.stampPlace(request, userId));
@@ -268,12 +221,14 @@ class StampServiceTest {
       when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
           .thenReturn(Optional.of(stamp));
 
-      when(placeService.getOrCreatePlace(null, placeCreateRequest)).thenReturn(place);
+      when(placeRepository.findById(placeId)).thenReturn(Optional.of(place));
+      when(stampRepository.existsByUser_IdAndPlace_Id(userId, placeId))
+          .thenReturn(false);
       doNothing().when(userService).increaseUserExp(any(User.class), anyInt());
       doNothing().when(guidebookParticipationService)
           .updateProgressByStamp(any(User.class), any(Place.class));
 
-      PlaceStampRequest request = new PlaceStampRequest(null, placeCreateRequest);
+      PlaceStampRequest request = new PlaceStampRequest(placeId);
 
       // when
       stampService.stampPlace(request, userId);
