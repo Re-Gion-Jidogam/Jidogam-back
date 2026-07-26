@@ -99,21 +99,6 @@ public class AreaService {
     log.debug("레거시 지역 코드 등록 완료 (total: {})", legacyCodes.size());
   }
 
-  private AreaLegacyCode toAreaLegacyCode(LegacyCodeMapping mapping) {
-
-    Area area = areaRepository.findByCode(mapping.areaCode())
-        .orElseThrow(() -> AreaNotFoundException.withCode(mapping.areaCode()));
-
-    log.info("레거시 코드 등록: {}({}) -> {}({})", mapping.legacyCode(), mapping.legacyName(),
-        area.getCode(), area.getName());
-
-    return AreaLegacyCode.builder()
-        .legacyCode(mapping.legacyCode())
-        .legacyName(mapping.legacyName())
-        .area(area)
-        .build();
-  }
-
   // 캐시 필요
   public Area getAreaByAddress(String fullAddress) {
 
@@ -179,5 +164,21 @@ public class AreaService {
       return interestAreaWeight;
     }
     return normalAreaWeight;
+  }
+
+  private AreaLegacyCode toAreaLegacyCode(LegacyCodeMapping mapping) {
+
+    Area area = areaRepository.findByCode(mapping.areaCode())
+        .orElseThrow(() -> AreaNotFoundException.withCode(mapping.areaCode()));
+
+    log.info("레거시 코드 등록: {}({}) -> {}({}), effectiveFrom={}", mapping.legacyCode(),
+        mapping.legacyName(), area.getCode(), area.getName(), mapping.effectiveFrom());
+
+    return AreaLegacyCode.builder()
+        .legacyCode(mapping.legacyCode())
+        .legacyName(mapping.legacyName())
+        .effectiveFrom(mapping.effectiveFrom())
+        .area(area)
+        .build();
   }
 }

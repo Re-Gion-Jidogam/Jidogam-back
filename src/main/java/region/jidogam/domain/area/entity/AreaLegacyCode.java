@@ -7,6 +7,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,6 +32,9 @@ public class AreaLegacyCode extends BaseEntity {
 
   @Column(length = 50)
   private String legacyName;
+
+  @Column
+  private LocalDate effectiveFrom;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "area_id", nullable = false)
