@@ -31,7 +31,7 @@ public class AreaController implements AreaApi {
   public ResponseEntity<Void> settingAreaWeight(
       @Valid @RequestBody AreaWeightUpdateRequest request
   ) {
-    areaService.updateAreaSettings(request);
+    areaService.updateAreaWeight(request);
     return ResponseEntity.ok().build();
   }
 

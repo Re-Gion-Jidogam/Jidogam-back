@@ -22,7 +22,6 @@ import region.jidogam.domain.area.entity.Area.PopulationDeclineCategory;
 import region.jidogam.domain.area.entity.AreaLegacyCode;
 import region.jidogam.domain.area.exception.AreaNotFoundException;
 import region.jidogam.domain.area.exception.InvalidWeightException;
-import region.jidogam.domain.area.parser.AddressParser;
 import region.jidogam.domain.area.repository.AreaLegacyCodeRepository;
 import region.jidogam.domain.area.repository.AreaRepository;
 
@@ -33,7 +32,6 @@ public class AreaService {
 
   private final AreaRepository areaRepository;
   private final AreaLegacyCodeRepository areaLegacyCodeRepository;
-  private final AddressParser addressParser;
 
   @Value("${jidogam.area.weights.normal}")
   private double normalAreaWeight;
@@ -99,7 +97,6 @@ public class AreaService {
     log.debug("레거시 지역 코드 등록 완료 (total: {})", legacyCodes.size());
   }
 
-  // 캐시 필요
   public Area getAreaByAddress(String fullAddress) {
 
     // todo: 여기를 alias db로 변경 -> 지역 데이터에 이미 있으니까 굳이 필요 없을 듯
@@ -114,7 +111,7 @@ public class AreaService {
   }
 
   @Transactional
-  public void updateAreaSettings(AreaWeightUpdateRequest request) {
+  public void updateAreaWeight(AreaWeightUpdateRequest request) {
 
     if (!request.useDefaultWeights()) {
       validateWeightValues(request.regions());
@@ -122,7 +119,7 @@ public class AreaService {
 
     for (RegionPopulation region : request.regions()) {
 
-      Area area = getAreaByAddress(region.getFullName());
+      Area area = findAreaByCode(region.sggCode(), region.getFullName());
 
       PopulationDeclineCategory newPopulationDeclineCategory = selectPopulationDeclineCategory(
           region);
@@ -180,5 +177,17 @@ public class AreaService {
         .effectiveFrom(mapping.effectiveFrom())
         .area(area)
         .build();
+  }
+
+  private Area findAreaByCode(String code, String name) {
+
+    return areaRepository.findByCode(code)
+        .or(() -> areaLegacyCodeRepository.findByLegacyCode(code)
+            .map(legacy -> {
+              log.info("레거시 코드로 매칭됨: {}({}) -> {}({})", code, name,
+                  legacy.getArea().getCode(), legacy.getArea().getName());
+              return legacy.getArea();
+            }))
+        .orElseThrow(() -> AreaNotFoundException.withCode(code));
   }
 }

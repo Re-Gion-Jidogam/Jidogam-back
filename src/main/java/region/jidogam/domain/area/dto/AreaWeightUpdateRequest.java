@@ -1,8 +1,10 @@
 package region.jidogam.domain.area.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record AreaWeightUpdateRequest(
 
     boolean useDefaultWeights,
@@ -14,8 +16,14 @@ public record AreaWeightUpdateRequest(
       @JsonProperty("SIDO_NM")
       String sidoName,
 
+      @JsonProperty("SIDO_CD")
+      String sidoCode,
+
       @JsonProperty("SGG_NM")
       String sggName,
+
+      @JsonProperty("SGG_CD")
+      String sggCode,
 
       @JsonProperty("POPL_DCRS_REGN_YN")
       Flag isPopulationDecreaseRegion, // 인구감소지역 여부

@@ -19,7 +19,7 @@ public interface AreaApi {
   })
   ResponseEntity<Void> fetchAreaData();
 
-  @Operation(summary = "지역 가중치 설정", description = "지역 가중치를 설정합니다. (관리자 전용)")
+  @Operation(summary = "지역 가중치 설정", description = "시군구 단위로 지역 가중치를 설정합니다. (관리자 전용)")
   @ApiResponses(value = {
       @ApiResponse(responseCode = "200", description = "지역 가중치 설정 성공"),
       @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
