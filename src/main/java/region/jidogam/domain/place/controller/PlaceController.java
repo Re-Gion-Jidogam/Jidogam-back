@@ -49,7 +49,7 @@ public class PlaceController implements PlaceApi {
       @Valid @ModelAttribute PlaceNearByRequest request,
       @CurrentUserId UUID userId
   ) {
-    List<PlaceResponse> responses = placeService.nearbyList(request, userId);
+    List<PlaceResponse> responses = placeInitService.nearbyListWithSync(request, userId);
     return ResponseEntity.ok(responses);
   }
 

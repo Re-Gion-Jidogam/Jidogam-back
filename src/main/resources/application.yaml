@@ -41,6 +41,9 @@ server:
   forward-headers-strategy: framework
 
 jidogam:
+  place:
+    nearby:
+      external-fetch-enabled: ${PLACE_NEARBY_EXTERNAL_FETCH_ENABLED:true}
   storage:
     type: ${STORAGE_TYPE}
     local:

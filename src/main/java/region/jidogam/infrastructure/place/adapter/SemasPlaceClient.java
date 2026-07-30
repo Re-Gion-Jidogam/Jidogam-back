@@ -24,6 +24,8 @@ public class SemasPlaceClient {
   private static final String SUCCESS_CODE = "00";
   private static final String STORE_LIST_IN_DONG_URL =
       "https://apis.data.go.kr/B553077/api/open/sdsc2/storeListInDong";
+  private static final String STORE_LIST_IN_RADIUS_URL =
+      "https://apis.data.go.kr/B553077/api/open/sdsc2/storeListInRadius";
   private static final String DIV_ID_SIGUNGU_CODE = "signguCd";
   private static final String RESPONSE_TYPE_JSON = "json";
 
@@ -57,6 +59,42 @@ public class SemasPlaceClient {
                     + "&indsLclsCd={indsLclsCd}&indsMclsCd={indsMclsCd}&indsSclsCd={indssclsCd}"
                     + "&type={type}",
                 apiKey, pageNo, numOfRows, DIV_ID_SIGUNGU_CODE, code,
+                indsLclsCd, indsMclsCd, indsSclsCd, RESPONSE_TYPE_JSON)
+            .accept(MediaType.APPLICATION_JSON)
+            .retrieve()
+            .body(SemasStoreResponse.class)
+    );
+
+    return response.body();
+  }
+
+  /**
+   * 좌표 기준 반경 내 상가업소 목록을 조회한다.
+   *
+   * @param cx         중심 경도
+   * @param cy         중심 위도
+   * @param radius     검색 반경 (미터)
+   * @param pageNo     페이지 번호
+   * @param numOfRows  페이지당 조회 건수
+   * @param indsLclsCd 상권업종대분류코드 (필터링하지 않으려면 빈 문자열)
+   * @param indsMclsCd 상권업종중분류코드 (필터링하지 않으려면 빈 문자열)
+   * @param indsSclsCd 상권업종소분류코드 (필터링하지 않으려면 빈 문자열)
+   */
+  public SemasStoreResponse.Body fetchStoresByRadius(
+      Double cx, Double cy, int radius, int pageNo, int numOfRows, String indsLclsCd,
+      String indsMclsCd, String indsSclsCd
+  ) {
+    log.debug("반경 상가업소 조회 요청: cx={}, cy={}, radius={}, pageNo={}, numOfRows={}",
+        cx, cy, radius, pageNo, numOfRows);
+
+    SemasStoreResponse response = callApiWithRetry(() ->
+        restClient.get()
+            .uri(STORE_LIST_IN_RADIUS_URL
+                    + "?ServiceKey={serviceKey}&pageNo={pageNo}&numOfRows={numOfRows}"
+                    + "&radius={radius}&cx={cx}&cy={cy}"
+                    + "&indsLclsCd={indsLclsCd}&indsMclsCd={indsMclsCd}&indsSclsCd={indssclsCd}"
+                    + "&type={type}",
+                apiKey, pageNo, numOfRows, radius, cx, cy,
                 indsLclsCd, indsMclsCd, indsSclsCd, RESPONSE_TYPE_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .retrieve()

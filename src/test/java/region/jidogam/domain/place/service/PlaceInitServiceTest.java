@@ -1,16 +1,21 @@
 package region.jidogam.domain.place.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,7 +23,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 import region.jidogam.domain.place.dto.ExternalPlaceData;
+import region.jidogam.domain.place.dto.PlaceNearByRequest;
+import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.place.dto.PlaceStoreInitRequest;
 import region.jidogam.domain.place.dto.PlaceStoreInitResponse;
 import region.jidogam.domain.place.dto.PlaceStoreInitResult;
@@ -141,6 +149,115 @@ class PlaceInitServiceTest {
       assertThat(secondResult.sigunguCode()).isEqualTo("41220");
       assertThat(secondResult.succeededCount()).isZero();
       assertThat(secondResult.failedCount()).isEqualTo(1);
+    }
+  }
+
+  @Nested
+  @DisplayName("주변 장소 동기화")
+  class SyncNearbyPlaces {
+
+    @BeforeEach
+    void enableExternalFetch() {
+      ReflectionTestUtils.setField(placeInitService, "externalFetchEnabled", true);
+    }
+
+    @Test
+    @DisplayName("조회된 장소를 모두 upsert한다")
+    void success() {
+      // given
+      ExternalPlaceData data1 = externalPlaceData("1");
+      ExternalPlaceData data2 = externalPlaceData("2");
+
+      when(placePort.getStoresByRadius(37.5, 127.0, 1000, 20, null, null, null))
+          .thenReturn(List.of(data1, data2));
+
+      // when
+      placeInitService.syncNearbyPlaces(37.5, 127.0, 20);
+
+      // then
+      verify(placeService).upsertPlace(data1, Source.SEMAS);
+      verify(placeService).upsertPlace(data2, Source.SEMAS);
+    }
+
+    @Test
+    @DisplayName("일부 장소 upsert가 실패해도 나머지는 계속 처리된다")
+    void partialFailure() {
+      // given
+      ExternalPlaceData data1 = externalPlaceData("1");
+      ExternalPlaceData data2 = externalPlaceData("2");
+
+      when(placePort.getStoresByRadius(37.5, 127.0, 1000, 20, null, null, null))
+          .thenReturn(List.of(data1, data2));
+      when(placeService.upsertPlace(any(ExternalPlaceData.class), eq(Source.SEMAS)))
+          .thenReturn(mock(Place.class));
+      doThrow(new IllegalStateException("area not found"))
+          .when(placeService).upsertPlace(data1, Source.SEMAS);
+
+      // when & then
+      assertThatCode(() -> placeInitService.syncNearbyPlaces(37.5, 127.0, 20))
+          .doesNotThrowAnyException();
+
+      verify(placeService).upsertPlace(data1, Source.SEMAS);
+      verify(placeService).upsertPlace(data2, Source.SEMAS);
+    }
+
+    @Test
+    @DisplayName("외부 API 조회 자체가 실패해도 예외를 전파하지 않는다")
+    void externalFetchFailure() {
+      // given
+      when(placePort.getStoresByRadius(37.5, 127.0, 1000, 20, null, null, null))
+          .thenThrow(new RuntimeException("API 호출 실패"));
+
+      // when & then
+      assertThatCode(() -> placeInitService.syncNearbyPlaces(37.5, 127.0, 20))
+          .doesNotThrowAnyException();
+
+      verify(placeService, never()).upsertPlace(any(), any());
+    }
+
+    @Test
+    @DisplayName("설정이 꺼져 있으면 외부 API를 호출하지 않는다")
+    void disabled() {
+      // given
+      ReflectionTestUtils.setField(placeInitService, "externalFetchEnabled", false);
+
+      // when
+      placeInitService.syncNearbyPlaces(37.5, 127.0, 20);
+
+      // then
+      verifyNoInteractions(placePort);
+    }
+  }
+
+  @Nested
+  @DisplayName("동기화 후 주변 장소 조회")
+  class NearbyListWithSync {
+
+    @BeforeEach
+    void enableExternalFetch() {
+      ReflectionTestUtils.setField(placeInitService, "externalFetchEnabled", true);
+    }
+
+    @Test
+    @DisplayName("주변 장소를 동기화한 뒤 PlaceService의 조회 결과를 그대로 반환한다")
+    void success() {
+      // given
+      UUID userId = UUID.randomUUID();
+      PlaceNearByRequest request = new PlaceNearByRequest(37.5, 127.0, 20);
+      ExternalPlaceData data = externalPlaceData("1");
+      List<PlaceResponse> expected = List.of(mock(PlaceResponse.class));
+
+      when(placePort.getStoresByRadius(37.5, 127.0, 1000, 20, null, null, null))
+          .thenReturn(List.of(data));
+      when(placeService.nearbyList(request, userId)).thenReturn(expected);
+
+      // when
+      List<PlaceResponse> result = placeInitService.nearbyListWithSync(request, userId);
+
+      // then
+      assertThat(result).isEqualTo(expected);
+      verify(placeService).upsertPlace(data, Source.SEMAS);
+      verify(placeService).nearbyList(request, userId);
     }
   }
 
