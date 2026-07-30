@@ -9,13 +9,15 @@ public record PlaceResponse(
 
     UUID pid,
     String name,
-    String address,
+    String jibunAddress,
+    String roadAddress,
     double y,
     double x,
     LocalDateTime visitedDate,
     int guidebookCount,
     int stampCount,
-    String category,
+    String categoryCode,
+    String categoryName,
     Double distanceInKm,
     int exp
 ) {

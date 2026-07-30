@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import region.jidogam.common.annotation.CurrentUserId;
@@ -18,6 +20,9 @@ import region.jidogam.domain.guidebook.service.GuidebookService;
 import region.jidogam.domain.place.dto.PlaceNearByRequest;
 import region.jidogam.domain.place.dto.PlacePopularRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
+import region.jidogam.domain.place.dto.PlaceStoreInitRequest;
+import region.jidogam.domain.place.dto.PlaceStoreInitResponse;
+import region.jidogam.domain.place.service.PlaceInitService;
 import region.jidogam.domain.place.service.PlaceService;
 
 @RestController
@@ -25,6 +30,7 @@ import region.jidogam.domain.place.service.PlaceService;
 @RequiredArgsConstructor
 public class PlaceController implements PlaceApi {
 
+  private final PlaceInitService placeInitService;
   private final PlaceService placeService;
   private final GuidebookService guidebookService;
 
@@ -56,6 +62,14 @@ public class PlaceController implements PlaceApi {
   ) {
     CursorPageResponseDto<GuidebookResponse> response = guidebookService.listByPlaceId(
         pid, request, userId);
+    return ResponseEntity.ok(response);
+  }
+
+  @Override
+  @PostMapping("/fetch-init-data")
+  public ResponseEntity<PlaceStoreInitResponse> fetchStoreData(
+      @Valid @RequestBody PlaceStoreInitRequest request) {
+    PlaceStoreInitResponse response = placeInitService.initializeStoreData(request);
     return ResponseEntity.ok(response);
   }
 }

@@ -33,6 +33,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import region.jidogam.common.dto.SortDirection;
 import region.jidogam.common.dto.response.CursorPageResponseDto;
 import region.jidogam.common.util.CursorCodecUtil;
+import region.jidogam.domain.area.entity.AdministrativeLevel;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.entity.Area.PopulationDeclineCategory;
 import region.jidogam.domain.auth.entity.EmailAuthCode;
@@ -1154,9 +1155,9 @@ class UserServiceTest {
           .build();
 
       testArea = Area.builder()
-          .sido("서울특별시")
-          .sigungu("강남구")
-          .sigunguCode("1168000000")
+          .code("1168000000")
+          .name("강남구")
+          .administrativeLevel(AdministrativeLevel.SIGUNGU)
           .weight(1.0)
           .populationDeclineCategory(PopulationDeclineCategory.NORMAL)
           .build();
@@ -1166,8 +1167,9 @@ class UserServiceTest {
           .name("장소1")
           .x(new BigDecimal("127.0"))
           .y(new BigDecimal("37.0"))
-          .address("서울시 강남구")
-          .category("카페")
+          .jibunAddress("서울시 강남구")
+          .fetchedAt(LocalDateTime.now())
+          .categoryName("카페")
           .build();
 
       testPlace2 = Place.builder()
@@ -1175,8 +1177,9 @@ class UserServiceTest {
           .name("장소2")
           .x(new BigDecimal("127.1"))
           .y(new BigDecimal("37.1"))
-          .address("서울시 서초구")
-          .category("식당")
+          .jibunAddress("서울시 서초구")
+          .fetchedAt(LocalDateTime.now())
+          .categoryName("식당")
           .build();
 
       testPlace3 = Place.builder()
@@ -1184,8 +1187,9 @@ class UserServiceTest {
           .name("장소3")
           .x(new BigDecimal("127.2"))
           .y(new BigDecimal("37.2"))
-          .address("서울시 송파구")
-          .category("공원")
+          .jibunAddress("서울시 송파구")
+          .fetchedAt(LocalDateTime.now())
+          .categoryName("공원")
           .build();
 
       testStamp1 = Stamp.builder()

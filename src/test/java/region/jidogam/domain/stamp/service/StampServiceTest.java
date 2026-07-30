@@ -26,6 +26,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import region.jidogam.domain.area.entity.AdministrativeLevel;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.entity.Area.PopulationDeclineCategory;
 import region.jidogam.domain.guidebook.service.GuidebookParticipationService;
@@ -86,9 +87,9 @@ class StampServiceTest {
         .build();
 
     area = Area.builder()
-        .sigunguCode("1234")
-        .sido("전라북도특별자치도")
-        .sigungu("익산시")
+        .code("1234")
+        .name("익산시")
+        .administrativeLevel(AdministrativeLevel.SIGUNGU)
         .weight(1.0)
         .populationDeclineCategory(PopulationDeclineCategory.NORMAL)
         .build();

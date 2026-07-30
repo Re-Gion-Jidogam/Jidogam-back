@@ -12,8 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.service.AreaService;
 import region.jidogam.domain.exp.service.ExpService;
+import region.jidogam.domain.place.dto.ExternalPlaceData;
 import region.jidogam.domain.place.dto.FieldChange;
-import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.entity.PlaceChangeHistory;
 import region.jidogam.domain.place.entity.PlaceChangeHistory.ChangeSource;
@@ -35,35 +35,41 @@ public class PlaceUpdateService {
   /**
    * Place를 업데이트하고 변경 이력을 기록합니다.
    *
-   * @param place   업데이트할 장소
-   * @param request 프론트에서 카카오 API 호출 후 전달한 최신 장소 정보
+   * @param place 업데이트할 장소
+   * @param data  외부 데이터 소스에서 가져온 최신 장소 정보
    */
   @Transactional
-  public void detectUpdateAndRecord(Place place, PlaceCreateRequest request) {
+  public void detectUpdateAndRecord(Place place, ExternalPlaceData data, ChangeSource source) {
     Map<String, FieldChange> changes = new HashMap<>();
 
     // 이름 변경
-    if (!Objects.equals(place.getName(), request.placeName())) {
-      changes.put("name", FieldChange.of(place.getName(), request.placeName()));
-      place.updateName(request.placeName());
+    if (!Objects.equals(place.getName(), data.placeName())) {
+      changes.put("name", FieldChange.of(place.getName(), data.placeName()));
+      place.updateName(data.placeName());
     }
 
     // 카테고리 변경
-    if (!Objects.equals(place.getCategory(), request.category())) {
-      changes.put("category", FieldChange.of(place.getCategory(), request.category()));
-      place.updateCategory(request.category());
+    if (!Objects.equals(place.getCategoryCode(), data.categoryCode())
+        || !Objects.equals(place.getCategoryName(), data.categoryName())) {
+      changes.put("categoryCode", FieldChange.of(place.getCategoryCode(), data.categoryCode()));
+      changes.put("categoryName", FieldChange.of(place.getCategoryName(), data.categoryName()));
+      place.updateCategory(data.categoryCode(), data.categoryName());
     }
 
     // 주소 변경
-    if (!Objects.equals(place.getAddress(), request.addressName())) {
-      updateAddressAndRelatedFields(place, request, changes);
+    if (!Objects.equals(place.getJibunAddress(), data.jibunAddress())
+        || !Objects.equals(place.getRoadAddress(), data.roadAddress())) {
+      updateAddressAndRelatedFields(place, data, changes);
     }
 
     // 변경사항이 있으면 이력 저장
     if (!changes.isEmpty()) {
-      recordChangeHistory(place.getId(), place.getKakaoId(), changes);
+      recordChangeHistory(place.getId(), place.getExternalId(), changes, source);
       log.debug("Place updated: placeId={}, changedFields={}", place.getId(), changes.keySet());
     }
+
+    // 데이터를 가져온 일시는 변경 이력과 무관하게 매 동기화마다 갱신
+    place.updateFetchedAt(data.fetchedAt());
   }
 
   /**
@@ -74,7 +80,7 @@ public class PlaceUpdateService {
    * - 지역 (Area)
    * - 포인트 (지역 가중치 기반)
    */
-  private void updateAddressAndRelatedFields(Place place, PlaceCreateRequest request,
+  private void updateAddressAndRelatedFields(Place place, ExternalPlaceData data,
       Map<String, FieldChange> changes) {
     // 변경 전 값 저장
     String oldCoordinates = place.getX() + "," + place.getY();
@@ -82,29 +88,33 @@ public class PlaceUpdateService {
     Integer oldExp = place.getExp();
 
     // 새로운 값 계산
-    String newCoordinates = request.x() + "," + request.y();
-    Area newArea = areaService.getAreaByAddress(request.addressName());
+    String newCoordinates = data.x() + "," + data.y();
+    Area newArea = areaService.getByCode(data.sigunguCode(), data.sigunguName());
     int newExp = expService.calculatePlaceExp(newArea.getWeight());
 
     // 변경 기록
-    changes.put("address", FieldChange.of(place.getAddress(), request.addressName()));
+    changes.put("jibunAddress",
+        FieldChange.of(place.getJibunAddress(), data.jibunAddress()));
+    changes.put("roadAddress",
+        FieldChange.of(place.getRoadAddress(), data.roadAddress()));
     changes.put("coordinates", FieldChange.of(oldCoordinates, newCoordinates));
     changes.put("areaId", FieldChange.of(oldAreaId, newArea.getId().toString()));
     changes.put("exp", FieldChange.of(oldExp.toString(), String.valueOf(newExp)));
 
     // 업데이트
-    place.updateAddress(request.addressName());
-    place.updateCoordinates(request.x(), request.y());
+    place.updateAddress(data.jibunAddress(), data.roadAddress());
+    place.updateCoordinates(data.x(), data.y());
     place.updateArea(newArea);
     place.updateExp(newExp);
   }
 
-  private void recordChangeHistory(UUID placeId, String kakaoId, Map<String, FieldChange> changes) {
+  private void recordChangeHistory(UUID placeId, String externalId,
+      Map<String, FieldChange> changes, ChangeSource source) {
     PlaceChangeHistory history = PlaceChangeHistory.builder()
         .placeId(placeId)
-        .kakaoId(kakaoId)
+        .kakaoId(externalId)
         .changedFields(changes)
-        .source(ChangeSource.KAKAO_API)
+        .source(source)
         .build();
 
     historyRepository.save(history);

@@ -52,5 +52,6 @@ jidogam:
 
 api:
   area:
-    service-id: test-dummy
-    secret-key: test-dummy
+    api-key: test-dummy
+  place:
+    api-key: test-dummy

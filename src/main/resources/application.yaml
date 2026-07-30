@@ -112,6 +112,8 @@ management:
 api:
   area:
     api-key: ${DATA_GO_API_KEY}
+  place:
+    api-key: ${DATA_GO_API_KEY}
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}

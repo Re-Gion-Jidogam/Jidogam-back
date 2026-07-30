@@ -18,6 +18,8 @@ import region.jidogam.domain.guidebook.dto.GuidebookResponse;
 import region.jidogam.domain.place.dto.PlaceNearByRequest;
 import region.jidogam.domain.place.dto.PlacePopularRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
+import region.jidogam.domain.place.dto.PlaceStoreInitRequest;
+import region.jidogam.domain.place.dto.PlaceStoreInitResponse;
 
 @Tag(name = "Place", description = "장소 관련 API")
 public interface PlaceApi {
@@ -53,4 +55,13 @@ public interface PlaceApi {
       @Valid @ModelAttribute GuidebookConditionRequest request,
       @Parameter(hidden = true) @CurrentUserId UUID userId
   );
+
+  @Operation(summary = "상가업소 데이터 적재", description = "공공데이터(SEMAS)에서 시군구코드 기준으로 상가업소 정보를 가져와 장소 데이터를 적재합니다. (관리자 전용)")
+  @ApiResponses(value = {
+      @ApiResponse(responseCode = "200", description = "상가업소 데이터 적재 성공"),
+      @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+      @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자"),
+      @ApiResponse(responseCode = "403", description = "권한 없음")
+  })
+  ResponseEntity<PlaceStoreInitResponse> fetchStoreData(PlaceStoreInitRequest request);
 }

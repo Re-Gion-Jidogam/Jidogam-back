@@ -105,19 +105,6 @@ public class AreaService {
     log.debug("레거시 지역 코드 등록 완료 (total: {})", legacyCodes.size());
   }
 
-  public Area getAreaByAddress(String fullAddress) {
-
-    // todo: 여기를 alias db로 변경 -> 지역 데이터에 이미 있으니까 굳이 필요 없을 듯
-    // AddressInfo addressInfo = addressParser.parseAddress(fullAddress);
-
-    //    String sido = addressInfo.sido();
-    //    String sigungu = addressInfo.sigungu();
-
-    //return areaRepository.findByParentAndCode(sido, sigungu)
-    //    .orElseThrow(() -> AreaNotFoundException.withSidoAndSigungu(sido, sigungu));
-    return null;
-  }
-
   @Transactional
   public void updateAreaWeight(AreaWeightUpdateRequest request) {
 
@@ -127,7 +114,7 @@ public class AreaService {
 
     for (RegionPopulation region : request.regions()) {
 
-      Area area = findAreaByCode(region.sggCode(), region.getFullName());
+      Area area = getByCode(region.sggCode(), region.getFullName());
 
       PopulationDeclineCategory newPopulationDeclineCategory = selectPopulationDeclineCategory(
           region);
@@ -139,6 +126,25 @@ public class AreaService {
       area.updateWeight(newWeight);
       area.updatePopulationDeclineCategory(newPopulationDeclineCategory);
     }
+  }
+
+  /**
+   * 시군구 코드로 Area 조회
+   *
+   * @param sigunguCode 시군구 코드
+   * @param sigunguName 시군구 지명 (log 용)
+   * @return
+   */
+  public Area getByCode(String sigunguCode, String sigunguName) {
+
+    return areaRepository.findByCode(sigunguCode)
+        .or(() -> areaLegacyCodeRepository.findByLegacyCode(sigunguCode)
+            .map(legacy -> {
+              log.info("레거시 코드로 매칭됨: {}({}) -> {}({})", sigunguCode, sigunguName,
+                  legacy.getArea().getCode(), legacy.getArea().getName());
+              return legacy.getArea();
+            }))
+        .orElseThrow(() -> AreaNotFoundException.withCode(sigunguCode));
   }
 
   private void validateWeightValues(List<RegionPopulation> regions) {
@@ -185,18 +191,6 @@ public class AreaService {
         .effectiveFrom(mapping.effectiveFrom())
         .area(area)
         .build();
-  }
-
-  private Area findAreaByCode(String code, String name) {
-
-    return areaRepository.findByCode(code)
-        .or(() -> areaLegacyCodeRepository.findByLegacyCode(code)
-            .map(legacy -> {
-              log.info("레거시 코드로 매칭됨: {}({}) -> {}({})", code, name,
-                  legacy.getArea().getCode(), legacy.getArea().getName());
-              return legacy.getArea();
-            }))
-        .orElseThrow(() -> AreaNotFoundException.withCode(code));
   }
 
   private void validateSidoCode(Sido sido) {

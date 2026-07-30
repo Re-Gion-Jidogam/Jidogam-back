@@ -10,13 +10,12 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import region.jidogam.domain.place.dto.PlaceVisitInfo;
 import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.entity.Place.Source;
 import region.jidogam.domain.place.repository.querydsl.PlaceRepositoryCustom;
 
 public interface PlaceRepository extends JpaRepository<Place, UUID>, PlaceRepositoryCustom {
 
-  Optional<Place> findByKakaoId(String kakaoId);
-
-  List<Place> findAllByKakaoIdIn(List<String> kakaoIds);
+  Optional<Place> findByExternalIdAndSource(String externalId, Source source);
 
   List<Place> findAllByOrderByStampCountDesc(Pageable pageable);
 

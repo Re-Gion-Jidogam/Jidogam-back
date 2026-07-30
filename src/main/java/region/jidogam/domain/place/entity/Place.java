@@ -2,11 +2,15 @@ package region.jidogam.domain.place.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,7 +20,11 @@ import region.jidogam.common.entity.BaseEntity;
 import region.jidogam.domain.area.entity.Area;
 
 @Entity
-@Table(name = "places")
+@Table(
+    name = "places", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"source", "external_id"})
+}
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -27,8 +35,12 @@ public class Place extends BaseEntity {
   @JoinColumn(name = "area_id", nullable = false)
   private Area area;
 
-  @Column(nullable = false, unique = true)
-  private String kakaoId;
+  @Column(nullable = false)
+  private String externalId;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private Source source;
 
   @Column(nullable = false)
   private String name;
@@ -40,10 +52,19 @@ public class Place extends BaseEntity {
   private BigDecimal y;
 
   @Column(nullable = false)
-  private String address;
+  private String jibunAddress;
 
   @Column
-  private String category;
+  private String roadAddress;
+
+  @Column(nullable = false)
+  private LocalDateTime fetchedAt;
+
+  @Column
+  private String categoryCode;
+
+  @Column
+  private String categoryName;
 
   @Column(nullable = false)
   @Builder.Default
@@ -61,8 +82,9 @@ public class Place extends BaseEntity {
     this.name = name;
   }
 
-  public void updateAddress(String address) {
-    this.address = address;
+  public void updateAddress(String jibunAddress, String roadAddress) {
+    this.jibunAddress = jibunAddress;
+    this.roadAddress = roadAddress;
   }
 
   public void updateCoordinates(BigDecimal x, BigDecimal y) {
@@ -70,8 +92,13 @@ public class Place extends BaseEntity {
     this.y = y;
   }
 
-  public void updateCategory(String category) {
-    this.category = category;
+  public void updateFetchedAt(LocalDateTime fetchedAt) {
+    this.fetchedAt = fetchedAt;
+  }
+
+  public void updateCategory(String categoryCode, String categoryName) {
+    this.categoryCode = categoryCode;
+    this.categoryName = categoryName;
   }
 
   public void updateArea(Area area) {
@@ -80,5 +107,12 @@ public class Place extends BaseEntity {
 
   public void updateExp(int exp) {
     this.exp = exp;
+  }
+
+  /**
+   * 장소 데이터의 출처
+   */
+  public enum Source {
+    SEMAS
   }
 }
