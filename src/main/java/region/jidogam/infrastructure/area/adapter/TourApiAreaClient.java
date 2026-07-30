@@ -29,7 +29,7 @@ public class TourApiAreaClient {
       "https://apis.data.go.kr/B551011/KorService2/ldongCode2";
   private static final String MOBILE_OS = "WEB";
   private static final String MOBILE_APP = "jidogam";
-  private static final String RESPONSE_TYPE = "json";
+  private static final String RESPONSE_TYPE_JSON = "json";
   private static final String NUM_OF_ROWS = "100";
 
   private final RestClient restClient;
@@ -51,7 +51,7 @@ public class TourApiAreaClient {
             .uri(LDONG_CODE_URL
                     + "?serviceKey={serviceKey}&MobileOS={mobileOS}&MobileApp={mobileApp}"
                     + "&_type={type}&numOfRows={numOfRows}&lDongRegnCd={lDongRegnCd}",
-                apiKey, MOBILE_OS, MOBILE_APP, RESPONSE_TYPE, NUM_OF_ROWS, lDongRegnCd)
+                apiKey, MOBILE_OS, MOBILE_APP, RESPONSE_TYPE_JSON, NUM_OF_ROWS, lDongRegnCd)
             .accept(MediaType.APPLICATION_JSON)
             .retrieve()
             .body(new ParameterizedTypeReference<TourApiResponse<LdongCode>>() {

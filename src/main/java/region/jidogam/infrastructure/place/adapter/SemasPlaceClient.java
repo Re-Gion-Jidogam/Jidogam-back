@@ -25,6 +25,7 @@ public class SemasPlaceClient {
   private static final String STORE_LIST_IN_DONG_URL =
       "https://apis.data.go.kr/B553077/api/open/sdsc2/storeListInDong";
   private static final String DIV_ID_SIGUNGU_CODE = "signguCd";
+  private static final String RESPONSE_TYPE_JSON = "json";
 
   private final RestClient restClient;
 
@@ -56,7 +57,7 @@ public class SemasPlaceClient {
                     + "&indsLclsCd={indsLclsCd}&indsMclsCd={indsMclsCd}&indsSclsCd={indssclsCd}"
                     + "&type={type}",
                 apiKey, pageNo, numOfRows, DIV_ID_SIGUNGU_CODE, code,
-                indsLclsCd, indsMclsCd, indsSclsCd, "json")
+                indsLclsCd, indsMclsCd, indsSclsCd, RESPONSE_TYPE_JSON)
             .accept(MediaType.APPLICATION_JSON)
             .retrieve()
             .body(SemasStoreResponse.class)
