@@ -40,7 +40,8 @@ public class SecurityConfig {
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/jidogam-admin/login", "/jidogam-admin/api/**", "/css/**").permitAll()
+            .requestMatchers("/jidogam-admin/login", "/jidogam-admin/api/login",
+                "/jidogam-admin/api/logout", "/css/**").permitAll()
             .anyRequest().hasRole("ADMIN"))
 
         .addFilterBefore(
