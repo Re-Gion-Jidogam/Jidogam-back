@@ -12,7 +12,7 @@ import region.jidogam.domain.place.dto.PlaceStoreInitResponse;
 import region.jidogam.domain.place.service.PlaceInitService;
 
 @RestController
-@RequestMapping("/jidogam-admin/api/place")
+@RequestMapping("/jidogam-admin/api/places")
 @RequiredArgsConstructor
 public class AdminPlaceApiController {
 
