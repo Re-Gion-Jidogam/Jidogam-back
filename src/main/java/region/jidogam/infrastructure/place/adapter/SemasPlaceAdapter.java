@@ -44,12 +44,11 @@ public class SemasPlaceAdapter implements PlacePort {
     String indsSclsCd = Objects.requireNonNullElse(smallCategoryCode, NO_FILTER);
 
     List<ExternalPlaceData> storeData = new ArrayList<>();
+    int numOfRows = Math.min(DEFAULT_FETCH_LIMIT, limit);
     int pageNo = 1;
     int totalCount;
 
     do {
-      int numOfRows = Math.min(DEFAULT_FETCH_LIMIT, limit - storeData.size());
-
       SemasStoreResponse.Body body = semasPlaceClient.fetchStoresBySigunguCode(
           sigunguCode, pageNo, numOfRows, indsLclsCd, indsMclsCd, indsSclsCd);
 
@@ -60,6 +59,10 @@ public class SemasPlaceAdapter implements PlacePort {
       totalCount = body.totalCount();
       pageNo++;
     } while (storeData.size() < limit && storeData.size() < totalCount);
+
+    if (storeData.size() > limit) {
+      storeData = new ArrayList<>(storeData.subList(0, limit));
+    }
 
     log.info("{} 상가업소 정보 {}건 조회 완료", sigunguCode, storeData.size());
     return storeData;
@@ -87,14 +90,14 @@ public class SemasPlaceAdapter implements PlacePort {
     String indsSclsCd = Objects.requireNonNullElse(smallCategoryCode, NO_FILTER);
 
     List<ExternalPlaceData> storeData = new ArrayList<>();
+    int numOfRows = Math.min(DEFAULT_FETCH_LIMIT, limit);
     int pageNo = 1;
     int totalCount;
 
     do {
-      int numOfRows = Math.min(DEFAULT_FETCH_LIMIT, limit - storeData.size());
-
       SemasStoreResponse.Body body = semasPlaceClient.fetchStoresByRadius(
-          lon, lat, radiusMeters, pageNo, numOfRows, indsLclsCd, indsMclsCd, indsSclsCd);
+          lon, lat, radiusMeters, pageNo, numOfRows, indsLclsCd, indsMclsCd,
+          indsSclsCd);
 
       storeData.addAll(body.items().stream()
           .map(this::toExternalPlaceData)
@@ -103,6 +106,10 @@ public class SemasPlaceAdapter implements PlacePort {
       totalCount = body.totalCount();
       pageNo++;
     } while (storeData.size() < limit && storeData.size() < totalCount);
+
+    if (storeData.size() > limit) {
+      storeData = new ArrayList<>(storeData.subList(0, limit));
+    }
 
     log.info("반경 {}m 상가업소 정보 {}건 조회 완료", radiusMeters, storeData.size());
     return storeData;
