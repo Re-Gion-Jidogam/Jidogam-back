@@ -1,16 +1,16 @@
-package region.jidogam.domain.area.dto.api;
+package region.jidogam.infrastructure.area.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record Sido(
+public record LdongCode(
 
-  @JsonProperty("addr_name")
-  String addressName,
+    @JsonProperty("name")
+    String name,
 
-  @JsonProperty("cd")
-  String code
+    @JsonProperty("code")
+    String code
 
 ) {
 

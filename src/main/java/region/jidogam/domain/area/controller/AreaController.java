@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import region.jidogam.domain.area.dto.AreaLegacyCodeRegisterRequest;
 import region.jidogam.domain.area.dto.AreaWeightUpdateRequest;
 import region.jidogam.domain.area.service.AreaInitService;
 import region.jidogam.domain.area.service.AreaService;
@@ -30,7 +31,15 @@ public class AreaController implements AreaApi {
   public ResponseEntity<Void> settingAreaWeight(
       @Valid @RequestBody AreaWeightUpdateRequest request
   ) {
-    areaService.updateAreaSettings(request);
+    areaService.updateAreaWeight(request);
+    return ResponseEntity.ok().build();
+  }
+
+  @PostMapping("/legacy-codes")
+  public ResponseEntity<Void> registerLegacyCodes(
+      @Valid @RequestBody AreaLegacyCodeRegisterRequest request
+  ) {
+    areaService.registerLegacyCodes(request);
     return ResponseEntity.ok().build();
   }
 }

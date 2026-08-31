@@ -3,7 +3,7 @@ package region.jidogam.domain.area.parser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import region.jidogam.domain.area.dto.api.AddressInfo;
+import region.jidogam.domain.area.dto.AddressInfo;
 
 @Slf4j
 @Component

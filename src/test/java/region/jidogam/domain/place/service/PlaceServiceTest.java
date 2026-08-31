@@ -2,28 +2,26 @@ package region.jidogam.domain.place.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
+import region.jidogam.domain.area.entity.AdministrativeLevel;
 import region.jidogam.domain.area.entity.Area;
-import region.jidogam.domain.area.entity.Area.AreaType;
+import region.jidogam.domain.area.entity.Area.PopulationDeclineCategory;
 import region.jidogam.domain.area.service.AreaService;
 import region.jidogam.domain.exp.service.ExpService;
-import region.jidogam.domain.place.dto.PlaceCreateRequest;
-import region.jidogam.domain.place.dto.PlaceGuidebookCountRequest;
-import region.jidogam.domain.place.dto.PlaceGuidebookCountResponse;
+import region.jidogam.domain.place.dto.ExternalPlaceData;
 import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.entity.PlaceChangeHistory.ChangeSource;
 import region.jidogam.domain.place.repository.PlaceRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,158 +47,138 @@ class PlaceServiceTest {
   void createPlaceSuccess() {
     // given
     Area area = Area.builder()
-        .sigunguCode("1234")
-        .sido("전라북도특별자치도")
-        .sigungu("익산시")
+        .code("1234")
+        .name("익산시")
+        .administrativeLevel(AdministrativeLevel.SIGUNGU)
         .weight(1.0)
         .weightUpdatedAt(LocalDateTime.now())
-        .type(AreaType.NORMAL)
+        .populationDeclineCategory(PopulationDeclineCategory.NORMAL)
         .build();
 
-    PlaceCreateRequest request = new PlaceCreateRequest(
-        "1234",
-        "임시마트",
-        "전북 익산시 망산길 11-17",
-        null,
-        BigDecimal.valueOf(35.976749396987046),
-        BigDecimal.valueOf(126.99599512792346)
-    );
+    ExternalPlaceData data = ExternalPlaceData.builder()
+        .externalId("1234")
+        .placeName("임시마트")
+        .jibunAddress("전북 익산시 망산길 11-17")
+        .roadAddress("전북 익산시 망산길 11-17")
+        .sigunguCode("52140")
+        .sigunguName("익산시")
+        .y(BigDecimal.valueOf(35.976749396987046))
+        .x(BigDecimal.valueOf(126.99599512792346))
+        .fetchedAt(LocalDateTime.now())
+        .build();
 
     Place place = Place.builder()
-        .kakaoId("1234")
-        .name(request.placeName())
-        .address(request.addressName())
-        .x(request.x())
-        .y(request.y())
-        .category(request.category())
+        .externalId("1234")
+        .source(Place.Source.SEMAS)
+        .name(data.placeName())
+        .jibunAddress(data.jibunAddress())
+        .roadAddress(data.roadAddress())
+        .fetchedAt(data.fetchedAt())
+        .x(data.x())
+        .y(data.y())
+        .categoryCode(data.categoryCode())
+        .categoryName(data.categoryName())
         .area(area)
         .exp(10)
         .build();
 
     when(expService.calculatePlaceExp(1.0)).thenReturn(10);
-    when(areaService.getAreaByAddress(any(String.class))).thenReturn(area);
+    when(areaService.getByCode("52140", "익산시")).thenReturn(area);
     when(placeRepository.save(any(Place.class))).thenReturn(place);
 
     // when
-    Place newPlace = placeService.createPlace(request);
+    Place newPlace = placeService.createPlace(data, Place.Source.SEMAS);
 
     // then
-    assertThat(newPlace.getKakaoId()).isEqualTo("1234");
+    assertThat(newPlace.getExternalId()).isEqualTo("1234");
     assertThat(newPlace.getName()).isEqualTo("임시마트");
-    assertThat(newPlace.getAddress()).isEqualTo(request.addressName());
+    assertThat(newPlace.getJibunAddress()).isEqualTo(data.jibunAddress());
 
   }
 
-  @Nested
-  @DisplayName("장소별 가이드북 수 조회")
-  class GetGuidebookCounts {
+  @Test
+  @DisplayName("upsertPlace: 이미 존재하는 장소면 변경 이력만 기록하고 새로 생성하지 않는다")
+  void upsertPlaceUpdatesExistingPlace() {
+    // given
+    Place existingPlace = Place.builder()
+        .externalId("1234")
+        .source(Place.Source.SEMAS)
+        .name("기존이름")
+        .jibunAddress("전북 익산시 망산길 11-17")
+        .fetchedAt(LocalDateTime.now().minusDays(1))
+        .x(BigDecimal.valueOf(126.99599512792346))
+        .y(BigDecimal.valueOf(35.976749396987046))
+        .exp(10)
+        .build();
 
-    @Test
-    @DisplayName("여러 카카오 장소 ID로 가이드북 수 조회 성공")
-    void success() {
-      // given
-      Area area = Area.builder()
-          .sigunguCode("11680")
-          .sido("서울특별시")
-          .sigungu("강남구")
-          .weight(1.0)
-          .weightUpdatedAt(LocalDateTime.now())
-          .type(AreaType.NORMAL)
-          .build();
+    ExternalPlaceData data = ExternalPlaceData.builder()
+        .externalId("1234")
+        .placeName("변경된이름")
+        .jibunAddress("전북 익산시 망산길 11-17")
+        .y(BigDecimal.valueOf(35.976749396987046))
+        .x(BigDecimal.valueOf(126.99599512792346))
+        .fetchedAt(LocalDateTime.now())
+        .build();
 
-      Place place1 = Place.builder()
-          .kakaoId("111")
-          .name("장소1")
-          .address("서울 강남구")
-          .x(BigDecimal.valueOf(127.0))
-          .y(BigDecimal.valueOf(37.5))
-          .area(area)
-          .guidebookCount(5)
-          .build();
-      ReflectionTestUtils.setField(place1, "id", UUID.randomUUID());
+    when(placeRepository.findByExternalIdAndSource("1234", Place.Source.SEMAS))
+        .thenReturn(java.util.Optional.of(existingPlace));
 
-      Place place2 = Place.builder()
-          .kakaoId("222")
-          .name("장소2")
-          .address("서울 강남구")
-          .x(BigDecimal.valueOf(127.1))
-          .y(BigDecimal.valueOf(37.6))
-          .area(area)
-          .guidebookCount(3)
-          .build();
-      ReflectionTestUtils.setField(place2, "id", UUID.randomUUID());
+    // when
+    Place result = placeService.upsertPlace(data, Place.Source.SEMAS);
 
-      when(placeRepository.findAllByKakaoIdIn(List.of("111", "222")))
-          .thenReturn(List.of(place1, place2));
+    // then
+    assertThat(result).isSameAs(existingPlace);
+    verify(placeUpdateService).detectUpdateAndRecord(existingPlace, data, ChangeSource.SEMAS);
+    verify(placeRepository, never()).save(any(Place.class));
+  }
 
-      PlaceGuidebookCountRequest request = new PlaceGuidebookCountRequest(
-          List.of("111", "222"));
+  @Test
+  @DisplayName("upsertPlace: 존재하지 않는 장소면 새로 생성한다")
+  void upsertPlaceCreatesNewPlace() {
+    // given
+    Area area = Area.builder()
+        .code("1234")
+        .name("익산시")
+        .administrativeLevel(AdministrativeLevel.SIGUNGU)
+        .weight(1.0)
+        .weightUpdatedAt(LocalDateTime.now())
+        .populationDeclineCategory(PopulationDeclineCategory.NORMAL)
+        .build();
 
-      // when
-      List<PlaceGuidebookCountResponse> responses = placeService.getGuidebookCounts(request);
+    ExternalPlaceData data = ExternalPlaceData.builder()
+        .externalId("5678")
+        .placeName("신규장소")
+        .jibunAddress("전북 익산시 망산길 11-17")
+        .sigunguCode("52140")
+        .sigunguName("익산시")
+        .y(BigDecimal.valueOf(35.976749396987046))
+        .x(BigDecimal.valueOf(126.99599512792346))
+        .fetchedAt(LocalDateTime.now())
+        .build();
 
-      // then
-      assertThat(responses).hasSize(2);
-      assertThat(responses.get(0).kakaoPid()).isEqualTo("111");
-      assertThat(responses.get(0).guidebookCount()).isEqualTo(5);
-      assertThat(responses.get(1).kakaoPid()).isEqualTo("222");
-      assertThat(responses.get(1).guidebookCount()).isEqualTo(3);
-    }
+    Place savedPlace = Place.builder()
+        .externalId("5678")
+        .source(Place.Source.SEMAS)
+        .name(data.placeName())
+        .jibunAddress(data.jibunAddress())
+        .fetchedAt(data.fetchedAt())
+        .x(data.x())
+        .y(data.y())
+        .area(area)
+        .exp(10)
+        .build();
 
-    @Test
-    @DisplayName("DB에 없는 카카오 ID가 포함된 경우 존재하는 장소만 반환")
-    void returnsOnlyExistingPlaces() {
-      // given
-      Area area = Area.builder()
-          .sigunguCode("11680")
-          .sido("서울특별시")
-          .sigungu("강남구")
-          .weight(1.0)
-          .weightUpdatedAt(LocalDateTime.now())
-          .type(AreaType.NORMAL)
-          .build();
+    when(placeRepository.findByExternalIdAndSource("5678", Place.Source.SEMAS))
+        .thenReturn(java.util.Optional.empty());
+    when(expService.calculatePlaceExp(1.0)).thenReturn(10);
+    when(areaService.getByCode("52140", "익산시")).thenReturn(area);
+    when(placeRepository.save(any(Place.class))).thenReturn(savedPlace);
 
-      Place place1 = Place.builder()
-          .kakaoId("111")
-          .name("장소1")
-          .address("서울 강남구")
-          .x(BigDecimal.valueOf(127.0))
-          .y(BigDecimal.valueOf(37.5))
-          .area(area)
-          .guidebookCount(2)
-          .build();
-      ReflectionTestUtils.setField(place1, "id", UUID.randomUUID());
+    // when
+    Place result = placeService.upsertPlace(data, Place.Source.SEMAS);
 
-      when(placeRepository.findAllByKakaoIdIn(List.of("111", "999")))
-          .thenReturn(List.of(place1));
-
-      PlaceGuidebookCountRequest request = new PlaceGuidebookCountRequest(
-          List.of("111", "999"));
-
-      // when
-      List<PlaceGuidebookCountResponse> responses = placeService.getGuidebookCounts(request);
-
-      // then
-      assertThat(responses).hasSize(1);
-      assertThat(responses.get(0).kakaoPid()).isEqualTo("111");
-      assertThat(responses.get(0).guidebookCount()).isEqualTo(2);
-    }
-
-    @Test
-    @DisplayName("모든 카카오 ID가 DB에 없으면 빈 리스트 반환")
-    void returnsEmptyWhenNoPlacesFound() {
-      // given
-      when(placeRepository.findAllByKakaoIdIn(List.of("999")))
-          .thenReturn(List.of());
-
-      PlaceGuidebookCountRequest request = new PlaceGuidebookCountRequest(
-          List.of("999"));
-
-      // when
-      List<PlaceGuidebookCountResponse> responses = placeService.getGuidebookCounts(request);
-
-      // then
-      assertThat(responses).isEmpty();
-    }
+    // then
+    assertThat(result.getExternalId()).isEqualTo("5678");
+    verify(placeUpdateService, never()).detectUpdateAndRecord(any(), any(), any());
   }
 }

@@ -71,14 +71,14 @@ public class GuidebookMapper {
     }
 
     return new AreaRatioDto(
-        guidebookAreaRatio.getFirstArea().areaName(),
+        guidebookAreaRatio.getFirstArea().getName(),
         guidebookAreaRatio.getFirstAreaRatio(),
         guidebookAreaRatio.getSecondArea() != null
-            ? guidebookAreaRatio.getSecondArea().areaName() : null,
+            ? guidebookAreaRatio.getSecondArea().getName() : null,
         guidebookAreaRatio.getSecondArea() != null
             ? guidebookAreaRatio.getSecondAreaRatio() : null,
         guidebookAreaRatio.getThirdArea() != null
-            ? guidebookAreaRatio.getThirdArea().areaName() : null,
+            ? guidebookAreaRatio.getThirdArea().getName() : null,
         guidebookAreaRatio.getThirdArea() != null
             ? guidebookAreaRatio.getThirdAreaRatio() : null,
         guidebookAreaRatio.getIsPrimaryArea()

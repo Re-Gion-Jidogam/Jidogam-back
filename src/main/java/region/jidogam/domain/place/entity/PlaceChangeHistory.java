@@ -40,7 +40,7 @@ public class PlaceChangeHistory extends BaseEntity {
   private ChangeSource source;
 
   public enum ChangeSource {
-    KAKAO_API,      // 카카오 API에서 감지된 변경
+    SEMAS,          // 소상공인
     USER_REPORT,    // 사용자 제보
     ADMIN           // 관리자 수정
   }

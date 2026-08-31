@@ -4,6 +4,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
@@ -17,7 +19,7 @@ import region.jidogam.common.entity.BaseUpdatableEntity;
 @Entity
 @Table(
     name = "areas", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"sido", "sigungu"})
+    @UniqueConstraint(columnNames = {"parent_id", "code"})
 }
 )
 @Getter
@@ -27,31 +29,33 @@ import region.jidogam.common.entity.BaseUpdatableEntity;
 public class Area extends BaseUpdatableEntity {
 
   @Column(nullable = false)
-  private String sido;
+  private String name;
 
-  @Column(nullable = false)
-  private String sigungu;
+  @Column(nullable = false, length = 10)
+  private String code;
 
   @Enumerated(EnumType.STRING)
-  private AreaType type;
+  private PopulationDeclineCategory populationDeclineCategory;
 
-  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
+  private AdministrativeLevel administrativeLevel;
+
+  @Column
   private Double weight;
 
   @Column(columnDefinition = "timestamp with time zone")
   private LocalDateTime weightUpdatedAt;
 
-  @Column(nullable = false, unique = true, length = 10)
-  private String sigunguCode;
+  @ManyToOne(fetch = FetchType.LAZY)
+  private Area parent;
 
-  public enum AreaType {
+  /**
+   * 시군구 단위 소외지역 분류
+   */
+  public enum PopulationDeclineCategory {
     NORMAL,
     INTEREST,
     UNDERSERVED
-  }
-
-  public String areaName() {
-    return sido + " " + sigungu;
   }
 
   public void updateWeight(double weight) {
@@ -59,7 +63,7 @@ public class Area extends BaseUpdatableEntity {
     this.weightUpdatedAt = LocalDateTime.now();
   }
 
-  public void updateType(AreaType type) {
-    this.type = type;
+  public void updatePopulationDeclineCategory(PopulationDeclineCategory populationDeclineCategory) {
+    this.populationDeclineCategory = populationDeclineCategory;
   }
 }

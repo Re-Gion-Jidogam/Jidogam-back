@@ -32,6 +32,9 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: INFO
 
 jidogam:
+  place:
+    nearby:
+      external-fetch-enabled: false
   admin:
     email: test-admin@jidogam.com
     password: testpassword1234!
@@ -52,5 +55,6 @@ jidogam:
 
 api:
   area:
-    service-id: test-dummy
-    secret-key: test-dummy
+    api-key: test-dummy
+  place:
+    api-key: test-dummy

@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.guidebook.service.GuidebookParticipationService;
 import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.exception.PlaceNotFoundException;
 import region.jidogam.domain.place.repository.PlaceRepository;
-import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.dto.PlaceStampRequest;
 import region.jidogam.domain.stamp.entity.Stamp;
 import region.jidogam.domain.stamp.exception.StampCooldownException;
@@ -36,13 +36,12 @@ public class StampService {
   private final UserRepository userRepository;
   private final StampRepository stampRepository;
   private final PlaceRepository placeRepository;
-  private final PlaceService placeService;
   private final UserService userService;
   private final GuidebookParticipationService guidebookParticipationService;
 
   @Transactional
   public void stampPlace(PlaceStampRequest request, UUID userId) {
-    log.debug("장소 도장 찍기 시작: placeName = {}, userId = {}", request.place().placeName(), userId);
+    log.debug("장소 도장 찍기 시작: placeId = {}, userId = {}", request.pid(), userId);
 
     // 1. 유저 확인
     User user = getUserOrThrow(userId);
@@ -51,12 +50,10 @@ public class StampService {
     validateStampCoolTime(user.getId());
 
     // 3. 장소 데이터 조회
-    Place place = placeService.getOrCreatePlace(request.pid(), request.place());
+    Place place = getPlaceOrThrow(request.pid());
 
     // 4. 중복 검사
-    if (request.pid() != null) {
-      validateDuplicateStamp(user, place);
-    }
+    validateDuplicateStamp(user, place);
 
     // 4. 도장 생성
     Stamp stamp = Stamp.builder()
@@ -75,8 +72,7 @@ public class StampService {
     // 7. 가이드북 완료 확인
     guidebookParticipationService.updateProgressByStamp(user, place);
 
-    log.debug("장소 도장 찍기 완료: placeName = {}, email = {}",
-        request.place().placeName(), user.getEmail());
+    log.debug("장소 도장 찍기 완료: placeName = {}, email = {}", place.getName(), user.getEmail());
   }
 
   @Transactional
@@ -110,6 +106,12 @@ public class StampService {
   private User getUserOrThrow(UUID userId) {
     return userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
+  }
+
+  // 장소 확인
+  private Place getPlaceOrThrow(UUID placeId) {
+    return placeRepository.findById(placeId)
+        .orElseThrow(() -> PlaceNotFoundException.withId(placeId));
   }
 
   // 도장 쿨타임 검사

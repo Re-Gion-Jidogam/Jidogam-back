@@ -46,8 +46,8 @@ import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookReviewRepository;
 import region.jidogam.domain.place.entity.Place;
+import region.jidogam.domain.place.exception.PlaceNotFoundException;
 import region.jidogam.domain.place.repository.PlaceRepository;
-import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.exception.UserNotFoundException;
@@ -72,7 +72,6 @@ public class GuidebookService {
   private final GuidebookReviewRepository guidebookReviewRepository;
   private final StampRepository stampRepository;
   private final PlaceRepository placeRepository;
-  private final PlaceService placeService;
   private final GuidebookMapper guidebookMapper;
   private final CursorCodecUtil cursorCodecUtil;
   private final ApplicationEventPublisher eventPublisher;
@@ -388,7 +387,7 @@ public class GuidebookService {
     }
 
     // 장소 추가
-    Place place = placeService.getOrCreatePlace(request.pid(), request.place());
+    Place place = getPlaceOrThrow(request.pid());
 
     if (guidebookPlaceRepository.existsByGuidebookAndPlace(guidebook, place)) {
       throw GuidebookPlaceDuplicateException.duplicate();
@@ -463,6 +462,11 @@ public class GuidebookService {
   private User getUserOrThrow(UUID userId) {
     return userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
+  }
+
+  private Place getPlaceOrThrow(UUID placeId) {
+    return placeRepository.findById(placeId)
+        .orElseThrow(() -> PlaceNotFoundException.withId(placeId));
   }
 
   private int getVisitedPlaceCount(UUID id, UUID userId) {

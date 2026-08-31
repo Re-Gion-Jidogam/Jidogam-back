@@ -1,18 +1,14 @@
 package region.jidogam.domain.stamp.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
-import region.jidogam.domain.place.dto.PlaceCreateRequest;
 
 public record PlaceStampRequest(
 
   @Schema(description = "장소ID", example = "uuid-id")
-  UUID pid,
-
-  @Schema(description = "장소데이터")
-  @Valid
-  PlaceCreateRequest place
+  @NotNull(message = "장소ID는 필수입니다.")
+  UUID pid
 
 ) {
 

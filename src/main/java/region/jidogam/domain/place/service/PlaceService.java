@@ -19,19 +19,16 @@ import region.jidogam.common.util.DistanceCalculatorUtil;
 import region.jidogam.domain.area.entity.Area;
 import region.jidogam.domain.area.service.AreaService;
 import region.jidogam.domain.exp.service.ExpService;
-import region.jidogam.domain.place.dto.PlaceCreateRequest;
+import region.jidogam.domain.place.dto.ExternalPlaceData;
 import region.jidogam.domain.place.dto.PlaceCursor;
 import region.jidogam.domain.place.dto.PlaceFilter;
-import region.jidogam.domain.place.dto.PlaceGuidebookCountRequest;
-import region.jidogam.domain.place.dto.PlaceGuidebookCountResponse;
 import region.jidogam.domain.place.dto.PlaceNearByRequest;
 import region.jidogam.domain.place.dto.PlacePopularRequest;
 import region.jidogam.domain.place.dto.PlaceResponse;
 import region.jidogam.domain.place.dto.PlaceSortBy;
 import region.jidogam.domain.place.dto.PlaceVisitInfo;
 import region.jidogam.domain.place.entity.Place;
-import region.jidogam.domain.place.exception.PlaceMismatchException;
-import region.jidogam.domain.place.exception.PlaceNotFoundException;
+import region.jidogam.domain.place.entity.PlaceChangeHistory.ChangeSource;
 import region.jidogam.domain.place.mapper.PlaceMapper;
 import region.jidogam.domain.place.repository.PlaceRepository;
 
@@ -49,20 +46,6 @@ public class PlaceService {
   private final ExpService expService;
   private final PlaceMapper placeMapper;
   private final CursorCodecUtil cursorCodecUtil;
-
-  @Transactional(readOnly = true)
-  public List<PlaceGuidebookCountResponse> getGuidebookCounts(
-      PlaceGuidebookCountRequest request) {
-
-    List<Place> places = placeRepository.findAllByKakaoIdIn(request.kakaoPids());
-
-    return places.stream()
-        .map(place -> new PlaceGuidebookCountResponse(
-            place.getId(),
-            place.getKakaoId(),
-            place.getGuidebookCount()))
-        .toList();
-  }
 
   @Transactional(readOnly = true)
   public List<PlaceResponse> popularList(PlacePopularRequest request) {
@@ -110,7 +93,7 @@ public class PlaceService {
   }
 
   /**
-   * 가이드북에 포함된 장소 목록을 거리 순으로 조회합니다. (내부 서비스용)
+   * 가이드북에 포함된 장소 목록을 거리 순으로 조회 (내부 서비스용)
    * <p>
    * 약 10m 정도의 오차는 허용하며 그 이상의 위치가 달라지는 경우 첫페이지를 응답합니다.
    */
@@ -227,51 +210,54 @@ public class PlaceService {
         .build();
   }
 
+  /**
+   * 외부 데이터 소스 기준으로 이미 존재하는 장소면 변경사항을 반영하고, 없으면 새로 생성
+   */
   @Transactional
-  public Place getOrCreatePlace(UUID id, PlaceCreateRequest request) {
-
-    if (id != null) {
-      Place place = placeRepository.findById(id)
-          .orElseThrow(() -> PlaceNotFoundException.withId(id));
-
-      if (!place.getKakaoId().equals(request.id())) {
-        throw PlaceMismatchException.idMismatch(id, request.id());
-      }
-
-      changeTrackingService.detectUpdateAndRecord(place, request);
-      return place;
-    }
-
-    return placeRepository.findByKakaoId(request.id())
-        .map(place -> {
-          changeTrackingService.detectUpdateAndRecord(place, request);
-          return place;
+  public Place upsertPlace(ExternalPlaceData place, Place.Source source) {
+    return placeRepository.findByExternalIdAndSource(place.externalId(), source)
+        .map(existing -> {
+          changeTrackingService.detectUpdateAndRecord(existing, place, toChangeSource(source));
+          return existing;
         })
-        .orElseGet(() -> createPlace(request));
+        .orElseGet(() -> createPlace(place, source));
   }
 
-  // 내부 서비스용
+  /**
+   * 내부 서비스 용
+   */
   @Transactional
-  public Place createPlace(PlaceCreateRequest request) {
-    log.debug("장소 생성 시작: placeName = {}", request.placeName());
+  public Place createPlace(ExternalPlaceData externalPlaceData, Place.Source source) {
+    log.debug("장소 생성 시작: placeName = {}", externalPlaceData.placeName());
 
-    Area area = areaService.getAreaByAddress(request.addressName());
+    Area area = areaService.getByCode(externalPlaceData.sigunguCode(),
+        externalPlaceData.sigunguName());
 
     int exp = expService.calculatePlaceExp(area.getWeight());
 
     Place place = Place.builder()
-        .kakaoId(request.id())
-        .name(request.placeName())
-        .address(request.addressName())
-        .x(request.x())
-        .y(request.y())
-        .category(request.category())
+        .externalId(externalPlaceData.externalId())
+        .source(source)
+        .name(externalPlaceData.placeName())
+        .jibunAddress(externalPlaceData.jibunAddress())
+        .roadAddress(externalPlaceData.roadAddress())
+        .fetchedAt(externalPlaceData.fetchedAt())
+        .x(externalPlaceData.x())
+        .y(externalPlaceData.y())
+        .categoryCode(externalPlaceData.categoryCode())
+        .categoryName(externalPlaceData.categoryName())
         .area(area)
         .exp(exp)
         .build();
 
-    log.info("장소 생성 완료: placeName = {}", request.placeName());
+    log.info("장소 생성 완료: placeName = {}", externalPlaceData.placeName());
     return placeRepository.save(place);
+  }
+
+  private ChangeSource toChangeSource(Place.Source source) {
+    return switch (source) {
+      case SEMAS -> ChangeSource.SEMAS;
+    };
   }
 
   private Map<UUID, LocalDateTime> getVisitedDateMap(UUID userId, List<Place> places) {

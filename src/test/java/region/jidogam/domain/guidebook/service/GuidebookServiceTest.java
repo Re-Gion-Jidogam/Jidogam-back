@@ -9,7 +9,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,10 +60,8 @@ import region.jidogam.domain.guidebook.repository.GuidebookParticipationReposito
 import region.jidogam.domain.guidebook.repository.GuidebookPlaceRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookRepository;
 import region.jidogam.domain.guidebook.repository.GuidebookReviewRepository;
-import region.jidogam.domain.place.dto.PlaceCreateRequest;
 import region.jidogam.domain.place.entity.Place;
 import region.jidogam.domain.place.repository.PlaceRepository;
-import region.jidogam.domain.place.service.PlaceService;
 import region.jidogam.domain.stamp.repository.StampRepository;
 import region.jidogam.domain.user.entity.User;
 import region.jidogam.domain.user.repository.UserRepository;
@@ -91,8 +88,6 @@ class GuidebookServiceTest {
   @Mock
   private PlaceRepository placeRepository;
   @Mock
-  private PlaceService placeService;
-  @Mock
   private CursorCodecUtil cursorCodecUtil;
   @Mock
   private ApplicationEventPublisher eventPublisher;
@@ -118,7 +113,6 @@ class GuidebookServiceTest {
         guidebookReviewRepository,
         stampRepository,
         placeRepository,
-        placeService,
         guidebookMapper,
         cursorCodecUtil,
         eventPublisher
@@ -471,18 +465,8 @@ class GuidebookServiceTest {
       User user = createUser(userId);
       GuidebookResponse expectedResponse = createResponse(userId, guidebookId, 3);
 
-      PlaceCreateRequest placeCreateRequest = new PlaceCreateRequest(
-          null,
-          "임시마트",
-          "전북 익산시 망산길 11-17",
-          null,
-          BigDecimal.valueOf(35.976749396987046),
-          BigDecimal.valueOf(126.99599512792346)
-      );
-
       GuidebookAddPlaceRequest request = new GuidebookAddPlaceRequest(
           placeId,
-          placeCreateRequest,
           "https://test.com/url"
       );
 
@@ -491,7 +475,7 @@ class GuidebookServiceTest {
       when(mockGuidebook.getId()).thenReturn(guidebookId);
       when(mockGuidebook.getAuthor()).thenReturn(user);
 
-      when(placeService.getOrCreatePlace(request.pid(), request.place())).thenReturn(mockPlace);
+      when(placeRepository.findById(placeId)).thenReturn(Optional.of(mockPlace));
       when(mockPlace.getId()).thenReturn(placeId);
       when(stampRepository.countUserStampsInGuidebook(userId, guidebookId)).thenReturn(3);
       when(guidebookMapper.toResponse(mockGuidebook, 3)).thenReturn(expectedResponse);
