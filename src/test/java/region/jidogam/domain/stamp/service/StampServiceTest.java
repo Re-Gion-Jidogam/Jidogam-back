@@ -25,6 +25,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 import region.jidogam.domain.area.entity.AdministrativeLevel;
 import region.jidogam.domain.area.entity.Area;
@@ -116,7 +117,7 @@ class StampServiceTest {
   void stampPlaceSuccess() {
     // given
     setClock();
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(userRepository.findByIdForUpdateNoWait(userId)).thenReturn(Optional.of(user));
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
         .thenReturn(Optional.empty());
     when(placeRepository.findById(placeId)).thenReturn(Optional.of(place));
@@ -148,7 +149,7 @@ class StampServiceTest {
   void failsByPlaceNotFound() {
     // given
     setClock();
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(userRepository.findByIdForUpdateNoWait(userId)).thenReturn(Optional.of(user));
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
         .thenReturn(Optional.empty());
     when(placeRepository.findById(placeId)).thenReturn(Optional.empty());
@@ -164,7 +165,7 @@ class StampServiceTest {
   void failsByAlreadyStamp() {
     // given
     setClock();
-    when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+    when(userRepository.findByIdForUpdateNoWait(userId)).thenReturn(Optional.of(user));
     when(stampRepository.findFirstByUser_IdOrderByCreatedAtDesc(userId))
         .thenReturn(Optional.empty());
     when(placeRepository.findById(placeId)).thenReturn(Optional.of(place));
@@ -187,7 +188,7 @@ class StampServiceTest {
     void failsByCooldownTime() {
       // given
       setClock();
-      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.findByIdForUpdateNoWait(userId)).thenReturn(Optional.of(user));
 
       // CoolTime 5분, 마지막 도장 3분 전
       LocalDateTime recent = LocalDateTime.of(2025, 8, 20, 11, 57);
@@ -206,11 +207,24 @@ class StampServiceTest {
     }
 
     @Test
+    @DisplayName("같은 사용자의 다른 도장 요청이 처리 중이면 대기하지 않고 쿨타임 예외로 실패")
+    void failsByConcurrentRequestInProgress() {
+      // given
+      when(userRepository.findByIdForUpdateNoWait(userId))
+          .thenThrow(new PessimisticLockingFailureException("could not obtain lock"));
+
+      PlaceStampRequest request = new PlaceStampRequest(placeId);
+
+      // when & then
+      assertThrows(StampCooldownException.class, () -> stampService.stampPlace(request, userId));
+    }
+
+    @Test
     @DisplayName("도장 쿨타임이 지난 경우 성공")
     void cooldownTimeIsAfterNowSuccess() {
       // given
       setClock();
-      when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+      when(userRepository.findByIdForUpdateNoWait(userId)).thenReturn(Optional.of(user));
 
       // CoolTime 5분, 마지막 도장 10분 전
       LocalDateTime recent = LocalDateTime.of(2025, 8, 20, 11, 50);

@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.guidebook.service.GuidebookParticipationService;
@@ -44,8 +45,8 @@ public class StampService {
   public void stampPlace(PlaceStampRequest request, UUID userId) {
     log.debug("장소 도장 찍기 시작: placeId = {}, userId = {}", request.pid(), userId);
 
-    // 1. 유저 확인
-    User user = getUserOrThrow(userId);
+    // 1. 유저 확인 (같은 사용자의 동시 요청은 대기 없이 거절해 쿨타임 우회 방지)
+    User user = getUserWithLockOrThrow(userId);
 
     // 2. 유저의 마지막 도장 찍은 시간 조회 (유효 시간 외인 경우 예외)
     validateStampCoolTime(user.getId());
@@ -112,6 +113,17 @@ public class StampService {
   private User getUserOrThrow(UUID userId) {
     return userRepository.findById(userId)
         .orElseThrow(() -> UserNotFoundException.withId(userId));
+  }
+
+  // 유저 확인 (행 락, NOWAIT)
+  // 락을 기다리면 커넥션을 쥔 채 대기하므로, 겹친 요청은 즉시 쿨타임 예외로 거절한다
+  private User getUserWithLockOrThrow(UUID userId) {
+    try {
+      return userRepository.findByIdForUpdateNoWait(userId)
+          .orElseThrow(() -> UserNotFoundException.withId(userId));
+    } catch (PessimisticLockingFailureException e) {
+      throw StampCooldownException.withRestTime(cooldownTime.toMinutes());
+    }
   }
 
   // 장소 확인
