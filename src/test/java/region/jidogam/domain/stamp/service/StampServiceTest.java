@@ -134,7 +134,7 @@ class StampServiceTest {
     // then
     // save가 호출될 때 인자를 캡처, 캡처된 Stamp 객체의 내용을 검증
     ArgumentCaptor<Stamp> stampCaptor = ArgumentCaptor.forClass(Stamp.class);
-    verify(stampRepository).save(stampCaptor.capture());
+    verify(stampRepository).saveAndFlush(stampCaptor.capture());
 
     Stamp savedStamp = stampCaptor.getValue();
     assertThat(savedStamp.getUser()).isEqualTo(user);
@@ -236,7 +236,7 @@ class StampServiceTest {
 
       // then
       ArgumentCaptor<Stamp> stampCaptor = ArgumentCaptor.forClass(Stamp.class);
-      verify(stampRepository).save(stampCaptor.capture());
+      verify(stampRepository).saveAndFlush(stampCaptor.capture());
 
       Stamp savedStamp = stampCaptor.getValue();
       assertThat(savedStamp.getUser()).isEqualTo(user);

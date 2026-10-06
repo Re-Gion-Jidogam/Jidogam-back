@@ -7,6 +7,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import region.jidogam.domain.guidebook.service.GuidebookParticipationService;
@@ -61,7 +62,12 @@ public class StampService {
         .user(user)
         .earnedExp(place.getExp())
         .build();
-    stampRepository.save(stamp);
+    // 동시 요청이 중복 검사를 함께 통과해도 (user_id, place_id) 유니크 제약에서 걸리도록 즉시 flush
+    try {
+      stampRepository.saveAndFlush(stamp);
+    } catch (DataIntegrityViolationException e) {
+      throw StampDuplicateException.withPlaceName(place.getName());
+    }
 
     // 5. 사용자 경험치 증가
     userService.increaseUserExp(user, place.getExp());
